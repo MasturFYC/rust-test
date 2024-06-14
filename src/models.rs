@@ -33,3 +33,10 @@ pub struct User {
     #[serde(rename = "updatedAt")]
     pub updated_at: Option<DateTime<Utc>>,
 }
+
+
+#[derive(Debug,Deserialize,sqlx::FromRow,sqlx::Type,Serialize,Clone)]
+pub struct Category {
+    pub id: i16,
+    pub name: String,
+}

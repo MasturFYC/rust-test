@@ -1,9 +1,12 @@
 mod config;
 mod db;
+mod categorydb;
 mod dtos;
+mod categorydtos;
 mod error;
 mod extractors;
 mod models;
+mod categories;
 mod scopes;
 mod utils;
 
@@ -18,7 +21,12 @@ use dtos::{
     FilterUserDto, LoginUserDto, RegisterUserDto, Response, UserData, UserListResponseDto,
     UserLoginResponseDto, UserResponseDto,
 };
+use categorydtos::{
+    CategoryDto,CategoryListResponseDto,CategoryResponseDto,
+    Response as CategoryResponse
+};
 use scopes::{auth, users};
+use categories::category;
 use sqlx::postgres::PgPoolOptions;
 use utoipa::{
     openapi::security::{HttpAuthScheme, HttpBuilder, SecurityScheme},
@@ -37,10 +45,17 @@ pub struct AppState {
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        auth::login,auth::logout,auth::register, users::get_me, users::get_users, health_checker_handler
+        auth::login, auth::logout, auth::register,
+        users::get_me, users::get_users,
+        category::get_category, 
+        // category::get_all, category::create, category::update, category::delete,
+        health_checker_handler
     ),
     components(
-        schemas(UserData,FilterUserDto,LoginUserDto,RegisterUserDto,UserResponseDto,UserLoginResponseDto,Response,UserListResponseDto)
+        schemas(
+            CategoryDto, CategoryListResponseDto, CategoryResponseDto, CategoryResponse,
+            UserData,FilterUserDto,LoginUserDto,RegisterUserDto,UserResponseDto,UserLoginResponseDto,Response,UserListResponseDto
+        )
     ),
     tags(
         (name = "Rust REST API", description = "Authentication in Rust Endpoints")
