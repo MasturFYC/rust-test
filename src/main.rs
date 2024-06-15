@@ -1,12 +1,11 @@
 mod config;
 mod db;
-mod categorydb;
 mod dtos;
-mod categorydtos;
 mod error;
 mod extractors;
 mod models;
-mod categories;
+mod category;
+mod product;
 mod scopes;
 mod utils;
 
@@ -14,6 +13,7 @@ use actix_cors::Cors;
 use actix_web::{
     get, http::header, middleware::Logger, web, App, HttpResponse, HttpServer, Responder
 };
+
 use config::Config;
 use db::DBClient;
 use dotenv::dotenv;
@@ -21,12 +21,7 @@ use dtos::{
     FilterUserDto, LoginUserDto, RegisterUserDto, Response, UserData, UserListResponseDto,
     UserLoginResponseDto, UserResponseDto,
 };
-use categorydtos::{
-    CategoryDto,CategoryListResponseDto,CategoryResponseDto,
-    Response as CategoryResponse
-};
 use scopes::{auth, users};
-use categories::category;
 use sqlx::postgres::PgPoolOptions;
 use utoipa::{
     openapi::security::{HttpAuthScheme, HttpBuilder, SecurityScheme},
@@ -46,14 +41,12 @@ pub struct AppState {
 #[openapi(
     paths(
         auth::login, auth::logout, auth::register,
-        users::get_me, users::get_users,
-        category::get_category, 
+        users::get_me, users::get_users, 
         // category::get_all, category::create, category::update, category::delete,
         health_checker_handler
     ),
     components(
         schemas(
-            CategoryDto, CategoryListResponseDto, CategoryResponseDto, CategoryResponse,
             UserData,FilterUserDto,LoginUserDto,RegisterUserDto,UserResponseDto,UserLoginResponseDto,Response,UserListResponseDto
         )
     ),
@@ -136,6 +129,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .service(scopes::auth::auth_scope())
             .service(scopes::users::users_scope())
             .service(health_checker_handler)
+            .configure(category::handler::category_scope)
             .service(Redoc::with_url("/redoc", openapi.clone()))
             .service(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc"))
             .service(SwaggerUi::new("/{_:.*}").url("/api-docs/openapi.json", openapi.clone()))

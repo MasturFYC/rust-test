@@ -7,7 +7,7 @@ use crate::models::User;
 
 #[derive(Debug, Clone)]
 pub struct DBClient {
-    pool: Pool<Postgres>,
+    pub pool: Pool<Postgres>,
 }
 
 impl DBClient {
@@ -102,7 +102,10 @@ impl UserExt for DBClient {
     ) -> Result<User, sqlx::Error> {
         let user = sqlx::query_as!(
             User,
-            r#"INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id,name, email, password, photo,verified,created_at,updated_at,role as "role: UserRole""#,
+            r#"INSERT INTO users 
+            (name, email, password) VALUES 
+            ($1, $2, $3) 
+            RETURNING id, name, email, password, photo, verified, created_at, updated_at,role as "role: UserRole""#,
             name.into(),
             email.into(),
             password.into()
@@ -121,7 +124,11 @@ impl UserExt for DBClient {
     ) -> Result<User, sqlx::Error> {
         let user = sqlx::query_as!(
             User,
-            r#"UPDATE users SET name = $1, email = $2 WHERE id = $3 RETURNING id, name, email, password, photo,verified,created_at,updated_at,role as "role: UserRole""#,
+            r#"UPDATE users SET 
+            name = $1, 
+            email = $2 
+            WHERE id = $3 
+            RETURNING id, name, email, password, photo,verified,created_at,updated_at,role as "role: UserRole""#,
             name.into(),
             email.into(),
             user_id
@@ -140,7 +147,10 @@ impl UserExt for DBClient {
     ) -> Result<User, sqlx::Error> {
         let user = sqlx::query_as!(
             User,
-            r#"INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4) RETURNING id,name, email, password, photo,verified,created_at,updated_at,role as "role: UserRole""#,
+            r#"INSERT INTO users 
+            (name, email, password, role) VALUES 
+            ($1, $2, $3, $4) 
+            RETURNING id,name, email, password, photo,verified,created_at,updated_at,role as "role: UserRole""#,
             name.into(),
             email.into(),
             password.into(),
