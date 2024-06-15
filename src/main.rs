@@ -43,7 +43,8 @@ pub struct AppState {
         auth::login, auth::logout, auth::register,
         users::get_me, users::get_users, 
         // category::get_all, category::create, category::update, category::delete,
-        health_checker_handler
+        health_checker_handler,
+        // product::get_product, product::get_products, product::create
     ),
     components(
         schemas(
@@ -114,7 +115,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .allowed_origin("http://localhost:3000")
             .allowed_origin("http://localhost:8000")
             .allowed_origin("https://rust.codevoweb.com")
-            .allowed_methods(vec!["GET", "POST", "PUT"])
+            .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
             .allowed_headers(vec![
                 header::CONTENT_TYPE,
                 header::AUTHORIZATION,
@@ -126,6 +127,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .app_data(web::Data::new(app_state.clone()))
             .wrap(cors)
             .wrap(Logger::default())
+            .service(product::handler::product_scope())
             .service(scopes::auth::auth_scope())
             .service(scopes::users::users_scope())
             .service(health_checker_handler)

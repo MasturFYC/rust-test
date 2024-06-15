@@ -36,8 +36,8 @@ pub fn users_scope() -> Scope {
     path = "/api/users/me",
     tag = "Get Authenticated User Endpoint",
     responses(
-        (status = 200, description= "Authenticated User", body = UserResponseDto),
-        (status= 500, description= "Internal Server Error", body = Response )
+        (status=200, description= "Authenticated User", body=UserResponseDto),
+        (status=500, description= "Internal Server Error", body=Response )
        
     ),
     security(

@@ -18,28 +18,10 @@ impl DBClient {
 
 #[async_trait]
 pub trait UserExt {
-    async fn get_user(
-        &self,
-        user_id: Option<Uuid>,
-        name: Option<&str>,
-        email: Option<&str>,
-    ) -> Result<Option<User>, sqlx::Error>;
-    
+    async fn get_user(&self, user_id: Option<Uuid>, name: Option<&str>, email: Option<&str>) -> Result<Option<User>, sqlx::Error>;
     async fn get_users(&self, page: u32, limit: usize) -> Result<Vec<User>, sqlx::Error>;
-    
-    async fn save_user<T: Into<String> + Send>(
-        &self,
-        name: T,
-        email: T,
-        password: T,
-    ) -> Result<User, sqlx::Error>;
-    
-    async fn user_update<T: Into<String> + Send>(
-        &self,
-        user_id: Option<Uuid>,
-        name: T,
-        email: T,
-    ) -> Result<User, sqlx::Error>;
+    async fn save_user<T: Into<String> + Send>(&self, name: T, email: T, password: T) -> Result<User, sqlx::Error>;
+    async fn user_update<T: Into<String> + Send>(&self, user_id: Option<Uuid>, name: T, email: T) -> Result<User, sqlx::Error>;
 
     #[allow(dead_code)]
     async fn save_admin_user<T: Into<String> + Send>(
