@@ -30,6 +30,9 @@ pub enum ErrorMessage {
     UserNoLongerExist,
     TokenNotProvided,
     PermissionDenied,
+    ProductExist,
+    DataCannotBeDeleted,
+    DataNotFound
 }
 
 impl ToString for ErrorMessage {
@@ -57,7 +60,10 @@ impl ErrorMessage {
             ErrorMessage::ExceededMaxPasswordLength(max_length) => format!("Password must not be more than {} characters", max_length),
             ErrorMessage::InvalidToken => "Authentication token is invalid or expired".to_string(),
             ErrorMessage::TokenNotProvided => "You are not logged in, please provide token".to_string(),
-            ErrorMessage::PermissionDenied => "You are not allowed to perform this action".to_string()
+            ErrorMessage::PermissionDenied => "You are not allowed to perform this action".to_string(),
+            ErrorMessage::ProductExist => "Product with barcode already exists".to_string(),
+            ErrorMessage::DataCannotBeDeleted => "Product cannot be deleted".to_string(),
+            ErrorMessage::DataNotFound => "Data not found".to_string()
         }
     }
 }
@@ -114,6 +120,10 @@ impl HttpError {
     pub fn into_http_response(self) -> HttpResponse {
         match self.status {
             400 => HttpResponse::BadRequest().json(Response {
+                status: "fail",
+                message: self.message.into(),
+            }),
+            404 => HttpResponse::NotFound().json(Response {
                 status: "fail",
                 message: self.message.into(),
             }),

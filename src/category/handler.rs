@@ -8,9 +8,8 @@ use serde_json::json;
 #[get("/categories/{id}")]
 async fn get_category (path: web::Path<i16>, data: web::Data<AppState>) -> impl Responder {
     let cat_id = path.into_inner();
-    let query_result  = sqlx::query_as!(
-        Category, 
-        "SELECT id, name FROM categories WHERE id = $1", cat_id
+    let query_result  = sqlx::query_file_as!(
+        Category, "sql/category-get-by-id.sql", cat_id
     )
     .fetch_one(&data.db_client.pool)
     .await;
@@ -37,9 +36,9 @@ async fn get_categories(opts: web::Query<PageOptions>, data: web::Data<AppState>
     let limit = opts.limit.unwrap_or(10);
     let offset = (opts.page.unwrap_or(1) - 1) * limit;
 
-    let query_result = sqlx::query_as!(
+    let query_result = sqlx::query_file_as!(
         Category,
-        r#"SELECT id,name FROM categories LIMIT $1 OFFSET $2"#,
+        "sql/category-get-all.sql",
         limit as i64,
         offset as i64
     )
@@ -64,9 +63,9 @@ async fn get_categories(opts: web::Query<PageOptions>, data: web::Data<AppState>
 
 #[post("/categories")]
 async fn create(body: web::Json<CreateCategorySchema>, data: web::Data<AppState>) -> impl Responder {
-    let query_result = sqlx::query_as!(
+    let query_result = sqlx::query_file_as!(
         Category,
-        "INSERT INTO categories (name) VALUES ($1) RETURNING id, name",
+        "sql/category-insert.sql",
         body.name.to_string()
     )
     .fetch_one(&data.db_client.pool)
@@ -96,7 +95,8 @@ async fn create(body: web::Json<CreateCategorySchema>, data: web::Data<AppState>
 async fn update(path: web::Path<i16>, body: web::Json<UpdateCategorySchema>, data: web::Data<AppState>) -> impl Responder {
 
     let cat_id = path.into_inner();
-    let query_result = sqlx::query_as!(Category,"SELECT id, name FROM categories WHERE id=$1", cat_id)
+    let query_result = sqlx::query_file_as!(
+        Category, "sql/category-get-by-id.sql", cat_id)
     .fetch_one(&data.db_client.pool)
     .await;
 
@@ -107,9 +107,9 @@ async fn update(path: web::Path<i16>, body: web::Json<UpdateCategorySchema>, dat
 
     let cat = query_result.unwrap();
 
-    let query_result = sqlx::query_as!(
+    let query_result = sqlx::query_file_as!(
         Category,
-        "UPDATE categories SET name = $1 WHERE id = $2 RETURNING *",
+        "sql/category-update.sql",
         body.name.to_owned().unwrap_or(cat.name),
         cat_id
     )
@@ -135,7 +135,7 @@ async fn update(path: web::Path<i16>, body: web::Json<UpdateCategorySchema>, dat
 #[delete("/categories/{id}")]
 async fn delete (path: web::Path<i16>, data: web::Data<AppState>) -> impl Responder {
     let cat_id = path.into_inner();
-    let rows_affected = sqlx::query!("DELETE FROM categories WHERE id = $1", cat_id)
+    let rows_affected = sqlx::query_file!("sql/category-delete.sql", cat_id)
     .execute(&data.db_client.pool)
     .await
     .unwrap()

@@ -29,6 +29,32 @@ pub struct CreateProductSchema {
     // pub updated_at: Option<DateTime<Utc>>,
 }
 
+
+#[derive(Validate, Debug, Default, Clone, Serialize, Deserialize, ToSchema)]
+pub struct UpdateProductSchema {
+    #[validate(length(min = 1, message = "Name is required"))]
+    pub name: Option<String>,
+    #[validate(length(min = 1, message = "Barcode is required"))]
+    pub barcode: Option<String>,
+    #[validate(length(min = 1, message = "Unit is required"))]
+    pub unit: Option<String>,
+    pub content: Option<BigDecimal>,
+    pub hpp: Option<BigDecimal>,
+    pub margin: Option<BigDecimal>,
+    pub price: Option<BigDecimal>,
+    pub ppn: Option<BigDecimal>,
+    #[serde(rename = "isActive")]
+    pub is_active: Option<bool>,
+    #[serde(rename = "variantName",skip_serializing_if = "Option::is_none")]
+    pub variant_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub descriptions: Option<String>,
+    #[serde(rename = "categoryId")]
+    pub category_id: Option<i16>,
+    #[serde(rename = "updatedAt")]
+    pub updated_at: Option<DateTime<Utc>>,
+}
+
 // #[derive(Debug, Serialize, Deserialize, sqlx::FromRow, sqlx::Type, Clone)]
 #[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
 pub struct Product {
@@ -108,6 +134,12 @@ pub struct ProductResponseDto {
 pub struct CreateResponseDto {
     pub status: String,
     pub data: Product,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct DeleteResponseDto {
+    pub status: String,
+    pub data: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]

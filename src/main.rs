@@ -21,6 +21,7 @@ use dtos::{
     FilterUserDto, LoginUserDto, RegisterUserDto, Response, UserData, UserListResponseDto,
     UserLoginResponseDto, UserResponseDto,
 };
+
 use scopes::{auth, users};
 use sqlx::postgres::PgPoolOptions;
 use utoipa::{
@@ -30,6 +31,8 @@ use utoipa::{
 use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
+
+// use product::handler;
 
 #[derive(Debug, Clone)]
 pub struct AppState {
@@ -44,7 +47,9 @@ pub struct AppState {
         users::get_me, users::get_users, 
         // category::get_all, category::create, category::update, category::delete,
         health_checker_handler,
-        // product::get_product, product::get_products, product::create
+        product::handler::create_product, 
+        product::handler::get_product,
+        product::handler::get_products,
     ),
     components(
         schemas(
