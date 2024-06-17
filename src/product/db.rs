@@ -26,6 +26,9 @@ impl ProductExt for DBClient {
     async fn get_products(&self, page: u32, limit: usize) -> Result<Vec<ProductFull>, sqlx::Error> {
         let offset = (page - 1) * limit as u32;
 
+        // let names: Vec<String> = sqlx::query!(
+        //     "SELECT name FROM customers WHERE id IN (SELECT customer_id FROM (SELECT customer_id, MAX(date) AS max_date FROM orders GROUP BY customer_id) AS latest_orders WHERE max_date >= NOW() - INTERVAL '30 days')"
+        // )        
         // println!("{} {} {}", offset, page, limit);
 
         let products = sqlx::query_file_as!(
@@ -41,6 +44,7 @@ impl ProductExt for DBClient {
     }
 
     async fn product_create(&self, data: CreateProductSchema) -> Result<Product, sqlx::Error> {
+        // let mut stmt = self.pool.prepare("SELECT * FROM users WHERE id = $1").await?;
         let product = sqlx::query_file_as!(
             Product,
             "sql/product-insert.sql",
