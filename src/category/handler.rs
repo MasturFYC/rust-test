@@ -1,18 +1,21 @@
 use crate::{
-    category::{Category, CreateCategorySchema, PageOptions, UpdateCategorySchema}, extractors::auth::RequireAuth, models::UserRole, AppState
+    category::{
+        Category, CreateCategorySchema, PageOptions, UpdateCategorySchema
+    },
+    extractors::auth::RequireAuth,
+    models::UserRole,
+    AppState,
 };
 
-use actix_web::{delete, get, put, post, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use serde_json::json;
 
 #[get("/categories/{id}")]
-async fn get_category (path: web::Path<i16>, data: web::Data<AppState>) -> impl Responder {
+async fn get_category(path: web::Path<i16>, data: web::Data<AppState>) -> impl Responder {
     let cat_id = path.into_inner();
-    let query_result  = sqlx::query_file_as!(
-        Category, "sql/category-get-by-id.sql", cat_id
-    )
-    .fetch_one(&data.db_client.pool)
-    .await;
+    let query_result = sqlx::query_file_as!(Category, "sql/category-get-by-id.sql", cat_id)
+        .fetch_one(&data.db_client.pool)
+        .await;
 
     match query_result {
         Ok(cat) => {
@@ -31,8 +34,10 @@ async fn get_category (path: web::Path<i16>, data: web::Data<AppState>) -> impl 
 }
 
 #[get("/categories")]
-async fn get_categories(opts: web::Query<PageOptions>, data: web::Data<AppState>) -> impl Responder {
-
+async fn get_categories(
+    opts: web::Query<PageOptions>,
+    data: web::Data<AppState>,
+) -> impl Responder {
     let limit = opts.limit.unwrap_or(10);
     let offset = (opts.page.unwrap_or(1) - 1) * limit;
 
@@ -62,14 +67,14 @@ async fn get_categories(opts: web::Query<PageOptions>, data: web::Data<AppState>
 }
 
 #[post("/categories")]
-async fn create(body: web::Json<CreateCategorySchema>, data: web::Data<AppState>) -> impl Responder {
-    let query_result = sqlx::query_file_as!(
-        Category,
-        "sql/category-insert.sql",
-        body.name.to_string()
-    )
-    .fetch_one(&data.db_client.pool)
-    .await;
+async fn create(
+    body: web::Json<CreateCategorySchema>,
+    data: web::Data<AppState>,
+) -> impl Responder {
+    let query_result =
+        sqlx::query_file_as!(Category, "sql/category-insert.sql", body.name.to_string())
+            .fetch_one(&data.db_client.pool)
+            .await;
 
     match query_result {
         Ok(cat) => {
@@ -92,17 +97,20 @@ async fn create(body: web::Json<CreateCategorySchema>, data: web::Data<AppState>
 }
 
 #[put("/categories/{id}")]
-async fn update(path: web::Path<i16>, body: web::Json<UpdateCategorySchema>, data: web::Data<AppState>) -> impl Responder {
-
+async fn update(
+    path: web::Path<i16>,
+    body: web::Json<UpdateCategorySchema>,
+    data: web::Data<AppState>,
+) -> impl Responder {
     let cat_id = path.into_inner();
-    let query_result = sqlx::query_file_as!(
-        Category, "sql/category-get-by-id.sql", cat_id)
-    .fetch_one(&data.db_client.pool)
-    .await;
+    let query_result = sqlx::query_file_as!(Category, "sql/category-get-by-id.sql", cat_id)
+        .fetch_one(&data.db_client.pool)
+        .await;
 
     if query_result.is_err() {
         let message = format!("Category with ID: {} not found", cat_id);
-        return HttpResponse::NotFound().json(serde_json::json!({"status": "fail","message": message}));
+        return HttpResponse::NotFound()
+            .json(serde_json::json!({"status": "fail","message": message}));
     }
 
     let cat = query_result.unwrap();
@@ -133,13 +141,13 @@ async fn update(path: web::Path<i16>, body: web::Json<UpdateCategorySchema>, dat
 }
 
 #[delete("/categories/{id}")]
-async fn delete (path: web::Path<i16>, data: web::Data<AppState>) -> impl Responder {
+async fn delete(path: web::Path<i16>, data: web::Data<AppState>) -> impl Responder {
     let cat_id = path.into_inner();
     let rows_affected = sqlx::query_file!("sql/category-delete.sql", cat_id)
-    .execute(&data.db_client.pool)
-    .await
-    .unwrap()
-    .rows_affected();
+        .execute(&data.db_client.pool)
+        .await
+        .unwrap()
+        .rows_affected();
 
     if rows_affected == 0 {
         let message = format!("Category with ID: {} not found", cat_id);
@@ -147,6 +155,39 @@ async fn delete (path: web::Path<i16>, data: web::Data<AppState>) -> impl Respon
     }
 
     HttpResponse::NoContent().finish()
+}
+
+#[get("/categories/products/{id}")]
+pub async fn get_category_with_products(
+    path: web::Path<i16>,
+    data: web::Data<AppState>,
+) -> impl Responder {
+    let cat_id = path.into_inner();
+    let row = sqlx::query_file!( "sql/category-with-product.sql", cat_id,)
+        .fetch_one(&data.db_client.pool)
+        .await;
+
+    match row {
+        Ok(data) => {
+            let note_response = serde_json::json!({
+                "status": "success",
+                "data": serde_json::json!({
+                    "category": {
+                        "id" : data.id,
+                        "name" : data.name,
+                        "products" : data.products
+                    },
+                })
+            });
+            return HttpResponse::Ok().json(note_response);
+        }
+        Err(_) => {
+            let message = format!("Category with ID: {} not found", cat_id);
+            return HttpResponse::NotFound()
+                .json(serde_json::json!({"status": "fail","message": message}));
+        }
+    }
+
 }
 
 pub fn category_scope(conf: &mut web::ServiceConfig) {
@@ -157,6 +198,7 @@ pub fn category_scope(conf: &mut web::ServiceConfig) {
         .service(get_categories)
         .service(create)
         .service(update)
+        .service(get_category_with_products)
         .service(delete);
 
     conf.service(scope);
