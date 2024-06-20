@@ -6,6 +6,7 @@ mod extractors;
 mod models;
 mod category;
 mod product;
+mod account;
 mod scopes;
 mod utils;
 
@@ -137,6 +138,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .service(scopes::users::users_scope())
             .service(health_checker_handler)
             .configure(category::handler::category_scope)
+            .configure(account::handler::account_scope)
             .service(Redoc::with_url("/redoc", openapi.clone()))
             .service(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc"))
             .service(SwaggerUi::new("/{_:.*}").url("/api-docs/openapi.json", openapi.clone()))

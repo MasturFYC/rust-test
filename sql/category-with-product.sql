@@ -3,6 +3,7 @@ SELECT c.id, c.name,
       SELECT p.id, p.name
       FROM products p
       WHERE p.category_id = c.id
-   ) AS x), '[]') AS "products"
+        ) AS x), '[]') AS "products!: Json<Vec<CategoryProduct>>"
+   -- ) AS x), '[]') AS "products"
    FROM categories c
    WHERE c.id = $1;
