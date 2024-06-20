@@ -2,7 +2,8 @@ use chrono::prelude::*;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
-#[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
+// #[serde_as]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Account {
     pub id: i16,
     pub name: String,
@@ -10,7 +11,10 @@ pub struct Account {
     pub root: Option<i16>,
     pub normal: i16,
     #[serde(rename = "enName")]
+    // #[serde_as(deserialize_as = "DefaultOnNull")]
     pub en_name: Option<String>,
+    // #[serde(skip_serializing_if = "Option::is_none")]
+    // #[serde_as(deserialize_as = "DefaultOnNull")]
     pub descriptions: Option<String>,
     #[serde(rename = "isActive")]
     pub is_active: bool,
@@ -52,4 +56,14 @@ pub struct UpdateAccountSchema {
     #[serde(rename = "isActive")]
     pub is_active: bool,
     pub payable: bool,
+    // #[serde(rename = "updatedAt")]
+    // pub updated_at: Option<DateTime<Utc>>,    
 }
+
+
+// fn parse_str<'de, D>(d: D) -> Result<String, D::Error> where D: Deserializer<'de> {
+//     Deserialize::deserialize(d)
+//         .map(|x: Option<_>| {
+//             x.unwrap_or("".to_string())
+//         })
+// }

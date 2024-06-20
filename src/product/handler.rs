@@ -119,11 +119,11 @@ pub async fn get_products(
         .await
         .map_err(|e| HttpError::server_error(e.to_string()))?;
 
-    let length = products.len();
+    // let length = products.len();
     Ok(HttpResponse::Ok().json(ProductListResponseDto {
         status: "success".to_string(),
+        count: products.len(),
         data: products,
-        results: length,
     }))
 }
 

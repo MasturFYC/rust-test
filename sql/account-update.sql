@@ -5,6 +5,7 @@ UPDATE accounts SET
    en_name = $5,
    descriptions = $6,
    is_active = $7,
-   payable = $8   
+   payable = $8,
+   updated_at = $9
    WHERE id = $1
    RETURNING *

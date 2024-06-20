@@ -146,5 +146,5 @@ pub struct DeleteResponseDto {
 pub struct ProductListResponseDto {
     pub status: String,
     pub data: Vec<ProductFull>,
-    pub results: usize,
+    pub count: usize,
 }
