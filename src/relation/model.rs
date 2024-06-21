@@ -34,7 +34,7 @@ pub struct Relation {
     #[serde(rename = "isSpecial")]
     pub is_special: bool,
     #[serde(rename = "relationType")]
-    pub rel_type: Option<Vec<RelationType>>,
+    pub rel_type: Vec<RelationType>,
     #[serde(rename = "createdAt")]
     pub created_at: Option<DateTime<Utc>>,
     #[serde(rename = "updatedAt")]
@@ -55,5 +55,5 @@ pub struct CreateRelationSchema {
     pub is_special: bool,
     #[serde(rename = "relationType")]
     #[validate(length(min = 1, message = "Type is required"))]
-    pub rel_type: Option<Vec<RelationType>>,
+    pub rel_type: Vec<RelationType>,
 }
