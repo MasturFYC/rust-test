@@ -1,0 +1,76 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, name, root, normal, en_name, descriptions, is_active, payable, created_at, updated_at\n    FROM accounts\n    WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "root",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 3,
+        "name": "normal",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 4,
+        "name": "en_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "descriptions",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "payable",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int2"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      false,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "4c4ed8eb1273a0e2748f8ac3ae926cce93d8c8d10fbc545145e32a70f7e9f14e"
+}

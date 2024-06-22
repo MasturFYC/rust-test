@@ -139,6 +139,7 @@ impl RelationExt for DBClient {
 
         Ok(relation)
     }
+    
     async fn relation_delete(&self, id: uuid::Uuid) -> Result<u64, sqlx::Error> {
         let rows_affected: u64 = sqlx::query_file!("sql/relation-delete.sql", id)
             .execute(&self.pool)

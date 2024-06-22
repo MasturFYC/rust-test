@@ -1,0 +1,120 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO relations \n    (name, city, street, phone, is_active, is_special, relation_type)\n    VALUES\n    ($1, $2, $3, $4, $5, $6, $7::relation_enum[])\n    RETURNING id, name, city, street, phone, is_active, is_special, \n    relation_type as \"relation_type: Vec<RelationType>\",\n    created_at, updated_at",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "city",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "street",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "phone",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
+        "name": "is_special",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "relation_type: Vec<RelationType>",
+        "type_info": {
+          "Custom": {
+            "name": "_relation_enum",
+            "kind": {
+              "Array": {
+                "Custom": {
+                  "name": "relation_enum",
+                  "kind": {
+                    "Enum": [
+                      "customer",
+                      "employee",
+                      "member",
+                      "supplier"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Bool",
+        "Bool",
+        {
+          "Custom": {
+            "name": "_relation_enum",
+            "kind": {
+              "Array": {
+                "Custom": {
+                  "name": "relation_enum",
+                  "kind": {
+                    "Enum": [
+                      "customer",
+                      "employee",
+                      "member",
+                      "supplier"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "b5f7609cc4e711c2ef683a7d5372a073288cbce22d06ebd186739a7347880309"
+}

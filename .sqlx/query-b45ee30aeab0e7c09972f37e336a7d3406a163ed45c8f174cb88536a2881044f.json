@@ -1,0 +1,96 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT  id,\n        name,\n        city,\n        street,\n        phone,\n        is_active,\n        is_special,\n        relation_type AS \"relation_type: Vec<RelationType>\",\n        created_at,\n        updated_at\n    FROM relations\n    ORDER BY name\n    LIMIT $1\n    OFFSET $2\n",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "city",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "street",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "phone",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
+        "name": "is_special",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "relation_type: Vec<RelationType>",
+        "type_info": {
+          "Custom": {
+            "name": "_relation_enum",
+            "kind": {
+              "Array": {
+                "Custom": {
+                  "name": "relation_enum",
+                  "kind": {
+                    "Enum": [
+                      "customer",
+                      "employee",
+                      "member",
+                      "supplier"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "b45ee30aeab0e7c09972f37e336a7d3406a163ed45c8f174cb88536a2881044f"
+}

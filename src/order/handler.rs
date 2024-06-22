@@ -35,13 +35,32 @@ async fn get_order(
 
     match query_result {
         Ok(order) => {
-            let order_response = serde_json::json!({"status": "success","data": order});
 
-            return HttpResponse::Ok().json(order_response);
+            match order {
+                None => {
+                    let message = format!("Order with ID: {} not found", order_id);
+                    return HttpResponse::NotFound()
+                        .json(serde_json::json!({"status": "fail","message": message}))
+
+                },
+                Some(x) => {
+                    let order_response = serde_json::json!({"status": "success","data": x});
+                    return HttpResponse::Ok().json(order_response)
+                }
+            };
+
+            // if order.is_none() {
+            //     let message = format!("Order with ID: {} not found", order_id);
+            //         return HttpResponse::NotFound()
+            //             .json(serde_json::json!({"status": "fail","message": message}));
+            // }
+
+            // let order_response = serde_json::json!({"status": "success","data": order});
+            // return HttpResponse::Ok().json(order_response);
         }
-        Err(_) => {
-            let message = format!("Order with ID: {} not found", order_id);
-            return HttpResponse::NotFound()
+        Err(e) => {
+            let message = format!("Error {:?}", e);
+            return HttpResponse::InternalServerError()
                 .json(serde_json::json!({"status": "fail","message": message}));
         }
     }
@@ -66,7 +85,8 @@ async fn get_orders(
     let page = query_params.page.unwrap_or(1);
     
 
-    let query_result = app_state.db_client
+    let query_result = app_state
+        .db_client
         .get_orders(page, limit)
         .await;
 
@@ -76,18 +96,18 @@ async fn get_orders(
             .json(json!({"status": "error","message": message}));
     }
 
-    let length = app_state.db_client.order_count().await.unwrap_or_default().unwrap();
 
-
-    let rels = query_result.unwrap();
+    let (orders, length) = query_result.unwrap();
+    let lim = limit as i64;
 
     let json_response = serde_json::json!({
         "status": "success",
-        "totalPages": length / (limit as i64) + (if length % (limit as i64) == 0 {0} else {1}),
-        "count": rels.len(),
-        "data": rels,
+        "totalPages": (length / lim) + (if length % lim == 0 {0} else {1}),
+        "count": orders.len(),
+        "data": orders,
         "totalItems": length,
     });
+
     HttpResponse::Ok().json(json_response)
 }
 
@@ -105,7 +125,7 @@ async fn create(
     match query_result {
         Ok(order) => {
             if order.is_none() {
-                return HttpResponse::BadRequest().json(
+                return HttpResponse::NotAcceptable().json(
                     serde_json::json!({"status": "fail","message": "Cannot create new order"}),
                 );
             }
@@ -143,9 +163,9 @@ async fn update(
             .json(serde_json::json!({"status": "fail","message": "Bad request"}));
     }
 
-    let old = query_result.unwrap_or(None);
+    // let old = ; //_or(None);
 
-    if old.is_none() {
+    if query_result.unwrap().is_none() {
         let message = format!("Order with ID: {} not found", order_id);
         return HttpResponse::NotFound()
             .json(serde_json::json!({"status": "fail","message": message}));

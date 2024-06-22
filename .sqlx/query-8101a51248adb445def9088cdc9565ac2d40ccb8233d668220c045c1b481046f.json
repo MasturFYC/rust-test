@@ -1,0 +1,148 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE \"orders\" SET\n        order_type = $2,\n        relation_id = $3,\n        payment_type = $4,\n        updated_by = $5,\n        total = $6,\n        payment = $7,\n        remain = $8,\n        invoice_id = $9,\n        due_at = $10,\n        created_at = $11,\n        updated_at = now()\n    WHERE id = $1\n    RETURNING id,\n        order_type as \"order_type: OrderType\",\n        relation_id,\n        payment_type as \"payment_type: PaymentType\",\n        updated_by,\n        total,\n        payment,\n        remain,\n        invoice_id,\n        due_at,\n        created_at,\n        updated_at\n",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "order_type: OrderType",
+        "type_info": {
+          "Custom": {
+            "name": "order_enum",
+            "kind": {
+              "Enum": [
+                "order",
+                "stock",
+                "orderreturn",
+                "stockreturn",
+                "mutation"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "relation_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "payment_type: PaymentType",
+        "type_info": {
+          "Custom": {
+            "name": "payment_enum",
+            "kind": {
+              "Enum": [
+                "cash",
+                "pending",
+                "loans",
+                "lunas"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "updated_by",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "total",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 6,
+        "name": "payment",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 7,
+        "name": "remain",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 8,
+        "name": "invoice_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 9,
+        "name": "due_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        {
+          "Custom": {
+            "name": "order_enum",
+            "kind": {
+              "Enum": [
+                "order",
+                "stock",
+                "orderreturn",
+                "stockreturn",
+                "mutation"
+              ]
+            }
+          }
+        },
+        "Uuid",
+        {
+          "Custom": {
+            "name": "payment_enum",
+            "kind": {
+              "Enum": [
+                "cash",
+                "pending",
+                "loans",
+                "lunas"
+              ]
+            }
+          }
+        },
+        "Varchar",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Varchar",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "8101a51248adb445def9088cdc9565ac2d40ccb8233d668220c045c1b481046f"
+}

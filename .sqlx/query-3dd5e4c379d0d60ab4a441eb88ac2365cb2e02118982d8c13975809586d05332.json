@@ -1,0 +1,118 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT p.*, c.name AS category_name \n   FROM products p \n   INNER JOIN categories c ON c.id = p.category_id \n   WHERE p.id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "barcode",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "unit",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "unit_in_stock",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 5,
+        "name": "content",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 6,
+        "name": "hpp",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 7,
+        "name": "margin",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 8,
+        "name": "price",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 9,
+        "name": "ppn",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 10,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 11,
+        "name": "variant_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 12,
+        "name": "descriptions",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 13,
+        "name": "category_id",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 14,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 15,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 16,
+        "name": "category_name",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "3dd5e4c379d0d60ab4a441eb88ac2365cb2e02118982d8c13975809586d05332"
+}

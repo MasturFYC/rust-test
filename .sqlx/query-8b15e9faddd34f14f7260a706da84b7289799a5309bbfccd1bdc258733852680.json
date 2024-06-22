@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT c.id, c.name, \n   COALESCE((SELECT json_agg(x) FROM (\n      SELECT p.id, p.name\n      FROM products p\n      WHERE p.category_id = c.id\n        ) AS x), '[]') AS \"products!: Json<Vec<CategoryProduct>>\"\n   -- ) AS x), '[]') AS \"products\"\n   FROM categories c\n   WHERE c.id = $1;\n",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "products!: Json<Vec<CategoryProduct>>",
+        "type_info": "Json"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int2"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "8b15e9faddd34f14f7260a706da84b7289799a5309bbfccd1bdc258733852680"
+}

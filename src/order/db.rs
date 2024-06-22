@@ -1,13 +1,16 @@
 use async_trait::async_trait;
-use sqlx;
+use chrono::Utc;
+use sqlx::{self, Acquire};
 
 use super::{CreateOrderSchema, Order, OrderType, PaymentType};
 use crate::DBClient;
 
+type MatchResult = (Vec<Order>, i64);
+
 #[async_trait]
 pub trait OrderExt {
     async fn get_order(&self, id: uuid::Uuid) -> Result<Option<Order>, sqlx::Error>;
-    async fn get_orders(&self, page: usize, limit: usize) -> Result<Vec<Order>, sqlx::Error>;
+    async fn get_orders(&self, page: usize, limit: usize) -> Result<MatchResult, sqlx::Error>;
     async fn order_create<T: Into<CreateOrderSchema> + Send>(
         &self,
         data: T,
@@ -31,21 +34,41 @@ impl OrderExt for DBClient {
         Ok(order)
     }
 
-    async fn get_orders(&self, page: usize, limit: usize) -> Result<Vec<Order>, sqlx::Error> {
+    /// call using curl
+    /// curl localhost:8000/api/orders \
+    /// -H "content-type: application/json" \
+    /// -H "Authorization: Bearer $(cat token.txt)"
+    async fn get_orders(&self, page: usize, limit: usize) -> Result<MatchResult, sqlx::Error> {
         let offset = (page - 1) * limit;
 
-        // let mut tx = &self.pool.begin();
+        // acquire pg connection from current pool
+        let mut conn = self.pool.acquire().await?; //.unwrap();
 
+        // get transaction pool from pg connection
+        let mut tx = conn.begin().await?;
+
+        // start transaction
+        // get orders data from database
         let orders = sqlx::query_file_as!(
             Order,
             "sql/order-get-all.sql",
             limit as i64,
             offset as i64
         )
-        .fetch_all(&self.pool)
+        .fetch_all(&mut *tx)
         .await?;
 
-        Ok(orders)
+        // start transacrion
+        // get total record of orders
+        let row = sqlx::query_scalar!("SELECT COUNT(*) as total FROM orders")
+            .fetch_one(&mut *tx)
+            .await?;    
+
+        // finish transaction
+        tx.commit().await?;
+
+        // return result to caller
+        Ok((orders, row.unwrap_or(0)))
     }
 
 
@@ -68,8 +91,8 @@ impl OrderExt for DBClient {
             temp.payment.into(),
             temp.remain.into(),
             temp.invoice_id.to_owned(),
-            temp.due_at.to_owned(),
-            temp.created_at.to_owned()
+            temp.due_at.to_owned(), // .unwrap_or(temp.created_at.unwrap_or(Utc::now()).checked_add_days(chrono::Days::new(7)).unwrap()),
+            temp.created_at.unwrap_or(Utc::now())
         )
         .fetch_optional(&self.pool)
         .await?;
