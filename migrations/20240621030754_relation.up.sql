@@ -1,9 +1,9 @@
 -- Add up migration script here
-CREATE TYPE relation_type AS ENUM ('customer', 'employee', 'member', 'supplier');
+CREATE TYPE relation_enum AS ENUM ('customer', 'employee', 'member', 'supplier');
 
-CREATE SEQUENCE IF NOT EXISTS relation_id_seq AS INT
-    INCREMENT BY 1
-    START 1;
+-- CREATE SEQUENCE IF NOT EXISTS relation_id_seq AS INT
+--     INCREMENT BY 1
+--     START 1;
 
 CREATE TABLE
     "relations" (
@@ -14,7 +14,7 @@ CREATE TABLE
         phone VARCHAR(25),
         is_active BOOLEAN NOT NULL DEFAULT TRUE,
         is_special BOOLEAN NOT NULL DEFAULT FALSE,
-        rel_type relation_type[] NOT NULL DEFAULT '{customer}',
+        relation_type relation_enum[] NOT NULL DEFAULT '{customer}',
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         PRIMARY KEY (id)

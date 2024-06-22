@@ -5,7 +5,7 @@ SELECT  id,
         phone,
         is_active,
         is_special,
-        rel_type AS "rel_type: Vec<RelationType>",
+        relation_type AS "relation_type: Vec<RelationType>",
         created_at,
         updated_at
     FROM relations

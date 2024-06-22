@@ -14,8 +14,15 @@ pub trait RelationExt {
         limit: usize,
         rels: Vec<RelationType>,
     ) -> Result<Vec<Relation>, sqlx::Error>;
-    async fn relation_create<T: Into<CreateRelationSchema> + Send>(&self, data: T) -> Result<Option<Relation>, sqlx::Error>;
-    async fn relation_update<T: Into<CreateRelationSchema> + Send>(&self, id: uuid::Uuid, data: T) -> Result<Option<Relation>, sqlx::Error>;
+    async fn relation_create<T: Into<CreateRelationSchema> + Send>(
+        &self,
+        data: T,
+    ) -> Result<Option<Relation>, sqlx::Error>;
+    async fn relation_update<T: Into<CreateRelationSchema> + Send>(
+        &self,
+        id: uuid::Uuid,
+        data: T,
+    ) -> Result<Option<Relation>, sqlx::Error>;
     async fn relation_delete(&self, id: uuid::Uuid) -> Result<u64, sqlx::Error>;
 }
 
@@ -51,7 +58,10 @@ impl RelationExt for DBClient {
         let offset: usize = (page - 1) * limit;
         // let mut params: Vec<String>;
 
-        let test: Vec<String> = rels.into_iter().map(|item| item.to_str().to_string()).collect();
+        let test: Vec<String> = rels
+            .into_iter()
+            .map(|item| item.to_str().to_string())
+            .collect();
 
         // for i in rels {
         //     params.push(i.to_str().to_string());
@@ -70,10 +80,13 @@ impl RelationExt for DBClient {
         Ok(relations)
     }
 
-    async fn relation_create<T: Into<CreateRelationSchema> + Send>(&self, t: T) -> Result<Option<Relation>, sqlx::Error> {
-
+    async fn relation_create<T: Into<CreateRelationSchema> + Send>(
+        &self,
+        t: T,
+    ) -> Result<Option<Relation>, sqlx::Error> {
         let data: CreateRelationSchema = t.try_into().unwrap();
-        let test: Vec<String> = data.rel_type
+        let test: Vec<String> = data
+            .relation_type
             .into_iter()
             .map(|item| item.to_str().to_string())
             .collect();
@@ -95,9 +108,19 @@ impl RelationExt for DBClient {
         Ok(relation)
     }
 
-    async fn relation_update<T: Into<CreateRelationSchema> + Send>(&self, id: uuid::Uuid, t: T) -> Result<Option<Relation>, sqlx::Error> {
+    async fn relation_update<T: Into<CreateRelationSchema> + Send>(
+        &self,
+        id: uuid::Uuid,
+        t: T,
+    ) -> Result<Option<Relation>, sqlx::Error> {
         let data: CreateRelationSchema = t.try_into().unwrap();
-        let test: Vec<String> = data.rel_type.into_iter().map(|item| item.to_str().to_string()).collect();
+
+        let test: Vec<String> = data
+            .relation_type
+            .into_iter()
+            .map(|item| item.to_str().to_string())
+            .collect();
+
         let relation = sqlx::query_file_as!(
             Relation,
             "sql/relation-update.sql",
@@ -123,6 +146,6 @@ impl RelationExt for DBClient {
             .unwrap()
             .rows_affected();
 
-        Ok(rows_affected)        
+        Ok(rows_affected)
     }
 }

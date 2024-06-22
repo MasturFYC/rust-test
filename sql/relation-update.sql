@@ -5,9 +5,9 @@ UPDATE relations SET
     phone = $5,
     is_active = $6,
     is_special = $7,
-    rel_type = $8::relation_type[],
-    updated_at = $9
+    relation_type = $8::relation_enum[],
+    created_at = $9
   WHERE id = $1
   RETURNING id, name, city, street, phone, is_active, is_special, 
-    rel_type as "rel_type: Vec<RelationType>",
+    relation_type as "relation_type: Vec<RelationType>",
     created_at, updated_at

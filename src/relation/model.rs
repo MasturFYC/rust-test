@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use validator::Validate;
 
 #[derive(Debug, Deserialize, Serialize, Clone, Copy, sqlx::Type, PartialEq)]
-#[sqlx(type_name = "relation_type", rename_all = "lowercase")]
+#[sqlx(type_name = "relation_enum", rename_all = "lowercase")]
 pub enum RelationType {
     Customer,
     Employee,
@@ -34,7 +34,7 @@ pub struct Relation {
     #[serde(rename = "isSpecial")]
     pub is_special: bool,
     #[serde(rename = "relationType")]
-    pub rel_type: Vec<RelationType>,
+    pub relation_type: Vec<RelationType>,
     #[serde(rename = "createdAt")]
     pub created_at: Option<DateTime<Utc>>,
     #[serde(rename = "updatedAt")]
@@ -55,5 +55,5 @@ pub struct CreateRelationSchema {
     pub is_special: bool,
     #[serde(rename = "relationType")]
     #[validate(length(min = 1, message = "Type is required"))]
-    pub rel_type: Vec<RelationType>,
+    pub relation_type: Vec<RelationType>,
 }
