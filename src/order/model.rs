@@ -104,7 +104,7 @@ impl CreateOrderSchema {
         let r = t - p;
         let now = data.created_at.unwrap_or(Utc::now());
         let date = match data.payment_type.unwrap() {
-            PaymentType::Cash | PaymentType::Lunas => data.created_at,
+            PaymentType::Cash | PaymentType::Lunas => Some(now),
             _ => {
                 let date1 = now.to_owned();
                 let days = chrono::Days::new(7);
@@ -121,8 +121,8 @@ impl CreateOrderSchema {
             payment: data.payment.to_owned(),
             remain: r.to_owned(),
             invoice_id: data.invoice_id.to_owned(),
-            created_at: Some(now),
-            due_at: date
+            created_at: Some(now).to_owned(),
+            due_at: date.to_owned()
         }
 
     }
