@@ -11,7 +11,7 @@ mod relation;
 mod account;
 mod scopes;
 mod utils;
-mod order_detail;
+// mod order_detail;
 
 use actix_cors::Cors;
 use actix_web::{
@@ -144,7 +144,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .configure(account::handler::account_scope)
             .configure(relation::handler::relation_scope)
             .configure(order::handler::order_scope)
-            .configure(order_detail::handler::order_detail_scope)
+            // .configure(order_detail::handler::order_detail_scope)
             .service(Redoc::with_url("/redoc", openapi.clone()))
             .service(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc"))
             .service(SwaggerUi::new("/{_:.*}").url("/api-docs/openapi.json", openapi.clone()))

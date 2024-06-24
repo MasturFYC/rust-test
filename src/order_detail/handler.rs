@@ -21,7 +21,7 @@ use crate::{
 };
 
 use super::{
-    db::OrderDetailExt, CreateOrder, CreateOrderDetailSchema, OrderDetail, OrderDetailCreateReturn,
+    db::OrderDetailExt, RequestQueryOrderDtos, CreateOrderDetailSchema, OrderDetail, OrderDetailCreateReturn,
 };
 
 pub fn order_detail_scope(conf: &mut web::ServiceConfig) {
@@ -123,7 +123,10 @@ async fn create(
 }
 
 #[post("/order")]
-async fn creates(body: web::Json<CreateOrder>, app_state: web::Data<AppState>) -> impl Responder {
+async fn creates(
+    body: web::Json<RequestQueryOrderDtos>,
+    app_state: web::Data<AppState>
+) -> impl Responder {
     let data = body.into_inner();
     let query_result = app_state
         .db_client

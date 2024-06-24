@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use validator::Validate;
 
-use crate::order::{CreateOrderSchema, Order};
+use crate::order::{OrderDtos, Order};
 
 
 #[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
@@ -50,11 +50,6 @@ pub struct OrderDetailCreateReturn {
    pub updated_at: Option<DateTime<Utc>>, 
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct CreateOrder {
-   pub order: CreateOrderSchema,
-   pub details: Vec<CreateOrderDetailSchema>
-}
 
 // type MatchResult = (Vec<Order>, i64);
 #[derive(Debug, sqlx::FromRow, Deserialize, Serialize, Clone)]

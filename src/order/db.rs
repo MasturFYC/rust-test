@@ -1,26 +1,37 @@
 use async_trait::async_trait;
-use chrono::Utc;
+// use bigdecimal::{BigDecimal, FromPrimitive};
 use sqlx::{self, Acquire};
+use uuid::Uuid;
 
-use super::{CreateOrderSchema, Order, OrderType, PaymentType};
-use crate::DBClient;
+use crate::db::DBClient;
 
-type MatchResult = (Vec<Order>, i64);
+use super::{
+    CreateOrderDetailSchema, DetailMark, MatchResult, MatchTrxResult, Order, OrderDetail,
+    OrderDtos, OrderType, PaymentType, ResponseOrder,
+};
+// use crate::{order_detail::{CreateOrderDetailSchema, MatchTrxResult, OrderDetail}, DBClient};
 
 #[async_trait]
 pub trait OrderExt {
     async fn get_order(&self, id: uuid::Uuid) -> Result<Option<Order>, sqlx::Error>;
     async fn get_orders(&self, page: usize, limit: usize) -> Result<MatchResult, sqlx::Error>;
-    async fn order_create<T: Into<CreateOrderSchema> + Send>(
+    async fn order_create<O: Into<OrderDtos> + Send, T: Into<Vec<CreateOrderDetailSchema>> + Send>(
         &self,
-        data: T,
-    ) -> Result<Option<Order>, sqlx::Error>;
-    async fn order_update<T: Into<CreateOrderSchema> + Send>(
+        data: O,
+        details: T,
+    ) -> Result<MatchTrxResult, sqlx::Error>;
+    async fn order_update<
+        O: Into<OrderDtos> + Send,
+        T: Into<Vec<CreateOrderDetailSchema>> + Send,
+        S: Into<Uuid> + Send,
+    >(
         &self,
-        id: uuid::Uuid,
-        data: T,
-    ) -> Result<Option<Order>, sqlx::Error>;
+        id: S,
+        data: O,
+        details: T,
+    ) -> Result<MatchTrxResult, sqlx::Error>;
     async fn order_delete(&self, id: uuid::Uuid) -> Result<u64, sqlx::Error>;
+    #[allow(dead_code)]
     async fn order_count(&self) -> Result<Option<i64>, sqlx::Error>;
 }
 
@@ -50,7 +61,7 @@ impl OrderExt for DBClient {
         // start transaction
         // get orders data from database
         let orders = sqlx::query_file_as!(
-            Order,
+            ResponseOrder,
             "sql/order-get-all.sql",
             limit as i64,
             offset as i64
@@ -60,9 +71,9 @@ impl OrderExt for DBClient {
 
         // start transacrion
         // get total record of orders
-        let row = sqlx::query_scalar!("SELECT COUNT(*) as total FROM orders")
+        let row = sqlx::query_file_scalar!("sql/order-count.sql")
             .fetch_one(&mut *tx)
-            .await?;    
+            .await?;
 
         // finish transaction
         tx.commit().await?;
@@ -71,62 +82,198 @@ impl OrderExt for DBClient {
         Ok((orders, row.unwrap_or(0)))
     }
 
-
-    async fn order_create<T: Into<CreateOrderSchema> + Send>(
+    async fn order_create<
+        O: Into<OrderDtos> + Send,
+        T: Into<Vec<CreateOrderDetailSchema>> + Send,
+    >(
         &self,
-        data: T,
-    ) -> Result<Option<Order>, sqlx::Error> {
-        let t: CreateOrderSchema = data.try_into().unwrap();
+        data: O,
+        details: T,
+    ) -> Result<MatchTrxResult, sqlx::Error> {
+        let details: Vec<CreateOrderDetailSchema> = details.try_into().unwrap();
 
-        let temp = CreateOrderSchema::set_default(&t);
+        let t: OrderDtos = data.try_into().unwrap();
+        let o: OrderDtos = OrderDtos::set_default(&t);
+
+        let mut conn: sqlx::pool::PoolConnection<sqlx::Postgres> = self.pool.acquire().await?;
+        let mut tx: sqlx::Transaction<sqlx::Postgres> = conn.begin().await?;
+
+        // println!("{:?}", o);
 
         let order = sqlx::query_file_as!(
             Order,
             "sql/order-insert.sql",
-            temp.order_type.unwrap() as OrderType,
-            temp.relation_id.to_owned(),
-            temp.payment_type.unwrap() as PaymentType,
-            temp.updated_by.to_owned(),
-            temp.total.to_owned(),
-            temp.payment.to_owned(),
-            temp.remain.to_owned(),
-            temp.invoice_id.to_owned(),
-            temp.due_at.to_owned(), // .unwrap_or(temp.created_at.unwrap_or(Utc::now()).checked_add_days(chrono::Days::new(7)).unwrap()),
-            temp.created_at.unwrap_or(Utc::now())
+            o.order_type.unwrap() as OrderType,
+            o.relation_id.to_owned(),
+            o.payment_type.unwrap() as PaymentType,
+            o.updated_by.to_owned(),
+            o.total.to_owned(),
+            o.payment.to_owned(),
+            o.remain.to_owned(),
+            o.invoice_id.to_owned(),
+            o.due_at.to_owned(),
+            o.created_at.to_owned() // .unwrap_or(Utc::now())
         )
-        .fetch_optional(&self.pool)
+        .fetch_optional(&mut *tx)
         .await?;
 
-        Ok(order)
+        let ord = order.unwrap();
+        let new_id = ord.id;
+
+        for (_, d) in details.iter().enumerate() {
+            let _ = sqlx::query_file!(
+                "sql/order-detail-insert.sql",
+                new_id.to_owned(),
+                d.product_id.to_owned(),
+                d.qty.to_owned(),
+                d.direction.to_owned(),
+                d.unit.to_owned(),
+                d.price.to_owned(),
+                d.discount.to_owned(),
+                d.hpp.to_owned()
+            )
+            .execute(&mut *tx)
+            // .fetch_one(&mut *tx)
+            .await?;
+
+            let _ = sqlx::query!(
+                "UPDATE products SET unit_in_stock = (unit_in_stock - $2) WHERE id = $1",
+                d.product_id.to_owned(),
+                d.qty.to_owned(),
+            )
+            .execute(&mut *tx)
+            .await?;
+        }
+
+        let details: Vec<OrderDetail> =
+            sqlx::query_file_as!(OrderDetail, "sql/order-detail-get-by-order.sql", new_id)
+                .fetch_all(&mut *tx)
+                .await?;
+
+        tx.commit().await?;
+
+        Ok((Some(ord), details))
     }
 
-    async fn order_update<T: Into<CreateOrderSchema> + Send>(
+    async fn order_update<
+        O: Into<OrderDtos> + Send,
+        T: Into<Vec<CreateOrderDetailSchema>> + Send,
+        S: Into<Uuid> + Send,
+    >(
         &self,
-        id: uuid::Uuid,
-        data: T,
-    ) -> Result<Option<Order>, sqlx::Error> {
-        let t: CreateOrderSchema = data.try_into().unwrap();
+        id: S,
+        data: O,
+        details: T,
+    ) -> Result<MatchTrxResult, sqlx::Error> {
+        let t: OrderDtos = data.try_into().unwrap();
+        let details: Vec<CreateOrderDetailSchema> = details.try_into().unwrap();
+        let uid: Uuid = id.try_into().unwrap();
+        let o = OrderDtos::set_default(&t);
 
-        let temp = CreateOrderSchema::set_default(&t);
+        let mut conn: sqlx::pool::PoolConnection<sqlx::Postgres> = self.pool.acquire().await?;
+        let mut tx: sqlx::Transaction<sqlx::Postgres> = conn.begin().await?;
+
         let order = sqlx::query_file_as!(
             Order,
             "sql/order-update.sql",
-            id,
-            temp.order_type.unwrap() as OrderType,
-            temp.relation_id.to_owned(),
-            temp.payment_type.unwrap() as PaymentType,
-            temp.updated_by.into(),
-            temp.total.into(),
-            temp.payment.into(),
-            temp.remain.into(),
-            temp.invoice_id.to_owned(),
-            temp.due_at.to_owned(),
-            temp.created_at.to_owned()
+            uid,
+            o.order_type.unwrap() as OrderType,
+            o.relation_id.to_owned(),
+            o.payment_type.unwrap() as PaymentType,
+            o.updated_by.into(),
+            o.total.into(),
+            o.payment.into(),
+            o.remain.into(),
+            o.invoice_id.to_owned(),
+            o.due_at.to_owned(),
+            o.created_at.to_owned()
         )
-        .fetch_optional(&self.pool)
+        .fetch_optional(&mut *tx)
         .await?;
 
-        Ok(order)
+        for (_, d) in details.iter().enumerate() {
+            match d.mark_as.unwrap() {
+                DetailMark::Delete => {
+                    let _ = sqlx::query!(
+                        "UPDATE products SET unit_in_stock = (unit_in_stock + $2) WHERE id = $1",
+                        d.old_product_id.to_owned(),
+                        d.old_qty,
+                    )
+                    .execute(&mut *tx)
+                    .await?;
+
+                    let _ = sqlx::query_file!("sql/order-detail-delete.sql", d.id.to_owned(),)
+                        .execute(&mut *tx)
+                        .await?;
+                }
+
+                DetailMark::Update => {
+                    let _ = sqlx::query_file!(
+                        "sql/order-detail-update.sql",
+                        d.id.to_owned(),
+                        // order_id
+                        uid,
+                        d.product_id.to_owned(),
+                        d.qty.to_owned(),
+                        d.direction.to_owned(),
+                        d.unit.to_owned(),
+                        d.price.to_owned(),
+                        d.discount.to_owned(),
+                        d.hpp.to_owned(),
+                    )
+                    .execute(&mut *tx)
+                    .await?;
+
+                    let _ = sqlx::query!(
+                        "UPDATE products SET unit_in_stock = (unit_in_stock + $2) WHERE id = $1",
+                        d.old_product_id.to_owned(),
+                        d.old_qty.to_owned()
+                    )
+                    .execute(&mut *tx)
+                    .await?;
+
+                    let _ = sqlx::query!(
+                        "UPDATE products SET unit_in_stock = (unit_in_stock - $2) WHERE id = $1",
+                        d.product_id.to_owned(),
+                        d.qty.to_owned(),
+                    )
+                    .execute(&mut *tx)
+                    .await?;
+                }
+                _ => {
+                    let _ = sqlx::query_file!(
+                        "sql/order-detail-insert.sql",
+                        uid,
+                        d.product_id.to_owned(),
+                        d.qty.to_owned(),
+                        d.direction.to_owned(),
+                        d.unit.to_owned(),
+                        d.price.to_owned(),
+                        d.discount.to_owned(),
+                        d.hpp.to_owned()
+                    )
+                    .execute(&mut *tx)
+                    .await?;
+
+                    let _ = sqlx::query!(
+                        "UPDATE products SET unit_in_stock = (unit_in_stock - $2) WHERE id = $1",
+                        d.product_id.to_owned(),
+                        d.qty.to_owned(),
+                    )
+                    .execute(&mut *tx)
+                    .await?;
+                }
+            }
+        }
+
+        let details: Vec<OrderDetail> =
+            sqlx::query_file_as!(OrderDetail, "sql/order-detail-get-by-order.sql", uid)
+                .fetch_all(&mut *tx)
+                .await?;
+
+        tx.commit().await?;
+
+        Ok((order, details))
     }
 
     async fn order_delete(&self, id: uuid::Uuid) -> Result<u64, sqlx::Error> {
@@ -144,7 +291,6 @@ impl OrderExt for DBClient {
             .fetch_one(&self.pool)
             .await?;
 
-        Ok(row)        
+        Ok(row)
     }
-
 }

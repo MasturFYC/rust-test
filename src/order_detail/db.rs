@@ -3,11 +3,10 @@ use chrono::Utc;
 use sqlx::{self, Acquire};
 
 use super::{
-    CreateOrderDetailSchema, MatchTrxResult, OrderDetail,
-    OrderDetailCreateReturn, TrxOrder,
+    CreateOrderDetailSchema, MatchTrxResult, OrderDetail, OrderDetailCreateReturn,
 };
 use crate::{
-    order::{CreateOrderSchema, Order, OrderType, PaymentType},
+    order::{OrderDtos, Order, OrderType, PaymentType},
     DBClient,
 };
 
@@ -19,7 +18,7 @@ pub trait OrderDetailExt {
         data: T,
     ) -> Result<Option<OrderDetailCreateReturn>, sqlx::Error>;
     async fn create_order_with_details<
-        O: Into<CreateOrderSchema> + Send,
+        O: Into<OrderDtos> + Send,
         T: Into<Vec<CreateOrderDetailSchema>> + Send,
     >(
         &self,
@@ -54,7 +53,7 @@ impl OrderDetailExt for DBClient {
             t.price.to_owned(),
             t.discount.to_owned(),
             t.hpp.to_owned(),
-            Utc::now()            
+            Utc::now()
         )
         .fetch_optional(&self.pool)
         .await?;
@@ -62,8 +61,8 @@ impl OrderDetailExt for DBClient {
         Ok(detail)
     }
 
-    async fn create_order_with_details<        
-        O: Into<CreateOrderSchema> + Send,
+    async fn create_order_with_details<
+        O: Into<OrderDtos> + Send,
         T: Into<Vec<CreateOrderDetailSchema>> + std::marker::Send,
     >(
         &self,
@@ -72,8 +71,8 @@ impl OrderDetailExt for DBClient {
     ) -> Result<MatchTrxResult, sqlx::Error> {
         let details: Vec<CreateOrderDetailSchema> = data.try_into().unwrap();
 
-        let t: CreateOrderSchema = new_order.try_into().unwrap();
-        let o: CreateOrderSchema = CreateOrderSchema::set_default(&t);
+        let t: OrderDtos = new_order.try_into().unwrap();
+        let o: OrderDtos = OrderDtos::set_default(&t);
 
         let mut conn: sqlx::pool::PoolConnection<sqlx::Postgres> = self.pool.acquire().await?;
         let mut tx: sqlx::Transaction<sqlx::Postgres> = conn.begin().await?;
@@ -81,8 +80,8 @@ impl OrderDetailExt for DBClient {
         // println!("{:?}", o);
 
         let order = sqlx::query_file_as!(
-            TrxOrder,
-            "sql/order-insert2.sql",
+            Order,
+            "sql/order-insert.sql",
             o.order_type.unwrap() as OrderType,
             o.relation_id.to_owned(),
             o.payment_type.unwrap() as PaymentType,
@@ -130,22 +129,23 @@ impl OrderDetailExt for DBClient {
 
         tx.commit().await?;
 
-        Ok((
-            Some(Order {
-                id: new_id,
-                relation_id: o.relation_id,
-                created_at: o.created_at,
-                due_at: o.due_at,
-                updated_at: ord.updated_at,
-                invoice_id: o.invoice_id,
-                order_type: o.order_type.unwrap(),
-                payment: o.payment,
-                remain: o.remain,
-                total: o.total,
-                payment_type: o.payment_type.unwrap(),
-                updated_by: o.updated_by,
-            }),
-            details,
-        ))
+        // Ok((
+        //     Some(Order {
+        //         id: new_id,
+        //         relation_id: o.relation_id,
+        //         created_at: o.created_at,
+        //         due_at: o.due_at,
+        //         updated_at: ord.updated_at,
+        //         invoice_id: o.invoice_id,
+        //         order_type: o.order_type.unwrap(),
+        //         payment: o.payment,
+        //         remain: o.remain,
+        //         total: o.total,
+        //         payment_type: o.payment_type.unwrap(),
+        //         updated_by: o.updated_by,
+        //     }),
+        //     details,
+        // ))
+        Ok((Some(ord), details))
     }
 }
