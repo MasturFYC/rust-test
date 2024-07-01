@@ -20,3 +20,18 @@ pub struct Ledger {
     #[serde(rename = "updatedAt")]
     pub updated_at: Option<DateTime<Utc>>,
 }
+
+#[derive(Validate, Debug, Default, Clone, Serialize, Deserialize)]
+pub struct CreateLedgerSchema {
+    #[serde(rename = "relationId")]
+    pub relation_id: Uuid,
+    #[validate(length(min = 1, message = "Name is required"))]
+    pub name: String,
+    pub descriptions: Option<String>,
+    #[serde(rename = "updatedBy")]
+    pub updated_by: String,
+    #[serde(rename = "isValid")]
+    pub is_valid: bool,
+}
+
+pub type MatchResult = (Vec<Ledger>, i64);
