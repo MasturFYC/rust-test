@@ -1,13 +1,29 @@
 SELECT
-    id, 
-    relation_id,
-    name,
-    descriptions,
-    updated_by,
-    is_valid,
-    created_at,
-    updated_at
+    t.id,
+    t.relation_id,
+    t.name,
+    t.descriptions,
+    t.updated_by,
+    t.is_valid,
+    t.created_at,
+    t.updated_at,
+    COALESCE((SELECT json_agg(x) FROM (
+      SELECT
+         d.ledger_id,
+         d.id,
+         d.account_id,
+         a.name,
+         d.descriptions,
+         d.amount,
+         d.direction,
+         d.ref_id
+      FROM ledger_details AS d
+      INNER JOIN accounts AS a
+         ON a.id = d.account_id
+      WHERE d.ledger_id = t.id
+      ORDER BY d.id
+        ) AS x), '[]') AS "details!: Json<Vec<LedgerDetail>>"
 FROM
-    ledgers
+    ledgers AS t
 WHERE
-    id = $1
+    t.id = $1

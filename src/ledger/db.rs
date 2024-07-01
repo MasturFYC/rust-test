@@ -1,12 +1,12 @@
-use super::{CreateLedgerSchema, Ledger, MatchResult};
+use super::{CreateLedgerSchema, Ledger, LedgerDetail, LedgerWithDetails, MatchResult};
 use crate::DBClient;
 use async_trait::async_trait;
-use sqlx::{self, Acquire, Error};
+use sqlx::{self, types::Json, Acquire, Error};
 use uuid::Uuid;
 
 #[async_trait]
 pub trait LedgerExt {
-    async fn get_ledger(&self, id: Uuid) -> Result<Option<Ledger>, Error>;
+    async fn get_ledger(&self, id: Uuid) -> Result<Option<LedgerWithDetails>, Error>;
     async fn get_ledgers(&self, page: usize, limit: usize) -> Result<MatchResult, Error>;
     async fn ledger_create<T: Into<CreateLedgerSchema> + Send>(
         &self,
@@ -22,10 +22,15 @@ pub trait LedgerExt {
 
 #[async_trait]
 impl LedgerExt for DBClient {
-    async fn get_ledger(&self, id: Uuid) -> Result<Option<Ledger>, Error> {
-        let ledger = sqlx::query_file_as!(Ledger, "sql/ledger-get-by-id.sql", id)
-            .fetch_optional(&self.pool)
-            .await?;
+    async fn get_ledger(&self, id: Uuid) -> Result<Option<LedgerWithDetails>, Error> {
+        let ledger = sqlx::query_file_as!(
+            LedgerWithDetails,
+            "sql/ledger-get-by-id.sql",
+            id,
+        )
+        .fetch_optional(&self.pool)
+        .await?;
+    
         Ok(ledger)
     }
 

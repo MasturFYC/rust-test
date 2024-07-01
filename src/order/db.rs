@@ -1,9 +1,12 @@
 use async_trait::async_trait;
-// use bigdecimal::{BigDecimal, FromPrimitive};
+use bigdecimal::{BigDecimal, FromPrimitive};
 use sqlx::{self, Acquire};
 use uuid::Uuid;
 
-use crate::db::DBClient;
+use crate::{
+    db::DBClient,
+    ledger::{CreateLedgerSchema, LedgerDetail},
+};
 
 use super::{
     CreateOrderDetailSchema, DetailMark, MatchResult, MatchTrxResult, Order, OrderDetail,
@@ -120,7 +123,13 @@ impl OrderExt for DBClient {
         let ord = order.unwrap();
         let new_id = ord.id;
 
-        for (_, d) in details.iter().enumerate() {
+        let ledger = create_ledger(o);
+        let pass = BigDecimal::from_i32(0).unwrap();
+        let modal = details.iter().fold(pass, |o, t| o + &t.hpp);
+        let ledger_details =
+            create_ledger_details(&ord.payment, &ord.total, modal, Some(new_id), new_id);
+
+        for (_, d) in details.into_iter().enumerate() {
             let _ = sqlx::query_file!(
                 "sql/order-detail-insert.sql",
                 new_id.to_owned(),
@@ -293,4 +302,109 @@ impl OrderExt for DBClient {
 
         Ok(row)
     }
+}
+
+fn create_ledger(o: OrderDtos) -> CreateLedgerSchema {
+    CreateLedgerSchema {
+        descriptions: Some(String::from("")),
+        is_valid: true,
+        name: String::from("ORDER"),
+        relation_id: o.relation_id,
+        updated_by: o.updated_by,
+    }
+}
+
+fn create_ledger_details(
+    payment: &BigDecimal,
+    total: &BigDecimal,
+    modal: BigDecimal,
+    ref_id: Option<Uuid>,
+    ledger_id: Uuid,
+) -> Vec<LedgerDetail> {
+    let mut ledger_details: Vec<LedgerDetail> = Vec::new();
+    let mut i: i16 = 1;
+
+    let remain = total - payment;
+    let pass = bigdecimal::BigDecimal::from_i32(0).unwrap();
+
+    ledger_details.push(LedgerDetail {
+        account_id: 421,
+        amount: total.to_owned(),
+        name: String::from("Total Order"),
+        descriptions: Some(String::from("Penjualan barang")),
+        direction: -1,
+        id: i,
+        ref_id,
+        ledger_id,
+    });
+
+    i += 1;
+
+    if remain.le(&pass) {
+        ledger_details.push(LedgerDetail {
+            account_id: 101,
+            amount: total.to_owned(),
+            name: String::from("Kas"),
+            descriptions: Some(String::from("Kas")),
+            direction: 1,
+            id: i,
+            ref_id,
+            ledger_id,
+        });
+    } else {
+        // jika tidak ada pembayaran
+        ledger_details.push(LedgerDetail {
+            account_id: 111,
+            amount: remain,
+            name: String::from("Piutang barang"),
+            descriptions: Some(String::from("Piutang barang")),
+            direction: 1,
+            id: i,
+            ref_id,
+            ledger_id,
+        });
+
+        // jika ada pembayaran
+        if payment.gt(&pass) {
+            i += 1;
+            ledger_details.push(LedgerDetail {
+                account_id: 101,
+                amount: payment.to_owned(),
+                name: String::from("Cash DP"),
+                descriptions: Some(String::from("Cash DP")),
+                direction: 1,
+                id: i,
+                ref_id,
+                ledger_id,
+            });
+        }
+    }
+
+    i += 1;
+
+    ledger_details.push(LedgerDetail {
+        account_id: 106,
+        amount: modal.to_owned(),
+        name: String::from("Persediaan barang"),
+        descriptions: Some(String::from("Persediaan barang")),
+        direction: -1,
+        id: i,
+        ref_id,
+        ledger_id,
+    });
+
+    i += 1;
+
+    ledger_details.push(LedgerDetail {
+        account_id: 521,
+        amount: modal,
+        name: String::from("Biaya Beli Barang"),
+        descriptions: Some(String::from("Biaya Beli Barang")),
+        direction: 1,
+        id: i,
+        ref_id,
+        ledger_id,
+    });
+
+    ledger_details
 }
