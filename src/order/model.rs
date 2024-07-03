@@ -126,7 +126,38 @@ pub struct OrderDtos {
     pub created_at: Option<DateTime<Utc>>,
 }
 
+// trait Trx {
+//     fn new () -> Self;
+//     fn set_default(&mut self);
+// }
+
+// impl Trx for OrderDtos {
+    
+// }
+
 impl OrderDtos {
+    
+    #[allow(dead_code)]
+    fn set_remain(&mut self) {
+        //Self {
+        let t = self.total.to_owned();
+        let p = self.payment.to_owned();
+        self.remain = t - p; // self.total.to_owned() - self.payment.to_owned();
+        let now = Some(self.created_at.unwrap_or(Utc::now()));
+        let date = match self.payment_type.unwrap() {
+            PaymentType::Cash | PaymentType::Lunas => now,
+            _ => {
+                let date1 = now.unwrap().to_owned();
+                let days = chrono::Days::new(self.due_range.unwrap_or(0));
+                date1.checked_add_days(days)
+            }
+        };
+        self.due_at = date; //.to_owned();
+          //  ..self
+        // }
+        // self
+    }
+
     pub fn set_default(data: &OrderDtos) -> Self {
         // let date1 = data.created_at.unwrap();
         // let days: Days = Days::new(7);
@@ -161,10 +192,14 @@ impl OrderDtos {
     }
 
     #[allow(dead_code)]
-    pub fn set_defaults(data: &[OrderDtos]) -> Vec<OrderDtos> {
-        data.iter()
-            .map(OrderDtos::set_default)
-            .collect()
+    pub fn set_defaults(mut data: Vec<OrderDtos>) { // &[OrderDtos]) { //-> Vec<OrderDtos> {
+
+        for e in data.iter_mut() {
+            e.set_remain();
+        }
+        // data.iter()
+            // .map(|&mut e| -> e.set_remain()); // OrderDtos::set_default)
+            //.collect()
         // data.iter().map(|d| CreateOrderSchema::set_default(d)).collect()
     }
     // fn get_due_at(&mut self) -> Option<DateTime<Utc>> {
