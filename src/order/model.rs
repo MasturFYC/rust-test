@@ -137,14 +137,15 @@ pub struct OrderDtos {
 
 impl OrderDtos {
     
-    #[allow(dead_code)]
-    fn set_remain(&mut self) {
-        //Self {
-        let t = self.total.to_owned();
+    pub fn set_total(&mut self, total: &BigDecimal) {
         let p = self.payment.to_owned();
-        self.remain = t - p; // self.total.to_owned() - self.payment.to_owned();
+        self.total = total.to_owned();
+        self.remain = total - p;
+    }
+
+    pub fn set_due_date(&mut self) {
         let now = Some(self.created_at.unwrap_or(Utc::now()));
-        let date = match self.payment_type.unwrap() {
+        self.due_at = match self.payment_type.unwrap() {
             PaymentType::Cash | PaymentType::Lunas => now,
             _ => {
                 let date1 = now.unwrap().to_owned();
@@ -152,56 +153,56 @@ impl OrderDtos {
                 date1.checked_add_days(days)
             }
         };
-        self.due_at = date; //.to_owned();
-          //  ..self
-        // }
-        // self
+
+        // println!("Now: {}, due at: {}", now.unwrap(), date.unwrap());
+        //  = date; //.to_owned();
     }
 
-    pub fn set_default(data: &OrderDtos) -> Self {
-        // let date1 = data.created_at.unwrap();
-        // let days: Days = Days::new(7);
-        // date1.checked_add_days(days);
-        let t = data.total.to_owned();
-        let p = data.payment.to_owned();
-        let r = t - p;
-        let now = Some(data.created_at.unwrap_or(Utc::now()));
-        let date = match data.payment_type.unwrap() {
-            PaymentType::Cash | PaymentType::Lunas => now,
-            _ => {
-                let date1 = now.unwrap().to_owned();
-                let days = chrono::Days::new(data.due_range.unwrap_or(0));
-                date1.checked_add_days(days)
-            }
-        };
+    // #[allow(dead_code)]
+    // pub fn set_default(data: &OrderDtos) -> Self {
+    //     // let date1 = data.created_at.unwrap();
+    //     // let days: Days = Days::new(7);
+    //     // date1.checked_add_days(days);
+    //     let t = data.total.to_owned();
+    //     let p = data.payment.to_owned();
+    //     let r = t - p;
+    //     let now = Some(data.created_at.unwrap_or(Utc::now()));
+    //     let date = match data.payment_type.unwrap() {
+    //         PaymentType::Cash | PaymentType::Lunas => now,
+    //         _ => {
+    //             let date1 = now.unwrap().to_owned();
+    //             let days = chrono::Days::new(data.due_range.unwrap_or(0));
+    //             date1.checked_add_days(days)
+    //         }
+    //     };
 
-        OrderDtos {
-            // order_type: data.order_type.to_owned(),
-            // relation_id: data.relation_id.to_owned(),
-            // payment_type: data.payment_type.to_owned(),
-            // updated_by: data.updated_by.to_owned(),
-            // total: data.total.to_owned(),
-            // payment: data.payment.to_owned(),
-            remain: r.to_owned(),
-            // invoice_id: data.invoice_id.to_owned(),
-            created_at: now.to_owned(),
-            due_at: date.to_owned(),
-            // due_range: data.due_range
-            ..data.clone()
-        }
-    }
+    //     OrderDtos {
+    //         // order_type: data.order_type.to_owned(),
+    //         // relation_id: data.relation_id.to_owned(),
+    //         // payment_type: data.payment_type.to_owned(),
+    //         // updated_by: data.updated_by.to_owned(),
+    //         // total: data.total.to_owned(),
+    //         // payment: data.payment.to_owned(),
+    //         remain: r.to_owned(),
+    //         // invoice_id: data.invoice_id.to_owned(),
+    //         created_at: now.to_owned(),
+    //         due_at: date.to_owned(),
+    //         // due_range: data.due_range
+    //         ..data.clone()
+    //     }
+    // }
 
-    #[allow(dead_code)]
-    pub fn set_defaults(mut data: Vec<OrderDtos>) { // &[OrderDtos]) { //-> Vec<OrderDtos> {
+    // #[allow(dead_code)]
+    // pub fn set_defaults(mut data: Vec<OrderDtos>) { // &[OrderDtos]) { //-> Vec<OrderDtos> {
 
-        for e in data.iter_mut() {
-            e.set_remain();
-        }
-        // data.iter()
-            // .map(|&mut e| -> e.set_remain()); // OrderDtos::set_default)
-            //.collect()
-        // data.iter().map(|d| CreateOrderSchema::set_default(d)).collect()
-    }
+    //     for e in data.iter_mut() {
+    //         e.set_remain();
+    //     }
+    //     // data.iter()
+    //         // .map(|&mut e| -> e.set_remain()); // OrderDtos::set_default)
+    //         //.collect()
+    //     // data.iter().map(|d| CreateOrderSchema::set_default(d)).collect()
+    // }
     // fn get_due_at(&mut self) -> Option<DateTime<Utc>> {
     //     // let test = self.payment_type.unwrap();
 
