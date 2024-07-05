@@ -29,7 +29,7 @@ CREATE INDEX ix_ledger_ref ON ledger_details(ref_id);
 ALTER TABLE ledgers ADD CONSTRAINT fx_ledger_relation
     FOREIGN KEY(relation_id) REFERENCES relations(id);
 ALTER TABLE ledger_details ADD CONSTRAINT fx_ledger_detail
-    FOREIGN KEY(ledger_id) REFERENCES ledgers(id);
+    FOREIGN KEY(ledger_id) REFERENCES ledgers(id) ON DELETE CASCADE;
 ALTER TABLE ledger_details ADD CONSTRAINT fx_ledger_detail_account
     FOREIGN KEY(account_id) REFERENCES accounts(id);
- 
+
