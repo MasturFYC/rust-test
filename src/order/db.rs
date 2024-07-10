@@ -18,21 +18,20 @@ use super::{
 pub trait OrderExt {
     async fn get_order(&self, id: uuid::Uuid) -> Result<Option<Order>, sqlx::Error>;
     async fn get_orders(&self, page: usize, limit: usize) -> Result<MatchResult, sqlx::Error>;
-    async fn order_create<O: Into<OrderDtos> + Send, T: Into<Vec<CreateOrderDetailSchema>> + Send>(
-        &self,
-        data: O,
-        details: T,
-    ) -> Result<MatchTrxResult, sqlx::Error>;
-    async fn order_update<
+    async fn order_create<O, T>(&self, data: O, details: T) -> Result<MatchTrxResult, sqlx::Error>
+    where
         O: Into<OrderDtos> + Send,
-        T: Into<Vec<CreateOrderDetailSchema>> + Send,
-        S: Into<Uuid> + Send,
-    >(
+        T: Into<Vec<CreateOrderDetailSchema>> + Send;
+    async fn order_update<S, O, T>(
         &self,
         id: S,
         data: O,
         details: T,
-    ) -> Result<MatchTrxResult, sqlx::Error>;
+    ) -> Result<MatchTrxResult, sqlx::Error>
+    where
+        S: Into<Uuid> + Send,
+        O: Into<OrderDtos> + Send,
+        T: Into<Vec<CreateOrderDetailSchema>> + Send;
     async fn order_delete(&self, id: uuid::Uuid) -> Result<u64, sqlx::Error>;
     #[allow(dead_code)]
     async fn order_count(&self) -> Result<Option<i64>, sqlx::Error>;
@@ -61,7 +60,7 @@ impl OrderExt for DBClient {
     /// curl localhost:8000/api/orders \
     /// -H "content-type: application/json" \
     /// -H "Authorization: Bearer $(cat token.txt)"
-    async fn get_orders(&self, page: usize, limit: usize) -> Result<MatchResult, sqlx::Error> {
+    async fn get_orders(&self, page: usize, limit: usize) -> Result<MatchResult, sqlx::Error>    {
         let offset = (page - 1) * limit;
 
         // acquire pg connection from current pool
@@ -94,14 +93,11 @@ impl OrderExt for DBClient {
         Ok((orders, row.unwrap_or(0)))
     }
 
-    async fn order_create<
+    async fn order_create<O, T>(&self, data: O, details: T) -> Result<MatchTrxResult, sqlx::Error>
+    where
         O: Into<OrderDtos> + Send,
         T: Into<Vec<CreateOrderDetailSchema>> + Send,
-    >(
-        &self,
-        data: O,
-        details: T,
-    ) -> Result<MatchTrxResult, sqlx::Error> {
+    {
         let details: Vec<CreateOrderDetailSchema> = details.try_into().unwrap();
         let mut o: OrderDtos = data.try_into().unwrap();
 
@@ -262,16 +258,17 @@ impl OrderExt for DBClient {
         Ok((Some(order), details))
     }
 
-    async fn order_update<
-        O: Into<OrderDtos> + Send,
-        T: Into<Vec<CreateOrderDetailSchema>> + Send,
-        S: Into<Uuid> + Send,
-    >(
+    async fn order_update<S, O, T>(
         &self,
         id: S,
         data: O,
         details: T,
-    ) -> Result<MatchTrxResult, sqlx::Error> {
+    ) -> Result<MatchTrxResult, sqlx::Error>
+    where
+        O: Into<OrderDtos> + Send,
+        T: Into<Vec<CreateOrderDetailSchema>> + Send,
+        S: Into<Uuid> + Send,
+    {
         let mut o: OrderDtos = data.try_into().unwrap();
         let details: Vec<CreateOrderDetailSchema> = details.try_into().unwrap();
         let uid: Uuid = id.try_into().unwrap();

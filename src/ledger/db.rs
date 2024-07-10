@@ -23,19 +23,15 @@ pub trait LedgerExt {
 #[async_trait]
 impl LedgerExt for DBClient {
     async fn get_ledger(&self, id: Uuid) -> Result<Option<LedgerWithDetails>, Error> {
-        let ledger = sqlx::query_file_as!(
-            LedgerWithDetails,
-            "sql/ledger-get-by-id.sql",
-            id,
-        )
-        .fetch_optional(&self.pool)
-        .await?;
-    
+        let query = sqlx::query_file_as!(LedgerWithDetails, "sql/ledger-get-by-id.sql", id);
+        let ledger = query.fetch_optional(&self.pool).await?;
+
         Ok(ledger)
     }
 
     async fn get_ledgers(&self, page: usize, limit: usize) -> Result<MatchResult, Error> {
-        let offset = (page - 1) * limit;
+        let x: usize = 1;
+        let offset = (page - x) * limit;
 
         // acquire pg connection from current pool
         let mut conn = self.pool.acquire().await?; //.unwrap();
@@ -45,20 +41,18 @@ impl LedgerExt for DBClient {
 
         // start transaction
         // get orders data from database
-        let ledgers = sqlx::query_file_as!(
+        let query = sqlx::query_file_as!(
             Ledger,
             "sql/ledger-get-all.sql",
             limit as i64,
             offset as i64
-        )
-        .fetch_all(&mut *tx)
-        .await?;
+        );
+        let ledgers = query.fetch_all(&mut *tx).await?;
 
         // start transacrion
         // get total record of orders
-        let row = sqlx::query_file_scalar!("sql/ledger-count.sql")
-            .fetch_one(&mut *tx)
-            .await?;
+        let scalar = sqlx::query_file_scalar!("sql/ledger-count.sql");
+        let row = scalar.fetch_one(&mut *tx).await?;
 
         // finish transaction
         tx.commit().await?;

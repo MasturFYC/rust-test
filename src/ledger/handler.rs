@@ -34,7 +34,8 @@ async fn get_ledgers(
     let limit = query_params.limit.unwrap_or(10);
     let page = query_params.page.unwrap_or(1);
 
-    let query_result = app_state.db_client.get_ledgers(page, limit).await;
+    let get_ledgers = app_state.db_client.get_ledgers(page, limit);
+    let query_result = get_ledgers.await;
 
     if query_result.is_err() {
         let message = "Something bad happened while fetching all ledger items";
@@ -42,13 +43,14 @@ async fn get_ledgers(
             .json(json!({"status": "error","message": message}));
     }
 
-    let result = query_result.unwrap();
+    //let result = query_result;//.unwrap();
 
-    let ledgers = result.0;
-    let count = result.1;
+    let (ledgers, count) = query_result.unwrap(); //.expect("No data found");
+    // let ledgers = result.0;
+    // let count = result.1;
     let lim = limit as i64;
 
-    let json_response = serde_json::json!({
+    let json_response = json!({
         "status": "success",
         "totalPages": (count / lim) + (if count % lim == 0 {0} else {1}),
         "count": ledgers.len(), // count of selected ledgers
@@ -75,7 +77,7 @@ async fn create(
                 );
             }
 
-            let ledger_response = serde_json::json!({"status": "success", "data": ledger.unwrap()});
+            let ledger_response = json!({"status": "success", "data": ledger.unwrap()});
 
             return HttpResponse::Created().json(ledger_response);
         }
