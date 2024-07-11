@@ -7,19 +7,6 @@ use crate::{
 
 use super::{db::OrderExt, RequestQueryOrderDtos};
 
-pub fn order_scope(conf: &mut web::ServiceConfig) {
-    let scope = web::scope("/api/orders")
-        .wrap(RequireAuth::allowed_roles(vec![UserRole::Admin]))
-        .service(get_order)
-        .service(get_orders)
-        // .service(get_relations_by_type)
-        .service(create)
-        .service(update)
-        .service(delete);
-
-    conf.service(scope);
-}
-
 #[get("/{id}")]
 async fn get_order(path: web::Path<uuid::Uuid>, app_state: web::Data<AppState>) -> impl Responder {
     let order_id = path.into_inner();
@@ -213,3 +200,17 @@ async fn delete(path: web::Path<uuid::Uuid>, app_state: web::Data<AppState>) -> 
         }
     }
 }
+
+pub fn order_scope(conf: &mut web::ServiceConfig) {
+    let scope = web::scope("/api/orders")
+        .wrap(RequireAuth::allowed_roles(vec![UserRole::Admin]))
+        .service(get_order)
+        .service(get_orders)
+        // .service(get_relations_by_type)
+        .service(create)
+        .service(update)
+        .service(delete);
+
+    conf.service(scope);
+}
+

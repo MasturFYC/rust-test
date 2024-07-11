@@ -60,7 +60,7 @@ impl OrderExt for DBClient {
     /// curl localhost:8000/api/orders \
     /// -H "content-type: application/json" \
     /// -H "Authorization: Bearer $(cat token.txt)"
-    async fn get_orders(&self, page: usize, limit: usize) -> Result<MatchResult, sqlx::Error>    {
+    async fn get_orders(&self, page: usize, limit: usize) -> Result<MatchResult, sqlx::Error> {
         let offset = (page - 1) * limit;
 
         // acquire pg connection from current pool
@@ -488,7 +488,7 @@ impl OrderExt for DBClient {
             }
         }
 
-        let _ = sqlx::query!("DELETE FROM order_details WHERE order_id = $1", id)
+        let _ = sqlx::query!("DELETE FROM order_details WHERE order_id = $1", id,)
             .execute(&mut *tx)
             .await?;
 
@@ -498,14 +498,14 @@ impl OrderExt for DBClient {
 
         let _ = sqlx::query!(
             r#"DELETE FROM ledgers WHERE
-            id = $1 OR 
-            id IN (SELECT ref_id FROM ledger_details WHERE ref_id = $1)"#,
-            id
+                id = $1 OR 
+                id IN (SELECT ref_id FROM ledger_details WHERE ref_id = $1)"#,
+            id,
         )
         .execute(&mut *tx)
         .await?;
 
-        let rows_affected: u64 = sqlx::query_file!("sql/order-delete.sql", id)
+        let rows_affected: u64 = sqlx::query_file!("sql/order-delete.sql", id,)
             .execute(&mut *tx)
             .await
             .unwrap()
