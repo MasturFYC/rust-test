@@ -79,6 +79,18 @@ pub struct CreateLedgerSchema {
 
 pub type MatchResult = (Vec<Ledger>, i64);
 
+impl CreateLedgerSchema {
+    pub fn new(relation_id: Uuid, name: String, descriptions: Option<String>, updated_by: String, is_valid: bool) -> Self {
+        Self {
+            relation_id,
+            name,
+            descriptions,
+            updated_by,
+            is_valid
+        }
+    }
+}
+
 
 impl<'r> sqlx::FromRow<'r, sqlx::postgres::PgRow> for LedgerWithDetails {
     fn from_row(row: &'r sqlx::postgres::PgRow) -> Result<Self, sqlx::Error> {

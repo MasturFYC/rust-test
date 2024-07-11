@@ -12,6 +12,7 @@ use super::{
     CreateOrderDetailSchema, DetailMark, MatchResult, MatchTrxResult, Order, OrderDetail,
     OrderDtos, OrderType, PaymentType, ResponseOrder,
 };
+
 // use crate::{order_detail::{CreateOrderDetailSchema, MatchTrxResult, OrderDetail}, DBClient};
 
 #[async_trait]
@@ -35,7 +36,7 @@ pub trait OrderExt {
     async fn order_delete(&self, id: uuid::Uuid) -> Result<u64, sqlx::Error>;
     #[allow(dead_code)]
     async fn order_count(&self) -> Result<Option<i64>, sqlx::Error>;
-    async fn create_ledger(&self, o: OrderDtos) -> CreateLedgerSchema;
+    // async fn create_ledger(&self, o: OrderDtos) -> CreateLedgerSchema;
     async fn create_ledger_details(
         &self,
         payment: &BigDecimal,
@@ -75,7 +76,7 @@ impl OrderExt for DBClient {
             ResponseOrder,
             "sql/order-get-all.sql",
             limit as i64,
-            offset as i64
+            offset as i64,
         )
         .fetch_all(&mut *tx)
         .await?;
@@ -133,12 +134,19 @@ impl OrderExt for DBClient {
         .await?;
 
         let order = ord.unwrap();
-        let new_id = order.id;
+        let nid = order.id;
 
         let payment = order.payment.to_owned();
-        let ledger = self.create_ledger(o).await;
+        let led = CreateLedgerSchema::new(
+            o.relation_id, 
+            String::from("ORDER"),
+            Some(format!("Order by {}", o.sales_id)),
+            o.updated_by,
+            true,
+            );
+        //self.create_ledger(o).await;
         let ledger_details = self
-            .create_ledger_details(&payment, &total, modal, Some(new_id), new_id)
+            .create_ledger_details(&payment, &total, modal, Some(nid), nid)
             .await;
 
         let len = details.len();
@@ -148,7 +156,7 @@ impl OrderExt for DBClient {
             if let Some(d) = details.get(i) {
                 let _ = sqlx::query_file!(
                     "sql/order-detail-insert.sql",
-                    new_id,
+                    nid,
                     d.product_id,
                     d.qty,
                     d.direction,
@@ -178,23 +186,23 @@ impl OrderExt for DBClient {
         }
 
         let _ = sqlx::query!(
-            r#"INSERT INTO ledgers
+                r#"INSERT INTO ledgers
                 (id, relation_id, name, descriptions, updated_by, is_valid)
                 VALUES ($1, $2, $3, $4, $5, $6)"#,
-            new_id,
-            ledger.relation_id,
-            ledger.name,
-            ledger.descriptions,
-            ledger.updated_by,
-            ledger.is_valid
-        )
-        .execute(&mut *tx)
-        .await?;
+                nid,
+                led.relation_id,
+                led.name,
+                led.descriptions,
+                led.updated_by,
+                led.is_valid
+                )
+            .execute(&mut *tx)
+            .await?;
 
         // for (_, d) in details.into_iter().enumerate() {
         //     let _ = sqlx::query_file!(
         //         "sql/order-detail-insert.sql",
-        //         new_id.to_owned(),
+        //         nid.to_owned(),
         //         d.product_id.to_owned(),
         //         d.qty.to_owned(),
         //         d.direction.to_owned(),
@@ -230,16 +238,16 @@ impl OrderExt for DBClient {
                     amount,
                     direction,
                     ref_id) VALUES ($1, $2, $3, $4, $5, $6, $7)"#,
-                d.ledger_id,
-                d.id,
-                d.account_id,
-                d.descriptions,
-                d.amount,
-                d.direction,
-                d.ref_id,
-            )
-            .execute(&mut *tx)
-            .await?;
+                    d.ledger_id,
+                    d.id,
+                    d.account_id,
+                    d.descriptions,
+                    d.amount,
+                    d.direction,
+                    d.ref_id,
+                    )
+                .execute(&mut *tx)
+                .await?;
 
             i = i.checked_add(1).unwrap();
 
@@ -249,7 +257,7 @@ impl OrderExt for DBClient {
         }
 
         let details: Vec<OrderDetail> =
-            sqlx::query_file_as!(OrderDetail, "sql/order-detail-get-by-order.sql", new_id)
+            sqlx::query_file_as!(OrderDetail, "sql/order-detail-get-by-order.sql", nid)
                 .fetch_all(&mut *tx)
                 .await?;
 
@@ -293,22 +301,22 @@ impl OrderExt for DBClient {
         let mut tx: sqlx::Transaction<sqlx::Postgres> = conn.begin().await?;
 
         let order = sqlx::query_file_as!(
-            Order,
-            "sql/order-update.sql",
-            uid,
-            o.order_type.unwrap() as OrderType,
-            o.relation_id.to_owned(),
-            o.payment_type.unwrap() as PaymentType,
-            o.updated_by.to_owned(),
-            o.total.into(),
-            o.payment.into(),
-            o.remain.into(),
-            o.invoice_id.to_owned(),
-            o.due_at.to_owned(),
-            o.created_at.to_owned()
-        )
-        .fetch_optional(&mut *tx)
-        .await?;
+                Order,
+                "sql/order-update.sql",
+                uid,
+                o.order_type.unwrap() as OrderType,
+                o.relation_id.to_owned(),
+                o.payment_type.unwrap() as PaymentType,
+                o.updated_by.to_owned(),
+                o.total.into(),
+                o.payment.into(),
+                o.remain.into(),
+                o.invoice_id.to_owned(),
+                o.due_at.to_owned(),
+                o.created_at.to_owned()
+                )
+            .fetch_optional(&mut *tx)
+            .await?;
 
         let mut i = 0;
         let len = details.len();
@@ -318,7 +326,9 @@ impl OrderExt for DBClient {
                 match d.mark_as.unwrap() {
                     DetailMark::Delete => {
                         let _ = sqlx::query!(
-                                "UPDATE products SET unit_in_stock = (unit_in_stock + $2) WHERE id = $1",
+                                "UPDATE products SET 
+                                unit_in_stock = (unit_in_stock + $2) 
+                                WHERE id = $1",
                                 d.old_product_id,
                                 d.old_qty,
                                 )
@@ -331,20 +341,19 @@ impl OrderExt for DBClient {
                     }
 
                     DetailMark::Update => {
-                        let _ = sqlx::query_file!(
-                            "sql/order-detail-update.sql",
-                            d.id,
-                            uid,
-                            d.product_id,
-                            d.qty,
-                            d.direction,
-                            d.unit,
-                            d.price,
-                            d.discount,
-                            d.hpp
-                        )
-                        .execute(&mut *tx)
-                        .await?;
+                        let _ = sqlx::query_file!("sql/order-detail-update.sql",
+                                d.id,
+                                uid,
+                                d.product_id,
+                                d.qty,
+                                d.direction,
+                                d.unit,
+                                d.price,
+                                d.discount,
+                                d.hpp
+                                )
+                            .execute(&mut *tx)
+                            .await?;
 
                         let _ = sqlx::query!(
                                 "UPDATE products SET unit_in_stock = (unit_in_stock + $2) WHERE id = $1",
@@ -363,22 +372,22 @@ impl OrderExt for DBClient {
                             .await?;
                     }
                     _ => {
-                        let _ = sqlx::query_file!(
-                            "sql/order-detail-insert.sql",
-                            uid,
-                            d.product_id,
-                            d.qty,
-                            d.direction,
-                            d.unit,
-                            d.price,
-                            d.discount,
-                            d.hpp,
-                        )
-                        .execute(&mut *tx)
-                        .await?;
+                        let _ = sqlx::query_file!("sql/order-detail-insert.sql",
+                                uid,
+                                d.product_id,
+                                d.qty,
+                                d.direction,
+                                d.unit,
+                                d.price,
+                                d.discount,
+                                d.hpp,
+                                )
+                            .execute(&mut *tx)
+                            .await?;
 
-                        let _ = sqlx::query!(
-                                "UPDATE products SET unit_in_stock = (unit_in_stock - $2) WHERE id = $1",
+                        let _ = sqlx::query!(r#"UPDATE products SET
+                                unit_in_stock = (unit_in_stock - $2)
+                                WHERE id = $1"#,
                                 d.product_id,
                                 d.qty,
                                 )
@@ -395,21 +404,20 @@ impl OrderExt for DBClient {
             }
         }
 
-        let _ = sqlx::query!(
-            r#"UPDATE ledgers SET 
+        let _ = sqlx::query!(r#"UPDATE ledgers SET
                 relation_id = $2, 
                 descriptions = $3,
                 updated_by = $4,
                 updated_at = $5
                 WHERE id = $1"#,
-            uid,
-            o.relation_id,
-            format!("Order by {}", o.sales_id),
-            o.updated_by,
-            Utc::now()
-        )
-        .execute(&mut *tx)
-        .await?;
+                uid,
+                o.relation_id,
+                format!("Order by {}", o.sales_id),
+                o.updated_by,
+                Utc::now()
+                )
+            .execute(&mut *tx)
+            .await?;
 
         let _ = sqlx::query!("DELETE FROM ledger_details WHERE ledger_id = $1", uid)
             .execute(&mut *tx)
@@ -422,24 +430,25 @@ impl OrderExt for DBClient {
             let d = ledger_details.get(i).unwrap();
 
             let _ = sqlx::query!(
-                r#"INSERT INTO ledger_details (
-                    ledger_id,
-                    id,
-                    account_id,
-                    descriptions,
-                    amount,
-                    direction,
-                    ref_id) VALUES ($1, $2, $3, $4, $5, $6, $7)"#,
-                d.ledger_id,
-                d.id,
-                d.account_id,
-                d.descriptions,
-                d.amount,
-                d.direction,
-                d.ref_id,
-            )
-            .execute(&mut *tx)
-            .await?;
+                    r#"INSERT INTO ledger_details (
+                        ledger_id,
+                        id,
+                        account_id,
+                        descriptions,
+                        amount,
+                        direction,
+                        ref_id)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7)"#,
+                    d.ledger_id,
+                    d.id,
+                    d.account_id,
+                    d.descriptions,
+                    d.amount,
+                    d.direction,
+                    d.ref_id,
+                )
+                .execute(&mut *tx)
+                .await?;
 
             i = i.checked_add(1).unwrap();
 
@@ -448,10 +457,13 @@ impl OrderExt for DBClient {
             }
         }
 
-        let details: Vec<OrderDetail> =
-            sqlx::query_file_as!(OrderDetail, "sql/order-detail-get-by-order.sql", uid)
-                .fetch_all(&mut *tx)
-                .await?;
+        let details: Vec<OrderDetail> = sqlx::query_file_as!(
+                OrderDetail,
+                "sql/order-detail-get-by-order.sql",
+                uid
+            )
+            .fetch_all(&mut *tx)
+            .await?;
 
         tx.commit().await?;
 
@@ -497,7 +509,8 @@ impl OrderExt for DBClient {
         //    .await?;
 
         let _ = sqlx::query!(
-            r#"DELETE FROM ledgers WHERE
+            r#"
+                DELETE FROM ledgers WHERE
                 id = $1 OR 
                 id IN (SELECT ref_id FROM ledger_details WHERE ref_id = $1)"#,
             id,
@@ -523,15 +536,15 @@ impl OrderExt for DBClient {
         Ok(row)
     }
 
-    async fn create_ledger(&self, o: OrderDtos) -> CreateLedgerSchema {
-        CreateLedgerSchema {
-            descriptions: Some(format!("Order by {}", o.sales_id)),
-            is_valid: true,
-            name: String::from("ORDER"),
-            relation_id: o.relation_id,
-            updated_by: o.updated_by,
-        }
-    }
+//    async fn create_ledger(&self, o: OrderDtos) -> CreateLedgerSchema {
+//        CreateLedgerSchema {
+//            descriptions: Some(format!("Order by {}", o.sales_id)),
+//            is_valid: true,
+//            name: String::from("ORDER"),
+//            relation_id: o.relation_id,
+//            updated_by: o.updated_by,
+//        }
+//    }
 
     async fn create_ledger_details(
         &self,

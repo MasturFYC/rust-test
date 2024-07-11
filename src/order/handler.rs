@@ -1,9 +1,11 @@
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use serde_json::json;
-// use validator::Validate;
 
 use crate::{
-    dtos::RequestQueryDto, extractors::auth::RequireAuth, models::UserRole, AppState};
+    dtos::RequestQueryDto, 
+    extractors::auth::RequireAuth, 
+    models::UserRole, AppState
+};
 
 use super::{db::OrderExt, RequestQueryOrderDtos};
 
@@ -18,10 +20,10 @@ async fn get_order(path: web::Path<uuid::Uuid>, app_state: web::Data<AppState>) 
                 None => {
                     let message = format!("Order with ID: {} not found", order_id);
                     return HttpResponse::NotFound()
-                        .json(serde_json::json!({"status": "fail","message": message}));
+                        .json(json!({"status": "fail","message": message}));
                 }
                 Some(x) => {
-                    let order_response = serde_json::json!({"status": "success","data": x});
+                    let order_response = json!({"status": "success","data": x});
                     return HttpResponse::Ok().json(order_response);
                 }
             };
@@ -66,7 +68,10 @@ async fn get_orders(
     if query_result.is_err() {
         let message = "Something bad happened while fetching all order items";
         return HttpResponse::InternalServerError()
-            .json(json!({"status": "error","message": message}));
+            .json(json!({
+                "status": "error",
+                "message": message
+            }));
     }
 
     // let (orders, length) = query_result.unwrap();
@@ -77,7 +82,7 @@ async fn get_orders(
     let length = v.1;
     let lim = limit as i64;
 
-    let json_response = serde_json::json!({
+    let json_response = json!({
         "status": "success",
         "totalPages": (length / lim) + (if length % lim == 0 {0} else {1}),
         "count": orders.len(), // count of selected orders
@@ -121,11 +126,17 @@ async fn create(
                     .contains("duplicate key value violates unique constraint")
                 {
                     return HttpResponse::BadRequest()
-                   .json(serde_json::json!({"status": "fail","message": "Note with that name already exists"}));
+                   .json(json!({
+                       "status": "fail",
+                       "message": "Note with that name already exists"
+                   }));
                 }
     
                 return HttpResponse::InternalServerError()
-                    .json(serde_json::json!({"status": "error","message": format!("{:?}", e)}));
+                    .json(json!({ 
+                        "status": "error",
+                        "message": format!("{:?}", e)
+                    }));
             }
         }
 }
@@ -142,14 +153,14 @@ async fn update(
 
     if query_result.is_err() {
         return HttpResponse::BadRequest()
-            .json(serde_json::json!({"status": "fail","message": "Bad request"}));
+            .json(json!({"status": "fail","message": "Bad request"}));
     }
     // let old = ; //_or(None);
 
     if query_result.unwrap().is_none() {
         let message = format!("Order with ID: {} not found", order_id);
         return HttpResponse::NotFound()
-            .json(serde_json::json!({"status": "fail","message": message}));
+            .json(json!({"status": "fail","message": message}));
     }
 
     let data = body.into_inner();
@@ -160,16 +171,18 @@ async fn update(
 
     match query_result {
         Ok(order) => {
-            let order_response = serde_json::json!({"status": "success","data": serde_json::json!({
-                "account": order
-            })});
+            let order_response = json!({
+                "status": "success",
+                "data": json!({
+                    "account": order
+                })});
 
             return HttpResponse::Ok().json(order_response);
         }
         Err(err) => {
             let message = format!("Error: {:?}", err);
             return HttpResponse::InternalServerError()
-                .json(serde_json::json!({"status": "error","message": message}));
+                .json(json!({"status": "error","message": message}));
         }
     }
 }
@@ -186,17 +199,26 @@ async fn delete(path: web::Path<uuid::Uuid>, app_state: web::Data<AppState>) -> 
                 let message = format!("Order with ID: {} not found", order_id);
 
                 return HttpResponse::NotFound()
-                    .json(serde_json::json!({"status": "fail","message": message}));
+                    .json(json!({
+                        "status": "fail",
+                        "message": message
+                    }));
             }
 
             let json = HttpResponse::Ok()
-                .json(serde_json::json!({"status": "success","data": rows_affected}));
+                .json(json!({
+                    "status": "success",
+                    "data": rows_affected
+                }));
             return json;
         }
         Err(err) => {
             let message = format!("Error: {:?}", err);
             return HttpResponse::InternalServerError()
-                .json(serde_json::json!({"status": "error","message": message}));
+                .json(json!({
+                    "status": "error",
+                    "message": message
+                }));
         }
     }
 }
