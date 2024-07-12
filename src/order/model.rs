@@ -1,4 +1,4 @@
-use bigdecimal::BigDecimal;
+use bigdecimal::{BigDecimal, FromPrimitive};
 use chrono::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -60,6 +60,7 @@ pub struct Order {
     #[serde(rename = "updatedBy")]
     pub updated_by: String,
     pub total: BigDecimal,
+    pub dp: BigDecimal, 
     pub payment: BigDecimal,
     pub remain: BigDecimal,
     #[serde(rename = "invoiceId")]
@@ -87,6 +88,7 @@ pub struct ResponseOrder {
     #[serde(rename = "updatedBy")]
     pub updated_by: String,
     pub total: BigDecimal,
+    pub dp: BigDecimal,
     pub payment: BigDecimal,
     pub remain: BigDecimal,
     #[serde(rename = "invoiceId")]
@@ -114,6 +116,7 @@ pub struct OrderDtos {
     #[validate(length(min = 1, message = "USER is required"))]
     pub updated_by: String,
     pub total: BigDecimal,
+    pub dp: BigDecimal,
     pub payment: BigDecimal,
     pub remain: BigDecimal,
     #[serde(rename = "invoiceId")]
@@ -126,21 +129,25 @@ pub struct OrderDtos {
     pub created_at: Option<DateTime<Utc>>,
 }
 
-// trait Trx {
-//     fn new () -> Self;
-//     fn set_default(&mut self);
-// }
-
-// impl Trx for OrderDtos {
-    
-// }
-
 impl OrderDtos {
     
     pub fn set_total(&mut self, total: &BigDecimal) {
-        let p = self.payment.to_owned();
         self.total = total.to_owned();
-        self.remain = total - p;
+        let remain = &self.total - (&self.payment + &self.dp);
+        let pass = BigDecimal::from_f32(0.0).unwrap();
+
+        let payment_type: PaymentType;
+
+        if remain.gt(&pass) && remain.lt(&self.total) {
+            payment_type = PaymentType::Pending;
+        } else if remain.gt(&self.total) {
+            payment_type = PaymentType::Cash;
+        } else {
+            payment_type = PaymentType::Loans;
+        }
+
+        self.remain = remain;
+        self.payment_type = Some(payment_type);
     }
 
     pub fn set_due_date(&mut self) {
@@ -153,10 +160,69 @@ impl OrderDtos {
                 date1.checked_add_days(days)
             }
         };
-
-        // println!("Now: {}, due at: {}", now.unwrap(), date.unwrap());
-        //  = date; //.to_owned();
     }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, Copy)]
+pub enum DetailMark {
+    New,
+    Update,
+    Delete,
+}
+
+#[derive(Validate, Debug, Default, Clone, Serialize, Deserialize)]
+pub struct CreateOrderDetailSchema {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<Uuid>,
+    #[serde(rename = "orderId", skip_serializing_if = "Option::is_none")]
+    pub order_id: Option<Uuid>,
+    #[serde(rename = "productId")]
+    pub product_id: i32,
+    #[serde(rename = "oldProductId")]
+    pub old_product_id: Option<i32>,
+    pub qty: BigDecimal,
+    #[serde(rename = "oldQty")]
+    pub old_qty: Option<BigDecimal>,
+    pub direction: i16,
+    #[validate(length(min = 1, message = "UNIT is required"))]
+    pub unit: String,
+    pub price: BigDecimal,
+    pub discount: BigDecimal,
+    pub hpp: BigDecimal,
+    #[serde(rename = "markAs")]
+    pub mark_as: Option<DetailMark>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub subtotal: Option<BigDecimal>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct RequestQueryOrderDtos {
+   pub order: OrderDtos,
+   pub details: Vec<CreateOrderDetailSchema>
+}
+
+#[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
+pub struct OrderDetail {
+   #[serde(rename = "orderId")]
+   pub order_id: Uuid,
+   pub id: Uuid,
+   #[serde(rename = "productId")]
+   pub product_id: i32,
+   pub qty: BigDecimal,
+   pub direction: i16,
+   pub unit: String,
+   pub price: BigDecimal,
+   pub discount: BigDecimal,
+   pub hpp: BigDecimal,
+   #[serde(rename = "createdAt")]
+   pub created_at: Option<DateTime<Utc>>,
+   #[serde(rename = "updatedAt")]
+   pub updated_at: Option<DateTime<Utc>>,
+   pub subtotal: BigDecimal,
+}
+
+pub type MatchTrxResult = (Option<Order>, Vec<OrderDetail>);
+pub type MatchResult = (Vec<ResponseOrder>, i64);
 
     // #[allow(dead_code)]
     // pub fn set_default(data: &OrderDtos) -> Self {
@@ -231,62 +297,6 @@ impl OrderDtos {
     // fn get_remain (&mut self) -> BigDecimal {
     //     &self.total - &self.payment
     // }
-}
+    //}
 
-#[derive(Debug, Deserialize, Serialize, Clone, Copy)]
-pub enum DetailMark {
-    New,
-    Update,
-    Delete,
-}
 
-#[derive(Validate, Debug, Default, Clone, Serialize, Deserialize)]
-pub struct CreateOrderDetailSchema {
-   #[serde(skip_serializing_if = "Option::is_none")]
-   pub id: Option<Uuid>,
-   #[serde(rename = "orderId", skip_serializing_if = "Option::is_none")]
-   pub order_id: Option<Uuid>,
-   #[serde(rename = "productId")]
-   pub product_id: i32,
-   #[serde(rename = "oldProductId")]
-   pub old_product_id: Option<i32>,
-   pub qty: BigDecimal,
-   #[serde(rename = "oldQty")]
-   pub old_qty: Option<BigDecimal>,
-   pub direction: i16,
-   #[validate(length(min = 1, message = "UNIT is required"))]
-   pub unit: String,
-   pub price: BigDecimal,
-   pub discount: BigDecimal,
-   pub hpp: BigDecimal,
-   #[serde(rename = "markAs")]
-   pub mark_as: Option<DetailMark>,
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct RequestQueryOrderDtos {
-   pub order: OrderDtos,
-   pub details: Vec<CreateOrderDetailSchema>
-}
-
-#[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
-pub struct OrderDetail {
-   #[serde(rename = "orderId")]
-   pub order_id: Uuid,
-   pub id: Uuid,
-   #[serde(rename = "productId")]
-   pub product_id: i32,
-   pub qty: BigDecimal,
-   pub direction: i16,
-   pub unit: String,
-   pub price: BigDecimal,
-   pub discount: BigDecimal,
-   pub hpp: BigDecimal,
-   #[serde(rename = "createdAt")]
-   pub created_at: Option<DateTime<Utc>>,
-   #[serde(rename = "updatedAt")]
-   pub updated_at: Option<DateTime<Utc>>,
-}
-
-pub type MatchTrxResult = (Option<Order>, Vec<OrderDetail>);
-pub type MatchResult = (Vec<ResponseOrder>, i64);

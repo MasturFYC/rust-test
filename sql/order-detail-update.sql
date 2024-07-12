@@ -7,5 +7,6 @@ SET order_id = $2,
    price = $7,
    discount = $8,
    hpp = $9,
+   subtotal = $10,
    updated_at = now()
 WHERE id = $1

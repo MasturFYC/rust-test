@@ -6,6 +6,7 @@ INSERT INTO order_details (
       unit,
       price,
       discount,
-      hpp
+      hpp,
+      subtotal
    )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)

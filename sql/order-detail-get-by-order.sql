@@ -8,7 +8,8 @@ SELECT order_id,
    discount,
    hpp,
    created_at,
-   updated_at
+   updated_at,
+   subtotal
 FROM order_details
 WHERE order_id = $1
 ORDER BY order_id,
