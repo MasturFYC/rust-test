@@ -1,6 +1,7 @@
 INSERT INTO "orders" (
     order_type,
-    relation_id,
+    customer_id,
+    sales_id,
     payment_type,
     updated_by,
     total,
@@ -9,12 +10,14 @@ INSERT INTO "orders" (
     remain,
     invoice_id,
     due_at,
+    is_protected,
     created_at
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 RETURNING id,
    order_type as "order_type: OrderType",
-   relation_id,
+   customer_id,
+   sales_id,
    payment_type as "payment_type: PaymentType",
    updated_by,
    total,
@@ -23,5 +26,6 @@ RETURNING id,
    remain,
    invoice_id,
    due_at,
+   is_protected,
    created_at,
    updated_at

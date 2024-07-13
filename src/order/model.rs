@@ -53,8 +53,10 @@ pub struct Order {
     pub id: Uuid,
     #[serde(rename = "orderType")]
     pub order_type: OrderType,
-    #[serde(rename = "relationId")]
-    pub relation_id: Uuid,
+    #[serde(rename = "customerId")]
+    pub customer_id: Uuid,
+    #[serde(rename = "salesId")]
+    pub sales_id: Uuid,
     #[serde(rename = "paymentType")]
     pub payment_type: PaymentType,
     #[serde(rename = "updatedBy")]
@@ -67,6 +69,8 @@ pub struct Order {
     pub invoice_id: Option<String>,
     #[serde(rename = "dueAt")]
     pub due_at: Option<DateTime<Utc>>,
+    #[serde(rename = "isProtected")]
+    pub is_protected: bool,
     #[serde(rename = "createdAt")]
     pub created_at: Option<DateTime<Utc>>,
     #[serde(rename = "updatedAt")]
@@ -79,10 +83,10 @@ pub struct ResponseOrder {
     pub id: Uuid,
     #[serde(rename = "orderType")]
     pub order_type: OrderType,
-    #[serde(rename = "relationId")]
-    pub relation_id: Uuid,
-    #[serde(rename = "relationName")]
-    pub relation_name: String,
+    #[serde(rename = "customerId")]
+    pub customer_id: Uuid,
+    #[serde(rename = "salesId")]
+    pub sales_id: Uuid,
     #[serde(rename = "paymentType")]
     pub payment_type: PaymentType,
     #[serde(rename = "updatedBy")]
@@ -95,10 +99,17 @@ pub struct ResponseOrder {
     pub invoice_id: Option<String>,
     #[serde(rename = "dueAt")]
     pub due_at: Option<DateTime<Utc>>,
+    #[serde(rename = "isProtected")]
+    pub is_protected: bool,
     #[serde(rename = "createdAt")]
     pub created_at: Option<DateTime<Utc>>,
     #[serde(rename = "updatedAt")]
     pub updated_at: Option<DateTime<Utc>>,
+    #[serde(rename = "customerName")]
+    pub customer_name: String,
+    #[serde(rename = "salesName")]
+    pub sales_name: String,
+ 
 }
 
 
@@ -106,8 +117,8 @@ pub struct ResponseOrder {
 pub struct OrderDtos {
     #[serde(rename = "orderType")]
     pub order_type: Option<OrderType>,
-    #[serde(rename = "relationId")]
-    pub relation_id: Uuid,
+    #[serde(rename = "customerId")]
+    pub customer_id: Uuid,
     #[serde(rename = "salesId")]
     pub sales_id: Uuid,
     #[serde(rename = "paymentType")]
@@ -125,6 +136,8 @@ pub struct OrderDtos {
     pub due_range: Option<u64>,
     #[serde(rename = "dueAt")]
     pub due_at: Option<DateTime<Utc>>,
+    #[serde(rename = "isProtected")]
+    pub is_protected: bool,
     #[serde(rename = "createdAt")]
     pub created_at: Option<DateTime<Utc>>,
 }
@@ -133,15 +146,16 @@ impl OrderDtos {
     
     pub fn set_total(&mut self, total: &BigDecimal) {
         self.total = total.to_owned();
-        let remain = &self.total - (&self.payment + &self.dp);
+        let total_payment = &self.payment + &self.dp;
+        let remain = &self.total - &total_payment;
         let pass = BigDecimal::from_f32(0.0).unwrap();
 
         let payment_type: PaymentType;
 
-        if remain.gt(&pass) && remain.lt(&self.total) {
+        if total_payment.ge(&self.total) {
+            payment_type = PaymentType::Lunas;
+        } else if total_payment.lt(&self.total) && total_payment.gt(&pass) {
             payment_type = PaymentType::Pending;
-        } else if remain.gt(&self.total) {
-            payment_type = PaymentType::Cash;
         } else {
             payment_type = PaymentType::Loans;
         }
@@ -177,9 +191,9 @@ pub struct CreateOrderDetailSchema {
     #[serde(rename = "orderId", skip_serializing_if = "Option::is_none")]
     pub order_id: Option<Uuid>,
     #[serde(rename = "productId")]
-    pub product_id: i32,
+    pub product_id: Uuid,
     #[serde(rename = "oldProductId")]
-    pub old_product_id: Option<i32>,
+    pub old_product_id: Option<Uuid>,
     pub qty: BigDecimal,
     #[serde(rename = "oldQty")]
     pub old_qty: Option<BigDecimal>,
@@ -207,7 +221,7 @@ pub struct OrderDetail {
    pub order_id: Uuid,
    pub id: Uuid,
    #[serde(rename = "productId")]
-   pub product_id: i32,
+   pub product_id: Uuid,
    pub qty: BigDecimal,
    pub direction: i16,
    pub unit: String,
@@ -298,5 +312,3 @@ pub type MatchResult = (Vec<ResponseOrder>, i64);
     //     &self.total - &self.payment
     // }
     //}
-
-

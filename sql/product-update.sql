@@ -1,16 +1,17 @@
-UPDATE products SET
-   name = $1,
-   barcode = $2,
-   unit = $3,
-   content = $4,
-   hpp = $5,
-   margin = $6,
-   price = $7,
-   ppn = $8,
-   is_active = $9,
-   variant_name = $10,
-   descriptions = $11,
-   category_id = $12,
-   updated_at = $13
-   WHERE id = $14
+UPDATE products
+SET
+   name = $2,
+   barcode = $3,
+   unit = $4,
+   content = $5,
+   hpp = $6,
+   margin = $7,
+   price = $8,
+   ppn = $9,
+   is_active = $10,
+   variant_name = $11,
+   descriptions = $12,
+   category_id = $13,
+   supplier_id = $14
+WHERE id = $1
    RETURNING *

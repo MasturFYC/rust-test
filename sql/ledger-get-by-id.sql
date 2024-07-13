@@ -1,10 +1,10 @@
 SELECT
     t.id,
     t.relation_id,
-    t.name,
-    t.descriptions,
+    t.ledger_type as "ledger_type: LedgerType",
     t.updated_by,
     t.is_valid,
+    t.descriptions,
     t.created_at,
     t.updated_at,
     COALESCE((SELECT json_agg(x) FROM (

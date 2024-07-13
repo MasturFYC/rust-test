@@ -1,7 +1,7 @@
 SELECT
-    id, 
+    id,
     relation_id,
-    name,
+    ledger_type as "ledger_type: LedgerType",
     descriptions,
     updated_by,
     is_valid,

@@ -77,7 +77,7 @@ async fn create(
                 );
             }
 
-            let ledger_response = json!({"status": "success", "data": ledger.unwrap()});
+            let ledger_response = json!({"status": "success", "data": ledger});
 
             return HttpResponse::Created().json(ledger_response);
         }

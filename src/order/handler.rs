@@ -20,7 +20,10 @@ async fn get_order(path: web::Path<uuid::Uuid>, app_state: web::Data<AppState>) 
                 None => {
                     let message = format!("Order with ID: {} not found", order_id);
                     return HttpResponse::NotFound()
-                        .json(json!({"status": "fail","message": message}));
+                        .json(json!({
+                            "status": "fail",
+                            "message": message
+                        }));
                 }
                 Some(x) => {
                     let order_response = json!({"status": "success","data": x});
@@ -235,4 +238,3 @@ pub fn order_scope(conf: &mut web::ServiceConfig) {
 
     conf.service(scope);
 }
-

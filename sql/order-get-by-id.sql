@@ -1,6 +1,7 @@
 SELECT id,
    order_type as "order_type: OrderType",
-   relation_id,
+   customer_id,
+   sales_id,
    payment_type as "payment_type: PaymentType",
    updated_by,
    total,
@@ -9,6 +10,7 @@ SELECT id,
    remain,
    invoice_id,
    due_at,
+   is_protected,
    created_at,
    updated_at
 FROM orders

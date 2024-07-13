@@ -1,13 +1,21 @@
 use actix_web::{web, HttpResponse, Scope};
-// use futures_util::TryFutureExt;
+use uuid::Uuid;
 use validator::Validate;
 
 use super::{
-    db::ProductExt, CreateResponseDto, DeleteResponseDto, ProductListResponseDto,
-    ProductResponseDto, UpdateProductSchema,
+    db::ProductExt, 
+    CreateResponseDto, 
+    DeleteResponseDto, 
+    ProductListResponseDto,
+    ProductResponseDto, 
+    CreateProductSchema
 };
 use crate::{
-    dtos::RequestQueryDto, error::{ErrorMessage, HttpError}, extractors::auth::RequireAuth, models::UserRole, product::CreateProductSchema, AppState
+    dtos::RequestQueryDto,
+    error::{ErrorMessage, HttpError},
+    extractors::auth::RequireAuth,
+    models::UserRole,
+    AppState
 };
 
 pub fn product_scope() -> Scope {
@@ -50,7 +58,7 @@ pub fn product_scope() -> Scope {
     )
 )]
 pub async fn get_product(
-    path: web::Path<i32>,
+    path: web::Path<Uuid>,
     app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, HttpError> {
     let prod_id = path.into_inner();
@@ -181,8 +189,8 @@ pub async fn create_product(
     )
 )]
 async fn update_product(
-    path: web::Path<i32>,
-    body: web::Json<UpdateProductSchema>,
+    path: web::Path<Uuid>,
+    body: web::Json<CreateProductSchema>,
     app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, HttpError> {
     body.validate()
@@ -193,7 +201,7 @@ async fn update_product(
 
     let result = app_state
         .db_client
-        .get_product(prod_id)
+        .get_product_origin(prod_id)
         .await
         .map_err(|e| HttpError::server_error(e.to_string()))?;
 
@@ -234,7 +242,7 @@ async fn update_product(
     )
 )]
 async fn delete_product(
-    path: web::Path<i32>,
+    path: web::Path<Uuid>,
     app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, HttpError> {
     let prod_id = path.into_inner();

@@ -1,4 +1,4 @@
-use super::{CreateLedgerSchema, Ledger, LedgerDetail, LedgerWithDetails, MatchResult};
+use super::{CreateLedgerSchema, Ledger, LedgerDetail, LedgerResult, LedgerType, LedgerWithDetails, MatchResult};
 use crate::DBClient;
 use async_trait::async_trait;
 use sqlx::{self, types::Json, Acquire, Error};
@@ -11,12 +11,12 @@ pub trait LedgerExt {
     async fn ledger_create<T: Into<CreateLedgerSchema> + Send>(
         &self,
         data: T,
-    ) -> Result<Option<Ledger>, Error>;
+    ) -> Result<Option<LedgerResult>, Error>;
     async fn ledger_update<T: Into<CreateLedgerSchema> + Send>(
         &self,
         id: Uuid,
         data: T,
-    ) -> Result<Option<Ledger>, Error>;
+    ) -> Result<Option<LedgerResult>, Error>;
     async fn ledger_delete(&self, id: Uuid) -> Result<u64, Error>;
 }
 
@@ -63,17 +63,17 @@ impl LedgerExt for DBClient {
     async fn ledger_create<T: Into<CreateLedgerSchema> + Send>(
         &self,
         data: T,
-    ) -> Result<Option<Ledger>, Error> {
+    ) -> Result<Option<LedgerResult>, Error> {
         let t: CreateLedgerSchema = data.try_into().unwrap();
         let ledger = sqlx::query_file_as!(
-            Ledger,
+            LedgerResult,
             "sql/ledger-insert.sql",
-            t.relation_id.to_owned(),
-            t.name.to_string(),
-            t.descriptions.to_owned(),
-            t.updated_by.to_owned(),
-            t.is_valid.to_owned(),
-        )
+            t.relation_id,
+            t.ledger_type.unwrap() as LedgerType,
+            t.updated_by,
+            t.is_valid,
+            t.descriptions,
+       )
         .fetch_optional(&self.pool)
         .await?;
 
@@ -84,20 +84,20 @@ impl LedgerExt for DBClient {
         &self,
         id: Uuid,
         data: T,
-    ) -> Result<Option<Ledger>, Error> {
+    ) -> Result<Option<LedgerResult>, Error> {
         let t: CreateLedgerSchema = data.try_into().unwrap();
         let ledger = sqlx::query_file_as!(
-            Ledger,
+            LedgerResult,
             "sql/ledger-update.sql",
             id,
             t.relation_id.to_owned(),
-            t.name.to_owned(),
-            t.descriptions.to_owned(),
+            t.ledger_type.unwrap() as LedgerType,
             t.updated_by.to_owned(),
             t.is_valid.to_owned(),
-        )
-        .fetch_optional(&self.pool)
-        .await?;
+            t.descriptions.to_owned()
+            )
+            .fetch_optional(&self.pool)
+            .await?;
 
         Ok(ledger)
     }

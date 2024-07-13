@@ -1,10 +1,11 @@
-UPDATE ledgers SET
+UPDATE ledgers
+SET
     relation_id = $2,
-    name = $3,
-    descriptions = $4,
-    updated_by = $5,
-    is_valid = $6,
+    ledger_type = $3,
+    updated_by = $4,
+    is_valid = $5,
+    descriptions = $6,
     updated_at = now()
 WHERE
     id = $1
-RETURNING *
+RETURNING id, created_at, updated_at
