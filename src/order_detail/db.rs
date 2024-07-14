@@ -53,10 +53,10 @@ impl OrderDetailExt for DBClient {
             t.price.to_owned(),
             t.discount.to_owned(),
             t.hpp.to_owned(),
-            Utc::now()
-        )
-        .fetch_optional(&self.pool)
-        .await?;
+            t.subtotal
+            )
+            .fetch_optional(&self.pool)
+            .await?;
 
         Ok(detail)
     }
@@ -114,7 +114,7 @@ impl OrderDetailExt for DBClient {
                 d.price.to_owned(),
                 d.discount.to_owned(),
                 d.hpp.to_owned(),
-                Utc::now()
+                d.subtotal                
             )
             .fetch_one(&mut *tx)
             .await?;

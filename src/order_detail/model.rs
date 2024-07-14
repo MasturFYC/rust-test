@@ -13,13 +13,14 @@ pub struct OrderDetail {
    pub order_id: Uuid,
    pub id: Uuid,
    #[serde(rename = "productId")]
-   pub product_id: i32,
+   pub product_id: Uuid,
    pub qty: BigDecimal,
-   pub direction: i16,
+   pub direction: i8,
    pub unit: String,
+   pub hpp: BigDecimal,
    pub price: BigDecimal,
    pub discount: BigDecimal,
-   pub hpp: BigDecimal,
+   pub subtotal: BigDecimal,
    #[serde(rename = "createdAt")]
    pub created_at: Option<DateTime<Utc>>,
    #[serde(rename = "updatedAt")]
@@ -36,9 +37,10 @@ pub struct CreateOrderDetailSchema {
    pub direction: i16,
    #[validate(length(min = 1, message = "UNIT is required"))]
    pub unit: String,
+   pub hpp: BigDecimal,
    pub price: BigDecimal,
    pub discount: BigDecimal,
-   pub hpp: BigDecimal,
+   pub subtotal: BigDecimal
 }
 
 #[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]

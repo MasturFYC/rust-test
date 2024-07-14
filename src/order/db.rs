@@ -9,8 +9,7 @@ use sqlx::{self, Acquire};
 use uuid::Uuid;
 
 use super::{
-    CreateOrderDetailSchema, DetailMark, MatchResult, MatchTrxResult, Order, OrderDetail,
-    OrderDtos, OrderType, PaymentType, ResponseOrder,
+    CreateOrderDetailSchema, DetailMark, MatchResult, MatchTrxResult, Order, OrderBuilder, OrderDetail, OrderDtos, OrderType, PaymentType, ResponseOrder
 };
 
 // use crate::{order_detail::{CreateOrderDetailSchema, MatchTrxResult, OrderDetail}, DBClient};
@@ -44,7 +43,7 @@ pub trait OrderExt {
         modal: BigDecimal,
         ref_id: Option<Uuid>,
         ledger_id: Uuid,
-    ) -> Vec<LedgerDetail>;
+    ) -> (Vec<LedgerDetail>, i16);
 }
 
 #[async_trait]
@@ -100,7 +99,24 @@ impl OrderExt for DBClient {
         T: Into<Vec<CreateOrderDetailSchema>> + Send,
     {
         let details: Vec<CreateOrderDetailSchema> = details.try_into().unwrap();
-        let mut o: OrderDtos = data.try_into().unwrap();
+        let dtos: OrderDtos = data.try_into().unwrap();
+
+        let o = OrderBuilder::new(
+            dtos.order_type,
+            dtos.updated_by,
+            dtos.total,
+            dtos.payment,
+            dtos.is_protected,
+            dtos.created_at,
+            dtos.invoice_id,
+            dtos.customer_id,
+            dtos.sales_id
+            )
+            .with_dp(dtos.dp)
+            .with_due_range(dtos.due_range.unwrap_or(0))
+            .build();
+
+
         let pass = BigDecimal::from_i32(0).unwrap();
         let modal = details
             .iter()
@@ -111,9 +127,6 @@ impl OrderExt for DBClient {
 
         let mut conn: sqlx::pool::PoolConnection<sqlx::Postgres> = self.pool.acquire().await?;
         let mut tx: sqlx::Transaction<sqlx::Postgres> = conn.begin().await?;
-
-        o.set_total(&total);
-        o.set_due_date();
 
         let ord = sqlx::query_file_as!(
             Order,
@@ -147,12 +160,8 @@ impl OrderExt for DBClient {
             Some(format!("Order by {}", o.sales_id)),
        );
         //self.create_ledger(o).await;
-        let ledger_details = self
-            .create_ledger_details(&payment, &total, modal, Some(nid), nid)
-            .await;
-
         let len = details.len();
-        let mut i: usize = 0;
+        let mut i  = 0;
 
         loop {
             if let Some(d) = details.get(i) {
@@ -224,12 +233,17 @@ impl OrderExt for DBClient {
         //     .execute(&mut *tx)
         //     .await?;
         // }
+        let (ledger_details, len) = self
+            .create_ledger_details(&payment, &total, modal, Some(nid), nid)
+            .await;
 
-        i = 0;
-        let len = ledger_details.len();
+
+        let mut i: i16 = 0;
+//        let len = ledger_details.len();
 
         loop {
-            let d = ledger_details.get(i).unwrap();
+            let x = i as usize;
+            let d = ledger_details.get(x).unwrap();
 
             let _ = sqlx::query!(
                 r#"INSERT INTO ledger_details (
@@ -282,11 +296,14 @@ impl OrderExt for DBClient {
         T: Into<Vec<CreateOrderDetailSchema>> + Send,
         S: Into<Uuid> + Send,
     {
-        let mut o: OrderDtos = data.try_into().unwrap();
-        let details: Vec<CreateOrderDetailSchema> = details.try_into().unwrap();
+       // o.set_total(&total);
+        // o.set_due_date();
+        
         let uid: Uuid = id.try_into().unwrap();
+        let dtos: OrderDtos = data.try_into().unwrap();
+        let details: Vec<CreateOrderDetailSchema> = details.try_into().unwrap();
 
-        let pass = BigDecimal::from_i32(0).unwrap();
+        let pass = BigDecimal::from(0);
         let total = details.iter().fold(pass.to_owned(), |d, t| {
             d + ((&t.price - &t.discount) * &t.qty)
         });
@@ -294,16 +311,30 @@ impl OrderExt for DBClient {
             .iter()
             .fold(pass.to_owned(), |d, t| d + (&t.hpp * &t.qty));
 
-        o.set_total(&total);
-        o.set_due_date();
-
-        let payment = o.payment.to_owned();
-        let ledger_details = self
-            .create_ledger_details(&payment, &hpp, total, Some(uid), uid)
-            .await;
-
         let mut conn: sqlx::pool::PoolConnection<sqlx::Postgres> = self.pool.acquire().await?;
         let mut tx: sqlx::Transaction<sqlx::Postgres> = conn.begin().await?;
+  
+        let test = sqlx::query_scalar("SELECT SUM(amount) FROM order_payments WHERE id = $1")
+            .bind(uid)
+            .fetch_one(&mut *tx)
+            .await?;
+
+        let payment = Some(test).unwrap_or(BigDecimal::from(0));
+
+        let o = OrderBuilder::new(
+            dtos.order_type,
+            dtos.updated_by,
+            dtos.total,
+            payment.to_owned(),
+            dtos.is_protected,
+            dtos.created_at,
+            dtos.invoice_id,
+            dtos.customer_id,
+            dtos.sales_id
+            )
+            .with_dp(dtos.dp)
+            .with_due_range(dtos.due_range.unwrap_or(0))
+            .build();
 
         let order = sqlx::query_file_as!(
             Order,
@@ -420,10 +451,10 @@ impl OrderExt for DBClient {
 
         let _ = sqlx::query!(
             r#"UPDATE ledgers SET
-            relation_id = $2, 
-            descriptions = $3,
-            updated_by = $4,
-            updated_at = $5
+                relation_id = $2, 
+                descriptions = $3,
+                updated_by = $4,
+                updated_at = $5
             WHERE id = $1"#,
             uid,
             o.customer_id,
@@ -438,11 +469,16 @@ impl OrderExt for DBClient {
             .execute(&mut *tx)
             .await?;
 
-        i = 0;
-        let len = ledger_details.len();
+        let (ledger_details, len) = self
+            .create_ledger_details(&payment, &hpp, total, Some(uid), uid)
+            .await;
+
+        let mut i: i16 = 0;
+//        let len = ledger_details.len();
 
         loop {
-            let d = ledger_details.get(i).unwrap();
+            let x = i as usize;
+            let d = ledger_details.get(x).unwrap();
 
             let _ = sqlx::query!(
                 r#"INSERT INTO ledger_details (
@@ -565,7 +601,7 @@ impl OrderExt for DBClient {
         modal: BigDecimal,
         ref_id: Option<Uuid>,
         ledger_id: Uuid,
-    ) -> Vec<LedgerDetail> {
+    ) -> (Vec<LedgerDetail>, i16) {
         let mut ledger_details: Vec<LedgerDetail> = Vec::new();
         let mut i: i16 = 1;
 
@@ -582,10 +618,10 @@ impl OrderExt for DBClient {
             ledger_id,
         });
 
-        i += 1;
 
         if remain.le(&pass) {
-            ledger_details.push(LedgerDetail {
+           i += 1;
+           ledger_details.push(LedgerDetail {
                 account_id: 101,
                 amount: total.to_owned(),
                 descriptions: Some(String::from("Kas")),
@@ -596,7 +632,8 @@ impl OrderExt for DBClient {
             });
         } else {
             // jika tidak ada pembayaran
-            ledger_details.push(LedgerDetail {
+          i += 1;
+          ledger_details.push(LedgerDetail {
                 account_id: 111,
                 amount: remain,
                 descriptions: Some(String::from("Piutang barang")),
@@ -645,6 +682,6 @@ impl OrderExt for DBClient {
             ledger_id,
         });
 
-        ledger_details
+        (ledger_details, i)
     }
 }

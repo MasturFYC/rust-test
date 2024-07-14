@@ -110,7 +110,7 @@ async fn create(
 
         match query_result {
             Ok(o) => {
-                let order = o.0.unwrap();
+                let order = o.0;
                 let details = o.1;
                 let detail_response = json!({
                     "status": "success",

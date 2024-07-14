@@ -142,6 +142,8 @@ pub struct OrderDtos {
     pub created_at: Option<DateTime<Utc>>,
 }
 
+
+
 impl OrderDtos {
     
     pub fn set_total(&mut self, total: &BigDecimal) {
@@ -238,7 +240,110 @@ pub struct OrderDetail {
 pub type MatchTrxResult = (Option<Order>, Vec<OrderDetail>);
 pub type MatchResult = (Vec<ResponseOrder>, i64);
 
-    // #[allow(dead_code)]
+pub struct OrderBuilder {
+    pub order_type: Option<OrderType>,
+    pub customer_id: Uuid,
+    pub sales_id: Uuid,
+    pub payment_type: Option<PaymentType>,
+    pub updated_by: String,
+    pub total: BigDecimal,
+    pub dp: BigDecimal,
+    pub payment: BigDecimal,
+    pub remain: BigDecimal,
+    pub invoice_id: Option<String>,
+    pub due_range: Option<u64>,
+    pub due_at: Option<DateTime<Utc>>,
+    pub is_protected: bool,
+    pub created_at: Option<DateTime<Utc>>,
+}
+
+impl OrderBuilder {
+
+    pub fn new (
+        order_type: Option<OrderType>, 
+        updated_by: String,
+        total: BigDecimal,
+        payment: BigDecimal,
+        is_protected: bool,
+        created_at: Option<DateTime<Utc>>,
+        invoice_id: Option<String>,
+        customer_id: Uuid,
+        sales_id: Uuid
+    ) -> OrderBuilder {
+        OrderBuilder {
+            order_type,
+            payment_type: Some(PaymentType::Lunas),
+            updated_by,
+            total,
+            dp: BigDecimal::from(0),
+            payment,
+            remain: BigDecimal::from(0),
+            due_range: Some(7),
+            due_at:Some(Utc::now()),
+            created_at,
+            invoice_id,
+            customer_id,
+            sales_id,
+            is_protected
+        }
+    }
+
+    pub fn with_due_range(&mut self, due_range: u64) -> &mut OrderBuilder {
+        self.due_range = Some(due_range);
+        let now = Some(self.created_at.unwrap_or(Utc::now()));
+        self.due_at = match self.payment_type.unwrap() {
+            PaymentType::Cash | PaymentType::Lunas => now,
+            _ => {
+                let date1 = now.unwrap().to_owned();
+                let days = chrono::Days::new(self.due_range.unwrap_or(0));
+                date1.checked_add_days(days)
+            }
+        };
+        self
+    }
+
+    pub fn with_dp(&mut self, dp: BigDecimal) -> &mut OrderBuilder {
+        self.dp = dp;
+        let total_payment = &self.payment + &self.dp;
+        let remain = &self.total - &total_payment;
+        let pass = BigDecimal::from_f32(0.0).unwrap();
+
+        let payment_type: PaymentType;
+
+        if total_payment.ge(&self.total) {
+            payment_type = PaymentType::Lunas;
+        } else if total_payment.lt(&self.total) && total_payment.gt(&pass) {
+            payment_type = PaymentType::Pending;
+        } else {
+            payment_type = PaymentType::Loans;
+        }
+
+        self.remain = remain;
+        self.payment_type = Some(payment_type);
+        self
+    }
+
+    pub fn build(&self) -> OrderDtos {
+        OrderDtos {
+            order_type: self.order_type,
+            payment_type: self.payment_type,
+            updated_by: self.updated_by.to_owned(),
+            total: self.total.to_owned(),
+            dp:self.dp.to_owned(),
+            payment: self.payment.to_owned(),
+            remain: self.remain.to_owned(),
+            due_at:self.due_at,
+            due_range: self.due_range,
+            created_at:self.created_at,
+            customer_id:self.customer_id,
+            sales_id:self.sales_id,
+            invoice_id:self.invoice_id.to_owned(),
+            is_protected:self.is_protected
+        }
+    }
+}
+
+   // #[allow(dead_code)]
     // pub fn set_default(data: &OrderDtos) -> Self {
     //     // let date1 = data.created_at.unwrap();
     //     // let days: Days = Days::new(7);
