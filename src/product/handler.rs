@@ -1,21 +1,22 @@
 use actix_web::{web, HttpResponse, Scope};
+use serde_json::json;
 use uuid::Uuid;
 use validator::Validate;
 
 use super::{
-    db::ProductExt, 
-    CreateResponseDto, 
-    DeleteResponseDto, 
-    ProductListResponseDto,
-    ProductResponseDto, 
-    CreateProductSchema
+    db::ProductExt,
+    CreateProductSchema,
+    CreateResponseDto,
+    DeleteResponseDto,
+    // ProductListResponseDto,
+    ProductResponseDto,
 };
 use crate::{
     dtos::RequestQueryDto,
     error::{ErrorMessage, HttpError},
     extractors::auth::RequireAuth,
     models::UserRole,
-    AppState
+    AppState,
 };
 
 pub fn product_scope() -> Scope {
@@ -23,27 +24,46 @@ pub fn product_scope() -> Scope {
         .route("/{id}", web::get().to(get_product))
         .route("", web::get().to(get_products))
         .route(
-            "", 
-            web::post().to(create_product)
-            .wrap(RequireAuth::allowed_roles(vec![
-                UserRole::Admin,
-                UserRole::Moderator
-            ]))
+            "",
+            web::post()
+                .to(create_product)
+                .wrap(RequireAuth::allowed_roles(vec![
+                    UserRole::Admin,
+                    UserRole::Moderator,
+                ])),
         )
         .route(
             "/{id}",
-            web::put().to(update_product)
-            .wrap(RequireAuth::allowed_roles(vec![
-                UserRole::Admin,
-                UserRole::Moderator
-            ]))
+            web::put()
+                .to(update_product)
+                .wrap(RequireAuth::allowed_roles(vec![
+                    UserRole::Admin,
+                    UserRole::Moderator,
+                ])),
         )
         .route(
             "/{id}",
-            web::delete().to(delete_product)
-            .wrap(RequireAuth::allowed_roles(vec![
-                UserRole::Admin
-            ]))
+            web::delete()
+                .to(delete_product)
+                .wrap(RequireAuth::allowed_roles(vec![UserRole::Admin])),                
+        )
+        .route(
+            "/category/{id}",
+            web::get()
+                .to(get_by_category)
+                .wrap(RequireAuth::allowed_roles(vec![
+                    UserRole::Admin,
+                    UserRole::Moderator,
+                ]))
+        )
+        .route(
+            "/supplier/{id}",
+            web::get()
+                .to(get_by_supplier)
+                .wrap(RequireAuth::allowed_roles(vec![
+                    UserRole::Admin,
+                    UserRole::Moderator,
+                ]))
         )
 }
 
@@ -63,10 +83,7 @@ pub async fn get_product(
 ) -> Result<HttpResponse, HttpError> {
     let prod_id = path.into_inner();
 
-    let result = app_state
-    .db_client
-    .get_product(prod_id)
-    .await;
+    let result = app_state.db_client.get_product(prod_id).await;
     // .map_err(|e| HttpError::server_error(e.to_string()));
 
     //let product = result.ok_or(HttpError::bad_request(ErrorMessage::UserNoLongerExist));
@@ -78,10 +95,10 @@ pub async fn get_product(
             } else {
                 Ok(HttpResponse::Ok().json(ProductResponseDto {
                     status: "success".to_string(),
-                    data: product.unwrap()
+                    data: product.unwrap(),
                 }))
             }
-        },
+        }
         Err(sqlx::Error::Database(db_err)) => {
             if db_err.is_unique_violation() {
                 Err(HttpError::unique_constraint_voilation(
@@ -91,7 +108,7 @@ pub async fn get_product(
                 Err(HttpError::server_error(db_err.to_string()))
             }
         }
-        
+
         Err(e) => Err(HttpError::server_error(e.to_string())),
     }
 }
@@ -120,20 +137,120 @@ pub async fn get_products(
 
     let page = query_params.page.unwrap_or(1);
     let limit = query_params.limit.unwrap_or(10);
+    let lim = limit as i64;
 
-    let products = app_state
+    let (products, count) = app_state
         .db_client
         .get_products(page as u32, limit)
         .await
         .map_err(|e| HttpError::server_error(e.to_string()))?;
 
     // let length = products.len();
-    Ok(HttpResponse::Ok().json(ProductListResponseDto {
-        status: "success".to_string(),
-        count: products.len(),
-        data: products,
-    }))
+    let response = json!({
+        "status": "success",
+        "count": products.len(),
+        "data": products,
+        "totalItems" : count,
+        "totalPages": (count / lim) + (if count % lim == 0 {0} else {1}),
+    });
+
+    Ok(HttpResponse::Ok().json(response))
 }
+
+
+#[utoipa::path(
+    get,
+    path = "/api/products/category/{id}",
+    tag = "Get all products endpoint",
+    params (RequestQueryDto),
+    responses(
+        (status=200, description="Get all product by category, page and limit", body=[ProductListResponseDto]),
+        (status=500, description= "Internal Server Error", body=Response ),
+    )
+)]
+pub async fn get_by_category(
+    id: web::Path<i16>,
+    query: web::Query<RequestQueryDto>,
+    app_state: web::Data<AppState>,
+) -> Result<HttpResponse, HttpError> {
+    // println!("{}", "Test");
+
+    let query_params: RequestQueryDto = query.into_inner();
+    let cat_id = id.to_owned();
+
+    query_params
+        .validate()
+        .map_err(|e| HttpError::bad_request(e.to_string()))?;
+
+    let page = query_params.page.unwrap_or(1);
+    let limit = query_params.limit.unwrap_or(10);
+    let lim = limit as i64;
+
+    let (products, count) = app_state
+        .db_client
+        .get_products_by_category(cat_id, page as u32, limit)
+        .await
+        .map_err(|e| HttpError::server_error(e.to_string()))?;
+
+    // let length = products.len();
+    let response = json!({
+        "status": "success",
+        "count": products.len(),
+        "data": products,
+        "totalItems" : count,
+        "totalPages": (count / lim) + (if count % lim == 0 {0} else {1}),
+    });
+
+    Ok(HttpResponse::Ok().json(response))
+}
+
+
+#[utoipa::path(
+    get,
+    path = "/api/products/supplier/{id}",
+    tag = "Get all products endpoint",
+    params (RequestQueryDto),
+    responses(
+        (status=200, description="Get all product by category, page and limit", body=[ProductListResponseDto]),
+        (status=500, description= "Internal Server Error", body=Response ),
+    )
+)]
+pub async fn get_by_supplier(
+    id: web::Path<Uuid>,
+    query: web::Query<RequestQueryDto>,
+    app_state: web::Data<AppState>,
+) -> Result<HttpResponse, HttpError> {
+    // println!("{}", "Test");
+
+    let query_params: RequestQueryDto = query.into_inner();
+    let sup_id = id.to_owned();
+
+    query_params
+        .validate()
+        .map_err(|e| HttpError::bad_request(e.to_string()))?;
+
+    let page = query_params.page.unwrap_or(1);
+    let limit = query_params.limit.unwrap_or(10);
+    let lim = limit as i64;
+
+    let (products, count) = app_state
+        .db_client
+        .get_products_by_supplier(sup_id, page as u32, limit)
+        .await
+        .map_err(|e| HttpError::server_error(e.to_string()))?;
+
+    // let length = products.len();
+    let response = json!({
+        "status": "success",
+        "count": products.len(),
+        "data": products,
+        "totalItems" : count,
+        "totalPages": (count / lim) + (if count % lim == 0 {0} else {1}),
+    });
+
+    Ok(HttpResponse::Ok().json(response))
+}
+
 
 #[utoipa::path(
     post,
@@ -251,7 +368,11 @@ async fn delete_product(
 
     match result {
         Ok(rows_affected) => Ok(HttpResponse::Ok().json(DeleteResponseDto {
-            status: if rows_affected as i32 == 0 {"No data tobe deleted.".to_string()} else {"success".to_string()},
+            status: if rows_affected as i32 == 0 {
+                "No data tobe deleted.".to_string()
+            } else {
+                "success".to_string()
+            },
             data: rows_affected,
         })),
         Err(sqlx::Error::Database(db_err)) => {

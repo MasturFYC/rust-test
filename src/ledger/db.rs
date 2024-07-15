@@ -1,4 +1,4 @@
-use super::{CreateLedgerSchema, Ledger, LedgerDetail, LedgerResult, LedgerType, LedgerWithDetails, MatchResult};
+use super::{LedgerSchema, Ledger, LedgerDetail, LedgerResult, LedgerType, LedgerWithDetails, MatchResult};
 use crate::DBClient;
 use async_trait::async_trait;
 use sqlx::{self, types::Json, Acquire, Error};
@@ -8,11 +8,11 @@ use uuid::Uuid;
 pub trait LedgerExt {
     async fn get_ledger(&self, id: Uuid) -> Result<Option<LedgerWithDetails>, Error>;
     async fn get_ledgers(&self, page: usize, limit: usize) -> Result<MatchResult, Error>;
-    async fn ledger_create<T: Into<CreateLedgerSchema> + Send>(
+    async fn ledger_create<T: Into<LedgerSchema> + Send>(
         &self,
         data: T,
     ) -> Result<Option<LedgerResult>, Error>;
-    async fn ledger_update<T: Into<CreateLedgerSchema> + Send>(
+    async fn ledger_update<T: Into<LedgerSchema> + Send>(
         &self,
         id: Uuid,
         data: T,
@@ -60,16 +60,16 @@ impl LedgerExt for DBClient {
         Ok((ledgers, row.unwrap_or(0)))
     }
 
-    async fn ledger_create<T: Into<CreateLedgerSchema> + Send>(
+    async fn ledger_create<T: Into<LedgerSchema> + Send>(
         &self,
         data: T,
     ) -> Result<Option<LedgerResult>, Error> {
-        let t: CreateLedgerSchema = data.try_into().unwrap();
+        let t: LedgerSchema = data.try_into().unwrap();
         let ledger = sqlx::query_file_as!(
             LedgerResult,
             "sql/ledger-insert.sql",
             t.relation_id,
-            t.ledger_type.unwrap() as LedgerType,
+            t.ledger_type as LedgerType,
             t.updated_by,
             t.is_valid,
             t.descriptions,
@@ -80,18 +80,18 @@ impl LedgerExt for DBClient {
         Ok(ledger)
     }
 
-    async fn ledger_update<T: Into<CreateLedgerSchema> + Send>(
+    async fn ledger_update<T: Into<LedgerSchema> + Send>(
         &self,
         id: Uuid,
         data: T,
     ) -> Result<Option<LedgerResult>, Error> {
-        let t: CreateLedgerSchema = data.try_into().unwrap();
+        let t: LedgerSchema = data.try_into().unwrap();
         let ledger = sqlx::query_file_as!(
             LedgerResult,
             "sql/ledger-update.sql",
             id,
             t.relation_id.to_owned(),
-            t.ledger_type.unwrap() as LedgerType,
+            t.ledger_type as LedgerType,
             t.updated_by.to_owned(),
             t.is_valid.to_owned(),
             t.descriptions.to_owned()

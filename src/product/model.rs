@@ -72,7 +72,7 @@ pub struct PageOptions {
 }
 
 #[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
-pub struct ProductFull {
+pub struct Products {
     pub id: Uuid,
     #[serde(rename = "supplierId")]
     pub supplier_id: Uuid,
@@ -114,7 +114,7 @@ pub struct ProductFull {
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct ProductResponseDto {
     pub status: String,
-    pub data: ProductFull,
+    pub data: Products,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -132,6 +132,6 @@ pub struct DeleteResponseDto {
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct ProductListResponseDto {
     pub status: String,
-    pub data: Vec<ProductFull>,
+    pub data: Vec<Products>,
     pub count: usize,
 }

@@ -3,7 +3,7 @@ use serde_json::json;
 
 use crate::{dtos::RequestQueryDto, extractors::auth::RequireAuth, models::UserRole, AppState};
 
-use super::{db::LedgerExt, CreateLedgerSchema};
+use super::{db::LedgerExt, LedgerSchema};
 
 #[get("/{id}")]
 async fn get_ledger(path: web::Path<uuid::Uuid>, app_state: web::Data<AppState>) -> impl Responder {
@@ -63,7 +63,7 @@ async fn get_ledgers(
 
 #[post("")]
 async fn create(
-    body: web::Json<CreateLedgerSchema>,
+    body: web::Json<LedgerSchema>,
     app_state: web::Data<AppState>,
 ) -> impl Responder {
     let data = body.into_inner();
@@ -98,7 +98,7 @@ async fn create(
 #[put("/{id}")]
 async fn update(
     path: web::Path<uuid::Uuid>,
-    body: web::Json<CreateLedgerSchema>,
+    body: web::Json<LedgerSchema>,
     app_state: web::Data<AppState>,
 ) -> impl Responder {
     let ledger_id = path.into_inner();

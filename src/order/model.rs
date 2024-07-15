@@ -14,6 +14,10 @@ pub enum OrderType {
     Mutation,
 }
 
+impl Default for OrderType {
+    fn default() -> Self { OrderType::Order }
+}
+
 #[allow(dead_code)]
 impl OrderType {
     pub fn to_str(&self) -> &str {
@@ -34,6 +38,10 @@ pub enum PaymentType {
     Pending,
     Loans,
     Lunas,
+}
+
+impl Default for PaymentType {
+    fn default() -> Self { PaymentType::Lunas }
 }
 
 #[allow(dead_code)]
@@ -62,7 +70,7 @@ pub struct Order {
     #[serde(rename = "updatedBy")]
     pub updated_by: String,
     pub total: BigDecimal,
-    pub dp: BigDecimal, 
+    pub dp: BigDecimal,
     pub payment: BigDecimal,
     pub remain: BigDecimal,
     #[serde(rename = "invoiceId")]
@@ -76,7 +84,6 @@ pub struct Order {
     #[serde(rename = "updatedAt")]
     pub updated_at: Option<DateTime<Utc>>,
 }
-
 
 #[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
 pub struct ResponseOrder {
@@ -109,9 +116,7 @@ pub struct ResponseOrder {
     pub customer_name: String,
     #[serde(rename = "salesName")]
     pub sales_name: String,
- 
 }
-
 
 #[derive(Validate, Debug, Default, Clone, Serialize, Deserialize)]
 pub struct OrderDtos {
@@ -142,42 +147,35 @@ pub struct OrderDtos {
     pub created_at: Option<DateTime<Utc>>,
 }
 
-
-
-impl OrderDtos {
-    
-    pub fn set_total(&mut self, total: &BigDecimal) {
-        self.total = total.to_owned();
-        let total_payment = &self.payment + &self.dp;
-        let remain = &self.total - &total_payment;
-        let pass = BigDecimal::from_f32(0.0).unwrap();
-
-        let payment_type: PaymentType;
-
-        if total_payment.ge(&self.total) {
-            payment_type = PaymentType::Lunas;
-        } else if total_payment.lt(&self.total) && total_payment.gt(&pass) {
-            payment_type = PaymentType::Pending;
-        } else {
-            payment_type = PaymentType::Loans;
-        }
-
-        self.remain = remain;
-        self.payment_type = Some(payment_type);
-    }
-
-    pub fn set_due_date(&mut self) {
-        let now = Some(self.created_at.unwrap_or(Utc::now()));
-        self.due_at = match self.payment_type.unwrap() {
-            PaymentType::Cash | PaymentType::Lunas => now,
-            _ => {
-                let date1 = now.unwrap().to_owned();
-                let days = chrono::Days::new(self.due_range.unwrap_or(0));
-                date1.checked_add_days(days)
-            }
-        };
-    }
-}
+// impl OrderDtos {
+//     pub fn set_total(&mut self, total: &BigDecimal) {
+//         self.total = total.to_owned();
+//         let total_payment = &self.payment + &self.dp;
+//         let remain = &self.total - &total_payment;
+//         let pass = BigDecimal::from_f32(0.0).unwrap();
+//         let payment_type: PaymentType;
+//         if total_payment.ge(&self.total) {
+//             payment_type = PaymentType::Lunas;
+//         } else if total_payment.lt(&self.total) && total_payment.gt(&pass) {
+//             payment_type = PaymentType::Pending;
+//         } else {
+//             payment_type = PaymentType::Loans;
+//         }
+//         self.remain = remain;
+//         self.payment_type = Some(payment_type);
+//     }
+//     pub fn set_due_date(&mut self) {
+//         let now = Some(self.created_at.unwrap_or(Utc::now()));
+//         self.due_at = match self.payment_type.unwrap() {
+//             PaymentType::Cash | PaymentType::Lunas => now,
+//             _ => {
+//                 let date1 = now.unwrap().to_owned();
+//                 let days = chrono::Days::new(self.due_range.unwrap_or(0));
+//                 date1.checked_add_days(days)
+//             }
+//         };
+//     }
+// }
 
 #[derive(Debug, Deserialize, Serialize, Clone, Copy)]
 pub enum DetailMark {
@@ -213,28 +211,28 @@ pub struct CreateOrderDetailSchema {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct RequestQueryOrderDtos {
-   pub order: OrderDtos,
-   pub details: Vec<CreateOrderDetailSchema>
+    pub order: OrderDtos,
+    pub details: Vec<CreateOrderDetailSchema>,
 }
 
 #[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
 pub struct OrderDetail {
-   #[serde(rename = "orderId")]
-   pub order_id: Uuid,
-   pub id: Uuid,
-   #[serde(rename = "productId")]
-   pub product_id: Uuid,
-   pub qty: BigDecimal,
-   pub direction: i16,
-   pub unit: String,
-   pub price: BigDecimal,
-   pub discount: BigDecimal,
-   pub hpp: BigDecimal,
-   #[serde(rename = "createdAt")]
-   pub created_at: Option<DateTime<Utc>>,
-   #[serde(rename = "updatedAt")]
-   pub updated_at: Option<DateTime<Utc>>,
-   pub subtotal: BigDecimal,
+    #[serde(rename = "orderId")]
+    pub order_id: Uuid,
+    pub id: Uuid,
+    #[serde(rename = "productId")]
+    pub product_id: Uuid,
+    pub qty: BigDecimal,
+    pub direction: i16,
+    pub unit: String,
+    pub price: BigDecimal,
+    pub discount: BigDecimal,
+    pub hpp: BigDecimal,
+    #[serde(rename = "createdAt")]
+    pub created_at: Option<DateTime<Utc>>,
+    #[serde(rename = "updatedAt")]
+    pub updated_at: Option<DateTime<Utc>>,
+    pub subtotal: BigDecimal,
 }
 
 pub type MatchTrxResult = (Option<Order>, Vec<OrderDetail>);
@@ -258,9 +256,8 @@ pub struct OrderBuilder {
 }
 
 impl OrderBuilder {
-
-    pub fn new (
-        order_type: Option<OrderType>, 
+    pub fn new(
+        order_type: Option<OrderType>,
         updated_by: String,
         total: BigDecimal,
         payment: BigDecimal,
@@ -268,7 +265,7 @@ impl OrderBuilder {
         created_at: Option<DateTime<Utc>>,
         invoice_id: Option<String>,
         customer_id: Uuid,
-        sales_id: Uuid
+        sales_id: Uuid,
     ) -> OrderBuilder {
         OrderBuilder {
             order_type,
@@ -279,12 +276,12 @@ impl OrderBuilder {
             payment,
             remain: BigDecimal::from(0),
             due_range: Some(7),
-            due_at:Some(Utc::now()),
+            due_at: Some(Utc::now()),
             created_at,
             invoice_id,
             customer_id,
             sales_id,
-            is_protected
+            is_protected,
         }
     }
 
@@ -329,91 +326,91 @@ impl OrderBuilder {
             payment_type: self.payment_type,
             updated_by: self.updated_by.to_owned(),
             total: self.total.to_owned(),
-            dp:self.dp.to_owned(),
+            dp: self.dp.to_owned(),
             payment: self.payment.to_owned(),
             remain: self.remain.to_owned(),
-            due_at:self.due_at,
+            due_at: self.due_at,
             due_range: self.due_range,
-            created_at:self.created_at,
-            customer_id:self.customer_id,
-            sales_id:self.sales_id,
-            invoice_id:self.invoice_id.to_owned(),
-            is_protected:self.is_protected
+            created_at: self.created_at,
+            customer_id: self.customer_id,
+            sales_id: self.sales_id,
+            invoice_id: self.invoice_id.to_owned(),
+            is_protected: self.is_protected,
         }
     }
 }
 
-   // #[allow(dead_code)]
-    // pub fn set_default(data: &OrderDtos) -> Self {
-    //     // let date1 = data.created_at.unwrap();
-    //     // let days: Days = Days::new(7);
-    //     // date1.checked_add_days(days);
-    //     let t = data.total.to_owned();
-    //     let p = data.payment.to_owned();
-    //     let r = t - p;
-    //     let now = Some(data.created_at.unwrap_or(Utc::now()));
-    //     let date = match data.payment_type.unwrap() {
-    //         PaymentType::Cash | PaymentType::Lunas => now,
-    //         _ => {
-    //             let date1 = now.unwrap().to_owned();
-    //             let days = chrono::Days::new(data.due_range.unwrap_or(0));
-    //             date1.checked_add_days(days)
-    //         }
-    //     };
+// #[allow(dead_code)]
+// pub fn set_default(data: &OrderDtos) -> Self {
+//     // let date1 = data.created_at.unwrap();
+//     // let days: Days = Days::new(7);
+//     // date1.checked_add_days(days);
+//     let t = data.total.to_owned();
+//     let p = data.payment.to_owned();
+//     let r = t - p;
+//     let now = Some(data.created_at.unwrap_or(Utc::now()));
+//     let date = match data.payment_type.unwrap() {
+//         PaymentType::Cash | PaymentType::Lunas => now,
+//         _ => {
+//             let date1 = now.unwrap().to_owned();
+//             let days = chrono::Days::new(data.due_range.unwrap_or(0));
+//             date1.checked_add_days(days)
+//         }
+//     };
 
-    //     OrderDtos {
-    //         // order_type: data.order_type.to_owned(),
-    //         // relation_id: data.relation_id.to_owned(),
-    //         // payment_type: data.payment_type.to_owned(),
-    //         // updated_by: data.updated_by.to_owned(),
-    //         // total: data.total.to_owned(),
-    //         // payment: data.payment.to_owned(),
-    //         remain: r.to_owned(),
-    //         // invoice_id: data.invoice_id.to_owned(),
-    //         created_at: now.to_owned(),
-    //         due_at: date.to_owned(),
-    //         // due_range: data.due_range
-    //         ..data.clone()
-    //     }
-    // }
+//     OrderDtos {
+//         // order_type: data.order_type.to_owned(),
+//         // relation_id: data.relation_id.to_owned(),
+//         // payment_type: data.payment_type.to_owned(),
+//         // updated_by: data.updated_by.to_owned(),
+//         // total: data.total.to_owned(),
+//         // payment: data.payment.to_owned(),
+//         remain: r.to_owned(),
+//         // invoice_id: data.invoice_id.to_owned(),
+//         created_at: now.to_owned(),
+//         due_at: date.to_owned(),
+//         // due_range: data.due_range
+//         ..data.clone()
+//     }
+// }
 
-    // #[allow(dead_code)]
-    // pub fn set_defaults(mut data: Vec<OrderDtos>) { // &[OrderDtos]) { //-> Vec<OrderDtos> {
+// #[allow(dead_code)]
+// pub fn set_defaults(mut data: Vec<OrderDtos>) { // &[OrderDtos]) { //-> Vec<OrderDtos> {
 
-    //     for e in data.iter_mut() {
-    //         e.set_remain();
-    //     }
-    //     // data.iter()
-    //         // .map(|&mut e| -> e.set_remain()); // OrderDtos::set_default)
-    //         //.collect()
-    //     // data.iter().map(|d| CreateOrderSchema::set_default(d)).collect()
-    // }
-    // fn get_due_at(&mut self) -> Option<DateTime<Utc>> {
-    //     // let test = self.payment_type.unwrap();
+//     for e in data.iter_mut() {
+//         e.set_remain();
+//     }
+//     // data.iter()
+//         // .map(|&mut e| -> e.set_remain()); // OrderDtos::set_default)
+//         //.collect()
+//     // data.iter().map(|d| CreateOrderSchema::set_default(d)).collect()
+// }
+// fn get_due_at(&mut self) -> Option<DateTime<Utc>> {
+//     // let test = self.payment_type.unwrap();
 
-    //     match self.payment_type.unwrap() {
-    //         PaymentType::Cash => self.created_at,
-    //         _ => {
-    //             let date1 = self.created_at.unwrap();
-    //             let days: Days = Days::new(7);
-    //             date1.checked_add_days(days);
-    //             Some(date1)
-    //         }
-    //     }
+//     match self.payment_type.unwrap() {
+//         PaymentType::Cash => self.created_at,
+//         _ => {
+//             let date1 = self.created_at.unwrap();
+//             let days: Days = Days::new(7);
+//             date1.checked_add_days(days);
+//             Some(date1)
+//         }
+//     }
 
-    //     // if test == PaymentType::Pending
-    //     //     || test == PaymentType::Loans
-    //     // {
-    //     //     let date1 = self.created_at.unwrap();
-    //     //     let days: Days = Days::new(7);
-    //     //     date1.checked_add_days(days);
-    //     //     Some(date1)
-    //     // } else {
-    //     //     self.created_at
-    //     // }
-    // }
+//     // if test == PaymentType::Pending
+//     //     || test == PaymentType::Loans
+//     // {
+//     //     let date1 = self.created_at.unwrap();
+//     //     let days: Days = Days::new(7);
+//     //     date1.checked_add_days(days);
+//     //     Some(date1)
+//     // } else {
+//     //     self.created_at
+//     // }
+// }
 
-    // fn get_remain (&mut self) -> BigDecimal {
-    //     &self.total - &self.payment
-    // }
-    //}
+// fn get_remain (&mut self) -> BigDecimal {
+//     &self.total - &self.payment
+// }
+//}

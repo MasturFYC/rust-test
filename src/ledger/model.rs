@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use validator::Validate;
 use sqlx::{types::Json, FromRow, Row};
+use derive_builder::Builder;
 
 #[derive(Debug, Deserialize, Serialize, Clone, Copy, sqlx::Type, PartialEq)]
 #[sqlx(type_name = "ledger_enum", rename_all = "lowercase")]
@@ -26,6 +27,10 @@ impl LedgerType {
             LedgerType::Loan => "loan",
         }
     }
+}
+
+impl Default for LedgerType {
+    fn default() -> Self { LedgerType::Order }
 }
 
 #[derive(Debug, Deserialize, Serialize, FromRow, Clone)]
@@ -92,42 +97,23 @@ pub struct LedgerWithDetails {
     pub details: Json<Vec<LedgerDetail>>,
 }
 
-#[derive(Validate, Debug, Default, Clone, Serialize, Deserialize)]
-pub struct CreateLedgerSchema {
+#[derive(Builder, Debug, Validate, Serialize, Deserialize)]
+#[builder(setter(into))]
+pub struct LedgerSchema {
     #[serde(rename = "relationId")]
     pub relation_id: Uuid,
     #[serde(rename = "LedgerType")]
-    pub ledger_type: Option<LedgerType>,
+    pub ledger_type: LedgerType,
     #[serde(rename = "isValid")]
     pub is_valid: bool,
     #[serde(rename = "updatedBy")]
     pub updated_by: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub descriptions: Option<String>,
-   // pub details: Option<Json<Vec<LedgerDetail>>>,
 }
 
 
 pub type MatchResult = (Vec<Ledger>, i64);
-
-impl CreateLedgerSchema {
-    pub fn new(
-        relation_id: Uuid,
-        ledger_type: Option<LedgerType>,
-        is_valid: bool,
-        updated_by: String,
-        descriptions: Option<String>
-       ) -> Self {
-        Self {
-            relation_id,
-            ledger_type,
-            is_valid,
-            updated_by,
-            descriptions,
-        }
-    }
-}
-
 
 impl<'r> sqlx::FromRow<'r, sqlx::postgres::PgRow> for LedgerWithDetails {
     fn from_row(row: &'r sqlx::postgres::PgRow) -> Result<Self, sqlx::Error> {

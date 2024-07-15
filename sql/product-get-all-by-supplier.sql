@@ -4,5 +4,6 @@ SELECT p.*,
 FROM products p
    INNER JOIN categories c ON c.id = p.category_id
    INNER JOIN relations r ON r.id = p.supplier_id
-ORDER BY p.name
-LIMIT $1 OFFSET $2;
+WHERE p.supplier_id = $1
+ORDER BY p.supplier_id, p.name
+LIMIT $2 OFFSET $3;

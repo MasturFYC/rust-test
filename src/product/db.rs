@@ -1,15 +1,17 @@
 use async_trait::async_trait;
-use sqlx;
+use sqlx::{self, Acquire};
 use uuid::Uuid;
 
-use super::{CreateProductSchema, Product, ProductFull};
-use crate::DBClient;
+use super::{CreateProductSchema, Product, Products};
+use crate::{DBClient};
 
 #[async_trait]
 pub trait ProductExt {
     async fn get_product_origin(&self, id: Uuid) -> Result<Option<Product>, sqlx::Error>;
-    async fn get_product(&self, id: Uuid) -> Result<Option<ProductFull>, sqlx::Error>;
-    async fn get_products(&self, page: u32, limit: usize) -> Result<Vec<ProductFull>, sqlx::Error>;
+    async fn get_product(&self, id: Uuid) -> Result<Option<Products>, sqlx::Error>;
+    async fn get_products(&self, page: u32, limit: usize) -> Result<(Vec<Products>, i64), sqlx::Error>;
+    async fn get_products_by_category(&self, category_id: i16, page: u32, limit: usize) -> Result<(Vec<Products>, i64), sqlx::Error>;
+    async fn get_products_by_supplier(&self, supplier_id: Uuid, page: u32, limit: usize) -> Result<(Vec<Products>, i64), sqlx::Error>;
     async fn product_create(&self, data: CreateProductSchema) -> Result<Product, sqlx::Error>;
     async fn product_update(&self, id: Uuid, data: CreateProductSchema, old: Product) -> Result<Product, sqlx::Error>;
     async fn product_delete(&self, id: Uuid) -> Result<u64, sqlx::Error>;
@@ -25,32 +27,86 @@ impl ProductExt for DBClient {
         Ok(product)
     }
 
-    async fn get_product(&self, id: Uuid) -> Result<Option<ProductFull>, sqlx::Error> {
-        let product = sqlx::query_file_as!(ProductFull, "sql/product-get-by-id.sql", id)
+    async fn get_product(&self, id: Uuid) -> Result<Option<Products>, sqlx::Error> {
+        let product = sqlx::query_file_as!(Products, "sql/product-get-by-id.sql", id)
             .fetch_optional(&self.pool)
             .await?;
 
         Ok(product)
     }
 
-    async fn get_products(&self, page: u32, limit: usize) -> Result<Vec<ProductFull>, sqlx::Error> {
+    async fn get_products(&self, page: u32, limit: usize) -> Result<(Vec<Products>, i64), sqlx::Error> {
         let offset = (page - 1) * limit as u32;
 
-        // let names: Vec<String> = sqlx::query!(
-        //     "SELECT name FROM customers WHERE id IN (SELECT customer_id FROM (SELECT customer_id, MAX(date) AS max_date FROM orders GROUP BY customer_id) AS latest_orders WHERE max_date >= NOW() - INTERVAL '30 days')"
-        // )        
-        // println!("{} {} {}", offset, page, limit);
+        let mut conn = self.pool.acquire().await?;
+        let mut tx = conn.begin().await?;
+
+        let count = sqlx::query_scalar!("SELECT COUNT(*) FROM products")
+            .fetch_one(&mut *tx)
+            .await?;
 
         let products = sqlx::query_file_as!(
-            ProductFull,
+            Products,
             "sql/product-get-all.sql",
             limit as i64,
             offset as i64
         )
-        .fetch_all(&self.pool)
+        .fetch_all(&mut *tx)
         .await?;
 
-        Ok(products)
+        tx.commit().await?;
+
+        Ok((products, count.unwrap_or(0)))
+    }
+
+    async fn get_products_by_category(&self, category_id: i16, page: u32, limit: usize) -> Result<(Vec<Products>, i64), sqlx::Error> {
+        let offset = (page - 1) * limit as u32;
+
+        let mut conn = self.pool.acquire().await?;
+        let mut tx = conn.begin().await?;
+
+        let count = sqlx::query_scalar!("SELECT COUNT(*) FROM products WHERE category_id = $1", category_id)
+            .fetch_one(&mut *tx)
+            .await?;
+
+        let products = sqlx::query_file_as!(
+            Products,
+            "sql/product-get-all-by-category.sql",
+            category_id,
+            limit as i64,
+            offset as i64
+        )
+        .fetch_all(&mut *tx)
+        .await?;
+
+        tx.commit().await?;
+
+        Ok((products, count.unwrap_or(0)))
+    }
+
+    async fn get_products_by_supplier(&self, supplier_id: Uuid, page: u32, limit: usize) -> Result<(Vec<Products>, i64), sqlx::Error> {
+        let offset = (page - 1) * limit as u32;
+
+        let mut conn = self.pool.acquire().await?;
+        let mut tx = conn.begin().await?;
+
+        let count = sqlx::query_scalar!("SELECT COUNT(*) FROM products WHERE supplier_id = $1", supplier_id)            
+            .fetch_one(&mut *tx)
+            .await?;
+
+        let products = sqlx::query_file_as!(
+            Products,
+            "sql/product-get-all-by-supplier.sql",
+            supplier_id,
+            limit as i64,
+            offset as i64
+        )
+        .fetch_all(&mut *tx)
+        .await?;
+
+        tx.commit().await?;
+
+        Ok((products, count.unwrap_or(0)))        
     }
 
     async fn product_create(&self, data: CreateProductSchema) -> Result<Product, sqlx::Error> {
