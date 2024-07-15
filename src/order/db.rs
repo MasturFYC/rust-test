@@ -164,6 +164,7 @@ impl OrderExt for DBClient {
         let nid = order.id;
 
         let payment = order.payment.to_owned();
+<<<<<<< HEAD
         let led = LedgerSchemaBuilder::default()
             .relation_id(o.customer_id)
             .ledger_type(LedgerType::Order)
@@ -172,6 +173,15 @@ impl OrderExt for DBClient {
             .descriptions(format!("Order {} by {}", customer_name, sales_name))
             .build()
             .unwrap();
+=======
+        let led = CreateLedgerSchema::new(
+            o.customer_id,
+            Some(LedgerType::Order),
+            true,
+            o.updated_by,
+            Some(format!("Order by {}", o.sales_id)),
+        );
+>>>>>>> c6f42095be9ecceb2509a7c60928ef2a993d2a78
         //self.create_ledger(o).await;
         let len = details.len();
         let mut i = 0;
@@ -306,9 +316,12 @@ impl OrderExt for DBClient {
         T: Into<Vec<CreateOrderDetailSchema>> + Send,
         S: Into<Uuid> + Send,
     {
+<<<<<<< HEAD
         // o.set_total(&total);
         // o.set_due_date();
 
+=======
+>>>>>>> c6f42095be9ecceb2509a7c60928ef2a993d2a78
         let uid: Uuid = id.try_into().unwrap();
         let dtos: OrderDtos = data.try_into().unwrap();
         let details: Vec<CreateOrderDetailSchema> = details.try_into().unwrap();
@@ -484,7 +497,10 @@ impl OrderExt for DBClient {
             .await;
 
         let mut i: i16 = 0;
+<<<<<<< HEAD
         //        let len = ledger_details.len();
+=======
+>>>>>>> c6f42095be9ecceb2509a7c60928ef2a993d2a78
 
         loop {
             let x = i as usize;
