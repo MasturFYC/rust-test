@@ -239,10 +239,10 @@ pub type MatchTrxResult = (Option<Order>, Vec<OrderDetail>);
 pub type MatchResult = (Vec<ResponseOrder>, i64);
 
 pub struct OrderBuilder {
-    pub order_type: Option<OrderType>,
+    pub order_type: OrderType,
     pub customer_id: Uuid,
     pub sales_id: Uuid,
-    pub payment_type: Option<PaymentType>,
+    pub payment_type: PaymentType,
     pub updated_by: String,
     pub total: BigDecimal,
     pub dp: BigDecimal,
@@ -257,7 +257,7 @@ pub struct OrderBuilder {
 
 impl OrderBuilder {
     pub fn new(
-        order_type: Option<OrderType>,
+        order_type: OrderType,
         updated_by: String,
         total: BigDecimal,
         payment: BigDecimal,
@@ -269,7 +269,7 @@ impl OrderBuilder {
     ) -> OrderBuilder {
         OrderBuilder {
             order_type,
-            payment_type: Some(PaymentType::Lunas),
+            payment_type: PaymentType::Lunas,
             updated_by,
             total,
             dp: BigDecimal::from(0),
@@ -288,7 +288,7 @@ impl OrderBuilder {
     pub fn with_due_range(&mut self, due_range: u64) -> &mut OrderBuilder {
         self.due_range = Some(due_range);
         let now = Some(self.created_at.unwrap_or(Utc::now()));
-        self.due_at = match self.payment_type.unwrap() {
+        self.due_at = match self.payment_type {
             PaymentType::Cash | PaymentType::Lunas => now,
             _ => {
                 let date1 = now.unwrap().to_owned();
@@ -316,14 +316,14 @@ impl OrderBuilder {
         }
 
         self.remain = remain;
-        self.payment_type = Some(payment_type);
+        self.payment_type = payment_type;
         self
     }
 
     pub fn build(&self) -> OrderDtos {
         OrderDtos {
-            order_type: self.order_type,
-            payment_type: self.payment_type,
+            order_type: Some(self.order_type),
+            payment_type: Some(self.payment_type),
             updated_by: self.updated_by.to_owned(),
             total: self.total.to_owned(),
             dp: self.dp.to_owned(),
