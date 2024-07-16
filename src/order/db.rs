@@ -1,6 +1,6 @@
 use crate::{
     db::DBClient,
-    ledger::{LedgerDetail, LedgerSchemaBuilder, LedgerType},
+    ledger::{util::LedgerUtil, LedgerSchemaBuilder, LedgerType},
 };
 use async_trait::async_trait;
 use bigdecimal::{BigDecimal, FromPrimitive};
@@ -34,9 +34,10 @@ pub trait OrderExt {
         O: Into<OrderDtos> + Send,
         T: Into<Vec<CreateOrderDetailSchema>> + Send;
     async fn order_delete(&self, id: uuid::Uuid) -> Result<u64, sqlx::Error>;
-    #[allow(dead_code)]
-    async fn order_count(&self) -> Result<Option<i64>, sqlx::Error>;
+    // #[allow(dead_code)]
+    // async fn order_count(&self) -> Result<Option<i64>, sqlx::Error>;
     // async fn create_ledger(&self, o: OrderDtos) -> CreateLedgerSchema;
+    /*
     async fn create_ledger_details(
         &self,
         payment: &BigDecimal,
@@ -45,6 +46,7 @@ pub trait OrderExt {
         ref_id: Option<Uuid>,
         ledger_id: Uuid,
     ) -> (Vec<LedgerDetail>, i16);
+    */
 }
 
 #[async_trait]
@@ -106,7 +108,7 @@ impl OrderExt for DBClient {
             dtos.order_type.unwrap_or(OrderType::Order),
             dtos.updated_by,
             dtos.total,
-            dtos.payment,
+            BigDecimal::from(0),
             dtos.is_protected,
             dtos.created_at,
             dtos.invoice_id,
@@ -118,7 +120,7 @@ impl OrderExt for DBClient {
         .build();
 
         let pass = BigDecimal::from_i32(0).unwrap();
-        let modal = details
+        let hpp = details
             .iter()
             .fold(pass.to_owned(), |d, t| d + (&t.hpp * &t.qty));
         let total = details.iter().fold(pass.to_owned(), |d, t| {
@@ -148,11 +150,13 @@ impl OrderExt for DBClient {
         .fetch_optional(&mut *tx)
         .await?;
 
-        let sales = sqlx::query_as::<_, (String,)>("SELECT name FROM relations WHERE id = $1")
+        let sql = "SELECT name FROM relations WHERE id = $1";
+
+        let sales = sqlx::query_as::<_, (String,)>(sql)
             .bind(o.sales_id)
             .fetch_one(&mut *tx)
             .await?;
-        let customer = sqlx::query_as::<_, (String,)>("SELECT name FROM relations WHERE id = $1")
+        let customer = sqlx::query_as::<_, (String,)>(sql)
             .bind(o.customer_id)
             .fetch_one(&mut *tx)
             .await?;
@@ -163,7 +167,6 @@ impl OrderExt for DBClient {
         let order = ord.unwrap();
         let nid = order.id;
 
-        let payment = order.payment.to_owned();
         let led = LedgerSchemaBuilder::default()
             .relation_id(o.customer_id)
             .ledger_type(LedgerType::Order)
@@ -195,7 +198,13 @@ impl OrderExt for DBClient {
                 .await?;
 
                 let _ = sqlx::query!(
-                    "UPDATE products SET unit_in_stock = (unit_in_stock - $2) WHERE id = $1",
+                    r#"
+                    UPDATE 
+                        products
+                    SET
+                        unit_in_stock = (unit_in_stock - $2)
+                    WHERE
+                        id = $1"#,
                     d.product_id,
                     d.qty
                 )
@@ -211,9 +220,12 @@ impl OrderExt for DBClient {
         }
 
         let _ = sqlx::query!(
-            r#"INSERT INTO ledgers
-            (id, relation_id, ledger_type, descriptions, updated_by, is_valid)
-            VALUES ($1, $2, $3, $4, $5, $6)"#,
+            r#"
+            INSERT INTO ledgers
+                (id, relation_id, ledger_type, descriptions, updated_by, is_valid)
+            VALUES
+                ($1, $2, $3, $4, $5, $6)
+        "#,
             nid,
             led.relation_id,
             led.ledger_type as LedgerType,
@@ -247,11 +259,10 @@ impl OrderExt for DBClient {
         //     .execute(&mut *tx)
         //     .await?;
         // }
-        let (ledger_details, len) = self
-            .create_ledger_details(&payment, &total, modal, Some(nid), nid)
-            .await;
+//        let payment = .to_owned();
+        let (ledger_details, len) = LedgerUtil::from_order(&total, &order.dp, &hpp, Some(nid), nid);
 
-        let mut i: i16 = 0;
+        let mut i: usize = 0;
         //        let len = ledger_details.len();
 
         loop {
@@ -259,14 +270,20 @@ impl OrderExt for DBClient {
             let d = ledger_details.get(x).unwrap();
 
             let _ = sqlx::query!(
-                r#"INSERT INTO ledger_details (
-                    ledger_id,
-                    id,
-                    account_id,
-                    descriptions,
-                    amount,
-                    direction,
-                    ref_id) VALUES ($1, $2, $3, $4, $5, $6, $7)"#,
+                r#"
+                INSERT INTO
+                    ledger_details(
+                        ledger_id,
+                        id,
+                        account_id,
+                        descriptions,
+                        amount,
+                        direction,
+                        ref_id
+                    )
+                VALUES
+                    ($1, $2, $3, $4, $5, $6, $7)
+                "#,
                 d.ledger_id,
                 d.id,
                 d.account_id,
@@ -321,7 +338,15 @@ impl OrderExt for DBClient {
         let mut conn: sqlx::pool::PoolConnection<sqlx::Postgres> = self.pool.acquire().await?;
         let mut tx: sqlx::Transaction<sqlx::Postgres> = conn.begin().await?;
 
-        let test = sqlx::query_scalar("SELECT SUM(amount) FROM order_payments WHERE id = $1")
+        let test = sqlx::query_scalar(
+            r#"
+                SELECT
+                    SUM(amount)
+                FROM
+                    order_payments
+                WHERE
+                    id = $1
+            "#)
             .bind(uid)
             .fetch_one(&mut *tx)
             .await?;
@@ -373,9 +398,14 @@ impl OrderExt for DBClient {
                 match d.mark_as.unwrap() {
                     DetailMark::Delete => {
                         let _ = sqlx::query!(
-                            "UPDATE products SET 
-                            unit_in_stock = (unit_in_stock + $2) 
-                            WHERE id = $1",
+                            r#"
+                            UPDATE
+                                products
+                            SET 
+                                unit_in_stock = (unit_in_stock + $2) 
+                            WHERE
+                                id = $1
+                            "#,
                             d.old_product_id,
                             d.old_qty
                         )
@@ -405,20 +435,34 @@ impl OrderExt for DBClient {
                         .await?;
 
                         let _ = sqlx::query!(
-                            "UPDATE products SET unit_in_stock = (unit_in_stock + $2) WHERE id = $1",
+                            r#"
+                            UPDATE
+                                products
+                            SET
+                                unit_in_stock = (unit_in_stock + $2)
+                            WHERE
+                                id = $1
+                            "#,
                             d.old_product_id,
                             d.old_qty
-                            )
-                            .execute(&mut *tx)
-                            .await?;
+                        )
+                        .execute(&mut *tx)
+                        .await?;
 
                         let _ = sqlx::query!(
-                            "UPDATE products SET unit_in_stock = (unit_in_stock - $2) WHERE id = $1",
+                            r#"
+                            UPDATE
+                                products
+                            SET
+                                unit_in_stock = (unit_in_stock - $2)
+                            WHERE
+                                id = $1
+                            "#,
                             d.product_id,
                             d.qty,
-                            )
-                            .execute(&mut *tx)
-                            .await?;
+                        )
+                        .execute(&mut *tx)
+                        .await?;
                     }
                     _ => {
                         let _ = sqlx::query_file!(
@@ -437,9 +481,13 @@ impl OrderExt for DBClient {
                         .await?;
 
                         let _ = sqlx::query!(
-                            r#"UPDATE products SET
+                            r#"
+                            UPDATE
+                                products
+                            SET
                                 unit_in_stock = (unit_in_stock - $2)
-                                WHERE id = $1"#,
+                            WHERE
+                                id = $1"#,
                             d.product_id,
                             d.qty,
                         )
@@ -457,12 +505,17 @@ impl OrderExt for DBClient {
         }
 
         let _ = sqlx::query!(
-            r#"UPDATE ledgers SET
+            r#"
+            UPDATE
+                ledgers
+            SET
                 relation_id = $2, 
                 descriptions = $3,
                 updated_by = $4,
                 updated_at = $5
-            WHERE id = $1"#,
+            WHERE
+                id = $1
+            "#,
             uid,
             o.customer_id,
             format!("Order by {}", o.sales_id),
@@ -472,30 +525,41 @@ impl OrderExt for DBClient {
         .execute(&mut *tx)
         .await?;
 
-        let _ = sqlx::query!("DELETE FROM ledger_details WHERE ledger_id = $1", uid)
-            .execute(&mut *tx)
-            .await?;
+        let _ = sqlx::query!(
+            r#"
+            DELETE
+            FROM
+                ledger_details
+            WHERE
+                ledger_id = $1
+            "#,
+            uid
+        )
+        .execute(&mut *tx)
+        .await?;
 
-        let (ledger_details, len) = self
-            .create_ledger_details(&payment, &hpp, total, Some(uid), uid)
-            .await;
+        let (ledger_details, len) = LedgerUtil::from_order(&total, &o.dp, &hpp, Some(uid), uid);
 
-        let mut i: i16 = 0;
+        let mut i = 0;
 
         loop {
-            let x = i as usize;
-            let d = ledger_details.get(x).unwrap();
+            let d = ledger_details.get(i).unwrap();
 
             let _ = sqlx::query!(
-                r#"INSERT INTO ledger_details (
-                ledger_id,
-                id,
-                account_id,
-                descriptions,
-                amount,
-                direction,
-                ref_id)
-                VALUES ($1, $2, $3, $4, $5, $6, $7)"#,
+                r#"
+                INSERT INTO
+                    ledger_details (
+                        ledger_id,
+                        id,
+                        account_id,
+                        descriptions,
+                        amount,
+                        direction,
+                        ref_id
+                     )
+                VALUES
+                    ($1, $2, $3, $4, $5, $6, $7)
+                "#,
                 d.ledger_id,
                 d.id,
                 d.account_id,
@@ -539,7 +603,14 @@ impl OrderExt for DBClient {
         loop {
             if let Some(d) = details.get(i) {
                 let _ = sqlx::query!(
-                    "UPDATE products SET unit_in_stock = (unit_in_stock + $2) WHERE id = $1",
+                    r#"
+                    UPDATE
+                        products
+                    SET
+                        unit_in_stock = (unit_in_stock + $2)
+                    WHERE
+                        id = $1
+                    "#,
                     d.product_id,
                     d.qty,
                 )
@@ -554,19 +625,27 @@ impl OrderExt for DBClient {
             }
         }
 
-        let _ = sqlx::query!("DELETE FROM order_details WHERE order_id = $1", id,)
-            .execute(&mut *tx)
-            .await?;
-
-        //let _ = sqlx::query!("DELETE FROM ledger_details WHERE ledger_id = $1", id)
-        //    .execute(&mut *tx)
-        //    .await?;
+        let _ = sqlx::query!(
+            r#"
+            DELETE FROM
+                order_details
+            WHERE
+                order_id = $1
+            "#,
+            id
+        )
+        .execute(&mut *tx)
+        .await?;
 
         let _ = sqlx::query!(
             r#"
-                DELETE FROM ledgers WHERE
-                id = $1 OR 
-                id IN (SELECT ref_id FROM ledger_details WHERE ref_id = $1)"#,
+                DELETE FROM
+                    ledgers
+                WHERE
+                    id = $1 OR
+                    id IN (SELECT id FROM order_payments WHERE order_id = $1)
+                    -- id IN (SELECT ref_id FROM ledger_details WHERE ref_id = $1) OR
+                    "#,
             id,
         )
         .execute(&mut *tx)
@@ -582,111 +661,19 @@ impl OrderExt for DBClient {
         Ok(rows_affected)
     }
 
-    async fn order_count(&self) -> Result<Option<i64>, sqlx::Error> {
-        let row = sqlx::query_scalar!("SELECT COUNT(*) as total FROM orders")
-            .fetch_one(&self.pool)
-            .await?;
+    // async fn order_count(&self) -> Result<Option<i64>, sqlx::Error> {
+    //     let row = sqlx::query_scalar!(
+    //         r#"
+    //         SELECT
+    //             COUNT(*) as total
+    //         FROM
+    //             orders
+    //         "#
+    //     )
+    //     .fetch_one(&self.pool)
+    //     .await?;
 
-        Ok(row)
-    }
+    //     Ok(row)
+    // }
 
-    //    async fn create_ledger(&self, o: OrderDtos) -> CreateLedgerSchema {
-    //        CreateLedgerSchema {
-    //            descriptions: Some(format!("Order by {}", o.sales_id)),
-    //            is_valid: true,
-    //            name: String::from("ORDER"),
-    //            relation_id: o.relation_id,
-    //            updated_by: o.updated_by,
-    //        }
-    //    }
-
-    async fn create_ledger_details(
-        &self,
-        payment: &BigDecimal,
-        total: &BigDecimal,
-        modal: BigDecimal,
-        ref_id: Option<Uuid>,
-        ledger_id: Uuid,
-    ) -> (Vec<LedgerDetail>, i16) {
-        let mut ledger_details: Vec<LedgerDetail> = Vec::new();
-        let mut i: i16 = 1;
-
-        let remain = total - payment;
-        let pass = bigdecimal::BigDecimal::from_i32(0).unwrap();
-
-        ledger_details.push(LedgerDetail {
-            account_id: 421,
-            amount: total.to_owned(),
-            descriptions: Some(String::from("Penjualan barang")),
-            direction: -1,
-            id: i,
-            ref_id,
-            ledger_id,
-        });
-
-        if remain.le(&pass) {
-            i += 1;
-            ledger_details.push(LedgerDetail {
-                account_id: 101,
-                amount: total.to_owned(),
-                descriptions: Some(String::from("Kas")),
-                direction: 1,
-                id: i,
-                ref_id,
-                ledger_id,
-            });
-        } else {
-            // jika tidak ada pembayaran
-            i += 1;
-            ledger_details.push(LedgerDetail {
-                account_id: 111,
-                amount: remain,
-                descriptions: Some(String::from("Piutang barang")),
-                direction: 1,
-                id: i,
-                ref_id,
-                ledger_id,
-            });
-
-            // jika ada pembayaran
-            if payment.gt(&pass) {
-                i += 1;
-                ledger_details.push(LedgerDetail {
-                    account_id: 101,
-                    amount: payment.to_owned(),
-                    descriptions: Some(String::from("Cash DP")),
-                    direction: 1,
-                    id: i,
-                    ref_id,
-                    ledger_id,
-                });
-            }
-        }
-
-        i += 1;
-
-        ledger_details.push(LedgerDetail {
-            account_id: 106,
-            amount: modal.to_owned(),
-            descriptions: Some(String::from("Persediaan barang")),
-            direction: -1,
-            id: i,
-            ref_id,
-            ledger_id,
-        });
-
-        i += 1;
-
-        ledger_details.push(LedgerDetail {
-            account_id: 521,
-            amount: modal,
-            descriptions: Some(String::from("Biaya Beli Barang")),
-            direction: 1,
-            id: i,
-            ref_id,
-            ledger_id,
-        });
-
-        (ledger_details, i)
-    }
 }
