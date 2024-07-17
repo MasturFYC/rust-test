@@ -14,6 +14,8 @@ pub enum LedgerType {
     OrderReturn,
     StockReturn,
     Loan,
+    OrderPayment,
+    StockPaymnent
 }
 
 #[allow(dead_code)]
@@ -25,6 +27,8 @@ impl LedgerType {
             LedgerType::OrderReturn => "orderreturn",
             LedgerType::StockReturn => "stockreturn",
             LedgerType::Loan => "loan",
+            LedgerType::OrderPayment => "orderpayment",
+            LedgerType::StockPaymnent => "stockpayment"
         }
     }
 }

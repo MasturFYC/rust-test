@@ -12,6 +12,7 @@ mod account;
 mod scopes;
 mod utils;
 mod ledger;
+mod payment;
 
 // mod order_detail;
 
@@ -147,6 +148,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .configure(relation::handler::relation_scope)
             .configure(order::handler::order_scope)
             .configure(ledger::handler::ledger_scope)
+            .configure(payment::handler::payment_scope)
             .service(Redoc::with_url("/redoc", openapi.clone()))
             .service(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc"))
             .service(SwaggerUi::new("/{_:.*}").url("/api-docs/openapi.json", openapi.clone()))

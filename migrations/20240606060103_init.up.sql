@@ -8,7 +8,7 @@ CREATE TYPE order_enum AS ENUM (
 
 CREATE TYPE payment_enum AS ENUM ('cash', 'pending', 'loans', 'lunas');
 
-CREATE TYPE ledger_enum AS ENUM ('order', 'stock', 'orderreturn', 'stockreturn', 'loan');
+CREATE TYPE ledger_enum AS ENUM ('order', 'stock', 'orderreturn', 'stockreturn', 'loan', 'orderpayment', 'stockpayment', 'loanpayment');
 
 CREATE TYPE relation_enum AS ENUM ('customer', 'employee', 'member', 'supplier');
 
@@ -229,6 +229,7 @@ CREATE TABLE
         order_id UUID NOT NULL,
         amount NUMERIC(12,0) NOT NULL DEFAULT 0,
         updated_by VARCHAR(50) NOT NULL,
+        via_by VARCHAR(50) NOT NULL,
         descriptions VARCHAR(50),
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

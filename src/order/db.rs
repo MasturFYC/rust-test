@@ -23,12 +23,7 @@ pub trait OrderExt {
     where
         O: Into<OrderDtos> + Send,
         T: Into<Vec<CreateOrderDetailSchema>> + Send;
-    async fn order_update<S, O, T>(
-        &self,
-        id: S,
-        data: O,
-        details: T,
-    ) -> Result<MatchTrxResult, sqlx::Error>
+    async fn order_update<S, O, T>(&self,id: S,data: O,details: T) -> Result<MatchTrxResult, sqlx::Error>
     where
         S: Into<Uuid> + Send,
         O: Into<OrderDtos> + Send,
@@ -266,8 +261,7 @@ impl OrderExt for DBClient {
         //        let len = ledger_details.len();
 
         loop {
-            let x = i as usize;
-            let d = ledger_details.get(x).unwrap();
+            let d = ledger_details.get(i).unwrap();
 
             let _ = sqlx::query!(
                 r#"

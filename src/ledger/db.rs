@@ -1,4 +1,6 @@
-use super::{LedgerSchema, Ledger, LedgerDetail, LedgerResult, LedgerType, LedgerWithDetails, MatchResult};
+use super::{
+    Ledger, LedgerDetail, LedgerResult, LedgerSchema, LedgerType, LedgerWithDetails, MatchResult,
+};
 use crate::DBClient;
 use async_trait::async_trait;
 use sqlx::{self, types::Json, Acquire, Error};
@@ -8,15 +10,12 @@ use uuid::Uuid;
 pub trait LedgerExt {
     async fn get_ledger(&self, id: Uuid) -> Result<Option<LedgerWithDetails>, Error>;
     async fn get_ledgers(&self, page: usize, limit: usize) -> Result<MatchResult, Error>;
-    async fn ledger_create<T: Into<LedgerSchema> + Send>(
-        &self,
-        data: T,
-    ) -> Result<Option<LedgerResult>, Error>;
-    async fn ledger_update<T: Into<LedgerSchema> + Send>(
-        &self,
-        id: Uuid,
-        data: T,
-    ) -> Result<Option<LedgerResult>, Error>;
+    async fn ledger_create<T>(&self, data: T) -> Result<Option<LedgerResult>, Error>
+    where
+        T: Into<LedgerSchema> + Send;
+    async fn ledger_update<T>(&self, id: Uuid, data: T) -> Result<Option<LedgerResult>, Error>
+    where
+        T: Into<LedgerSchema> + Send;
     async fn ledger_delete(&self, id: Uuid) -> Result<u64, Error>;
 }
 
@@ -60,10 +59,10 @@ impl LedgerExt for DBClient {
         Ok((ledgers, row.unwrap_or(0)))
     }
 
-    async fn ledger_create<T: Into<LedgerSchema> + Send>(
-        &self,
-        data: T,
-    ) -> Result<Option<LedgerResult>, Error> {
+    async fn ledger_create<T>(&self, data: T) -> Result<Option<LedgerResult>, Error>
+    where
+        T: Into<LedgerSchema> + Send,
+    {
         let t: LedgerSchema = data.try_into().unwrap();
         let ledger = sqlx::query_file_as!(
             LedgerResult,
@@ -73,7 +72,7 @@ impl LedgerExt for DBClient {
             t.updated_by,
             t.is_valid,
             t.descriptions,
-       )
+        )
         .fetch_optional(&self.pool)
         .await?;
 
@@ -84,7 +83,10 @@ impl LedgerExt for DBClient {
         &self,
         id: Uuid,
         data: T,
-    ) -> Result<Option<LedgerResult>, Error> {
+    ) -> Result<Option<LedgerResult>, Error>
+    where
+        T: Into<LedgerSchema> + Send,
+    {
         let t: LedgerSchema = data.try_into().unwrap();
         let ledger = sqlx::query_file_as!(
             LedgerResult,
@@ -95,9 +97,9 @@ impl LedgerExt for DBClient {
             t.updated_by.to_owned(),
             t.is_valid.to_owned(),
             t.descriptions.to_owned()
-            )
-            .fetch_optional(&self.pool)
-            .await?;
+        )
+        .fetch_optional(&self.pool)
+        .await?;
 
         Ok(ledger)
     }
