@@ -1,65 +1,66 @@
-use bigdecimal::BigDecimal;
+// use bigdecimal::BigDecimal;
+use database::ledger::{LedgerType, LedgerDetail};
 use chrono::prelude::*;
 use serde::{Deserialize, Serialize};
 use sqlx::{types::Json, FromRow, Row};
 use uuid::Uuid;
-use validator::Validate;
+// use validator::Validate;
 
-#[derive(Debug, Deserialize, Serialize, Clone, Copy, sqlx::Type, PartialEq)]
-#[sqlx(type_name = "ledger_enum", rename_all = "snake_case")]
-pub enum LedgerType {
-    Order,
-    Stock,
-    OrderReturn,
-    StockReturn,
-    Loan,
-    OrderPayment,
-    StockPaymnent
-}
+// #[derive(Debug, Deserialize, Serialize, Clone, Copy, sqlx::Type, PartialEq)]
+// #[sqlx(type_name = "ledger_enum", rename_all = "snake_case")]
+// pub enum LedgerType {
+//     Order,
+//     Stock,
+//     OrderReturn,
+//     StockReturn,
+//     Loan,
+//     OrderPayment,
+//     StockPaymnent
+// }
 
-#[allow(dead_code)]
-impl LedgerType {
-    pub fn to_str(&self) -> &str {
-        match self {
-            LedgerType::Order => "order",
-            LedgerType::Stock => "stock",
-            LedgerType::OrderReturn => "order_return",
-            LedgerType::StockReturn => "stock_return",
-            LedgerType::Loan => "loan",
-            LedgerType::OrderPayment => "order_payment",
-            LedgerType::StockPaymnent => "stock_payment"
-        }
-    }
-}
+// #[allow(dead_code)]
+// impl LedgerType {
+//     pub fn to_str(&self) -> &str {
+//         match self {
+//             LedgerType::Order => "order",
+//             LedgerType::Stock => "stock",
+//             LedgerType::OrderReturn => "order_return",
+//             LedgerType::StockReturn => "stock_return",
+//             LedgerType::Loan => "loan",
+//             LedgerType::OrderPayment => "order_payment",
+//             LedgerType::StockPaymnent => "stock_payment"
+//         }
+//     }
+// }
 
-impl Default for LedgerType {
-    fn default() -> Self {
-        LedgerType::Order
-    }
-}
+// impl Default for LedgerType {
+//     fn default() -> Self {
+//         LedgerType::Order
+//     }
+// }
 
-#[derive(Debug, Deserialize, Serialize, FromRow, Clone)]
-pub struct LedgerDetail {
+// #[derive(Debug, Deserialize, Serialize, FromRow, Clone)]
+// pub struct LedgerDetail {
     
-    #[serde(rename = "ledgerId")]
-    pub ledger_id: Uuid,
+//     #[serde(rename = "ledgerId")]
+//     pub ledger_id: Uuid,
     
-    pub id: i16,
+//     pub id: i16,
     
-    #[serde(rename = "accountId")]
-    pub account_id: i16,
+//     #[serde(rename = "accountId")]
+//     pub account_id: i16,
     
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub descriptions: Option<String>,    
+//     #[serde(skip_serializing_if = "Option::is_none")]
+//     pub descriptions: Option<String>,    
     
-    /// nominal
-    pub amount: BigDecimal,
+//     /// nominal
+//     pub amount: BigDecimal,
 
-    pub direction: i16,
+//     pub direction: i16,
     
-    #[serde(skip_serializing_if = "Option::is_none", rename = "refId")]
-    pub ref_id: Option<Uuid>,
-}
+//     #[serde(skip_serializing_if = "Option::is_none", rename = "refId")]
+//     pub ref_id: Option<Uuid>,
+// }
 
 
 #[derive(Deserialize, Serialize, FromRow, Clone)]
@@ -111,19 +112,19 @@ pub struct LedgerWithDetails {
     pub details: Json<Vec<LedgerDetail>>,
 }
 
-#[derive(Debug, Validate, Serialize, Deserialize)]
-pub struct LedgerSchema {
-    #[serde(rename = "relationId")]
-    pub relation_id: Uuid,
-    #[serde(rename = "LedgerType")]
-    pub ledger_type: LedgerType,
-    #[serde(rename = "isValid")]
-    pub is_valid: bool,
-    #[serde(rename = "updatedBy")]
-    pub updated_by: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub descriptions: Option<String>,
-}
+// #[derive(Debug, Validate, Serialize, Deserialize)]
+// pub struct LedgerSchema {
+//     #[serde(rename = "relationId")]
+//     pub relation_id: Uuid,
+//     #[serde(rename = "LedgerType")]
+//     pub ledger_type: LedgerType,
+//     #[serde(rename = "isValid")]
+//     pub is_valid: bool,
+//     #[serde(rename = "updatedBy")]
+//     pub updated_by: String,
+//     #[serde(skip_serializing_if = "Option::is_none")]
+//     pub descriptions: Option<String>,
+// }
 
 pub type MatchResult = (Vec<Ledger>, i64);
 

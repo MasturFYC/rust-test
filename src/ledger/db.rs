@@ -1,8 +1,9 @@
 use super::{
-    Ledger, LedgerDetail, LedgerResult, LedgerSchema, LedgerType, LedgerWithDetails, MatchResult,
+    Ledger, LedgerResult, LedgerWithDetails, MatchResult,
 };
 use crate::DBClient;
 use async_trait::async_trait;
+use database::ledger::{LedgerSchema, LedgerType, LedgerDetail};
 use sqlx::{self, types::Json, Acquire, Error};
 use uuid::Uuid;
 

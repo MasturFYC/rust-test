@@ -1,8 +1,5 @@
-extern crate test_library;
-use crate::{
-    db::DBClient,
-    ledger::{ /* util::LedgerUtil, */ builder::LedgerBuilder, LedgerType},
-};
+use database::ledger::{LedgerUtil, LedgerBuilder, LedgerType};
+use database::db::DBClient;
 use async_trait::async_trait;
 use bigdecimal::{BigDecimal, FromPrimitive};
 use chrono::Utc;
@@ -255,7 +252,7 @@ impl OrderExt for DBClient {
         //     .await?;
         // }
 //        let payment = .to_owned();
-        let (ledger_details, len) = test_library::LedgerUtil::from_order(&total, &order.dp, &hpp, nid, nid);
+        let (ledger_details, len) = LedgerUtil::from_order(&total, &order.dp, &hpp, nid, nid);
 
         let mut i: usize = 0;
         //        let len = ledger_details.len();
@@ -532,7 +529,7 @@ impl OrderExt for DBClient {
         .execute(&mut *tx)
         .await?;
 
-        let (ledger_details, len) = test_library::LedgerUtil::from_order(&total, &o.dp, &hpp, uid, uid);
+        let (ledger_details, len) = LedgerUtil::from_order(&total, &o.dp, &hpp, uid, uid);
 
         let mut i = 0;
 

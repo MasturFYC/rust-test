@@ -1,14 +1,10 @@
-extern crate test_library;
-
+use database::ledger::{LedgerType, LedgerUtil};
 use async_trait::async_trait;
 use sqlx::{self, pool::PoolConnection, Acquire, Error, Postgres, Transaction};
 use uuid::Uuid;
 
 use super::{OrderPayment, OrderPayments};
-use crate::{
-    db::DBClient,
-    ledger::{ /* util, */ LedgerType},
-};
+use database::db::DBClient;
 
 #[derive(serde::Deserialize, serde::Serialize, sqlx::FromRow, Clone)]
 struct OrderInfo {
@@ -187,7 +183,7 @@ impl OrderPaymentExt for DBClient {
         .await?;
 
         let (ledger_details, count) =
-            test_library::LedgerUtil::from_order_payment(&op.amount, pid, pid);
+            LedgerUtil::from_order_payment(&op.amount, pid, pid);
 
         let mut i: usize = 0;
 
@@ -369,7 +365,7 @@ impl OrderPaymentExt for DBClient {
         .await?;
 
         let (ledger_details, count) =
-            test_library::LedgerUtil::from_order_payment(&op.amount, pid, pid);
+            LedgerUtil::from_order_payment(&op.amount, pid, pid);
 
         let mut i: usize = 0;
 

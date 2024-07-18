@@ -1,9 +1,10 @@
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use database::ledger::LedgerSchema;
 use serde_json::json;
 
 use crate::{dtos::RequestQueryDto, extractors::auth::RequireAuth, models::UserRole, AppState};
 
-use super::{db::LedgerExt, LedgerSchema};
+use super::db::LedgerExt;
 
 #[get("/{id}")]
 async fn get_ledger(path: web::Path<uuid::Uuid>, app_state: web::Data<AppState>) -> impl Responder {

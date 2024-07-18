@@ -1,12 +1,13 @@
 use bigdecimal::BigDecimal;
+use builder::mod_struct::Coa;
 use uuid::Uuid;
 
 use super::{
-    builder::{Coa, LedgerDetailBuilder},
+    // builder::{Coa, LedgerDetailBuilder},
     LedgerDetail,
 };
 
-pub struct LedgerUtil {}
+// pub struct LedgerUtil {}
 
 impl LedgerUtil {
     /// ## Ledger untuk transaksi order
@@ -45,7 +46,7 @@ impl LedgerUtil {
         let remain = total - dp;
         let pass = bigdecimal::BigDecimal::from(0);
 
-        let detail = LedgerDetailBuilder::default()
+        let detail = builder::LedgerUtil::LedgerDetailBuilder::default()
             .with_ref_id(ref_id)
             .with_ledger_id(ledger_id)
             .with_id(i)
@@ -187,13 +188,13 @@ impl LedgerUtil {
 #[cfg(test)]
 mod test {
     use super::*;
-    extern crate test_library;
+    use builder;
 
     #[allow(dead_code)]
     #[test]
     fn test_create_schema_builder() {
         let amount = bigdecimal::BigDecimal::from(25_000);
-        let (data, _) = LedgerUtil::from_order_payment(&amount, Uuid::new_v4(), Uuid::new_v4());
+        let (data, _) = builder::LedgerUtil::from_order_payment(&amount, Uuid::new_v4(), Uuid::new_v4());
 
         for (_, d) in data.iter().enumerate() {
             println!("{:#?}", d);
@@ -204,7 +205,7 @@ mod test {
     #[test]
     fn test_test_library() {
         let amount = bigdecimal::BigDecimal::from(25_000);
-        let (data, _) = test_library::LedgerUtil::from_order_payment(&amount, Uuid::new_v4(), Uuid::new_v4());
+        let (data, _) = builder::LedgerUtil::from_order_payment(&amount, Uuid::new_v4(), Uuid::new_v4());
         for (_, d) in data.iter().enumerate() {
             println!("{:#?}", d);
         }

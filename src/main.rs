@@ -20,7 +20,7 @@ use actix_web::{
 };
 
 use config::Config;
-use db::DBClient;
+use database::db::DBClient;
 use dotenv::dotenv;
 use dtos::{
     FilterUserDto, LoginUserDto, RegisterUserDto, Response, UserData, UserListResponseDto,
