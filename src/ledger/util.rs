@@ -1,38 +1,7 @@
 use bigdecimal::BigDecimal;
 use uuid::Uuid;
 
-use super::{LedgerDetail, LedgerDetailBuilder};
-
-// /// 106 - persediaan barang
-// const ACC_INVENTORY: i16 = 0x6A;
-// /// 521 - biaya beli barang
-// const ACC_GOODS_COST: i16 = 0x209;
-// /// 421 - penjualan barang
-// // const ACC_REVENUE: i16 = 0x1A5;
-// /// 111 - piutang penjualan
-// const ACC_PIUTANG: i16 = 0x6F;
-// /// 111 - kas
-// const ACC_KAS: i16 = 0x65;
-
-#[derive(Copy, Clone)]
-pub enum Coa {
-    /// 106 - persediaan barang
-    Inventory = 0x6A,
-    /// 521 - biaya beli barang
-    GoodCost = 0x209,
-    /// 421 - penjualan barang
-    Revenue = 0x1A5,
-    /// 111 - piutang penjualan
-    Loan = 0x6F,
-    /// 111 - kas
-    Cash = 0x65,
-}
-
-impl Into<i16> for Coa {
-    fn into(self) -> i16 {
-        self as i16
-    }
-}
+use super::{builder::{Coa, LedgerDetailBuilder}, LedgerDetail};
 
 pub struct LedgerUtil {}
 
@@ -64,7 +33,7 @@ impl LedgerUtil {
         total: &BigDecimal,
         dp: &BigDecimal,
         hpp: &BigDecimal,
-        ref_id: Option<Uuid>,
+        ref_id: Uuid,
         ledger_id: Uuid,
     ) -> (Vec<LedgerDetail>, usize) {
         let mut details: Vec<LedgerDetail> = Vec::new();
@@ -80,8 +49,7 @@ impl LedgerUtil {
             .with_direction(-1_i16)
             .with_amount(total.to_owned())
             .with_descriptions("Penjualan barang")
-            .build()
-            .unwrap();
+            .build();
 
         details.push(detail);
 
@@ -96,8 +64,7 @@ impl LedgerUtil {
                 .with_direction(1_i16)
                 .with_amount(total.to_owned())
                 .with_descriptions("Cash payment")
-                .build()
-                .unwrap();
+                .build();
             details.push(detail);
         } else {
             // sisa pembayaran
@@ -110,8 +77,7 @@ impl LedgerUtil {
                 .with_direction(1_i16)
                 .with_amount(remain)
                 .with_descriptions("Piutang barang")
-                .build()
-                .unwrap();
+                .build();
             details.push(detail);
 
             // jika ada pembayaran
@@ -125,8 +91,7 @@ impl LedgerUtil {
                     .with_direction(1_i16)
                     .with_amount(dp.to_owned())
                     .with_descriptions("Cash DP")
-                    .build()
-                    .unwrap();
+                    .build();
                 details.push(detail);
             }
         }
@@ -141,8 +106,7 @@ impl LedgerUtil {
             .with_direction(-1_i16)
             .with_amount(hpp.to_owned())
             .with_descriptions("Persediaan barang")
-            .build()
-            .unwrap();
+            .build();
 
         details.push(detail);
 
@@ -156,8 +120,7 @@ impl LedgerUtil {
             .with_direction(1_i16)
             .with_amount(hpp.to_owned())
             .with_descriptions("Biaya Beli Barang")
-            .build()
-            .unwrap();
+            .build();
 
         details.push(detail);
 
@@ -176,7 +139,7 @@ impl LedgerUtil {
     ///
     pub fn from_order_payment(
         amount: &BigDecimal,
-        ref_id: Option<Uuid>,
+        ref_id: Uuid,
         ledger_id: Uuid,
     ) -> (Vec<LedgerDetail>, usize) {
         let mut details: Vec<LedgerDetail> = Vec::new();
@@ -190,8 +153,7 @@ impl LedgerUtil {
             .with_direction(1_i16)
             .with_amount(amount.to_owned())
             .with_descriptions("Titip bayar")
-            .build()
-            .unwrap();
+            .build();
 
         details.push(detail);
 
@@ -205,8 +167,7 @@ impl LedgerUtil {
             .with_direction(-1_i16)
             .with_amount(amount.to_owned())
             .with_descriptions("Piutang penjualan")
-            .build()
-            .unwrap();
+            .build();
 
         details.push(detail);
 

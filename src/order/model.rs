@@ -5,7 +5,7 @@ use uuid::Uuid;
 use validator::Validate;
 
 #[derive(Debug, Deserialize, Serialize, Clone, Copy, sqlx::Type, PartialEq)]
-#[sqlx(type_name = "order_enum", rename_all = "lowercase")]
+#[sqlx(type_name = "order_enum", rename_all = "snake_case")]
 pub enum OrderType {
     Order,
     Stock,
@@ -24,8 +24,8 @@ impl OrderType {
         match self {
             OrderType::Order => "order",
             OrderType::Stock => "stock",
-            OrderType::OrderReturn => "orderreturn",
-            OrderType::StockReturn => "stockreturn",
+            OrderType::OrderReturn => "order_return",
+            OrderType::StockReturn => "stock_return",
             OrderType::Mutation => "mutation",
         }
     }

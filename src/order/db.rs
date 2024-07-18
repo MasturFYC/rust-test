@@ -1,6 +1,6 @@
 use crate::{
     db::DBClient,
-    ledger::{util::LedgerUtil, LedgerSchemaBuilder, LedgerType},
+    ledger::{util::LedgerUtil, builder::LedgerBuilder, LedgerType},
 };
 use async_trait::async_trait;
 use bigdecimal::{BigDecimal, FromPrimitive};
@@ -162,14 +162,13 @@ impl OrderExt for DBClient {
         let order = ord.unwrap();
         let nid = order.id;
 
-        let led = LedgerSchemaBuilder::default()
+        let led = LedgerBuilder::default()
             .relation_id(o.customer_id)
             .ledger_type(LedgerType::Order)
             .is_valid(true)
             .updated_by(o.updated_by)
             .descriptions(format!("Order {} by {}", customer_name, sales_name))
-            .build()
-            .unwrap();
+            .build();
         //self.create_ledger(o).await;
         let len = details.len();
         let mut i = 0;
@@ -255,7 +254,7 @@ impl OrderExt for DBClient {
         //     .await?;
         // }
 //        let payment = .to_owned();
-        let (ledger_details, len) = LedgerUtil::from_order(&total, &order.dp, &hpp, Some(nid), nid);
+        let (ledger_details, len) = LedgerUtil::from_order(&total, &order.dp, &hpp, nid, nid);
 
         let mut i: usize = 0;
         //        let len = ledger_details.len();
@@ -532,7 +531,7 @@ impl OrderExt for DBClient {
         .execute(&mut *tx)
         .await?;
 
-        let (ledger_details, len) = LedgerUtil::from_order(&total, &o.dp, &hpp, Some(uid), uid);
+        let (ledger_details, len) = LedgerUtil::from_order(&total, &o.dp, &hpp, uid, uid);
 
         let mut i = 0;
 

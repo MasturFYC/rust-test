@@ -1,4 +1,4 @@
-use super::db::OrderPaymentExt;
+use super::{db::OrderPaymentExt, OrderPayment};
 use crate::{dtos::RequestQueryDto, extractors::auth::RequireAuth, models::UserRole, AppState};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use serde_json::json;
@@ -8,10 +8,10 @@ pub fn payment_scope(conf: &mut web::ServiceConfig) {
         .wrap(RequireAuth::allowed_roles(vec![UserRole::Admin]))
         .service(get_payment)
         .service(get_payments)
-    // .service(create)
-    // .service(update)
-    // .service(delete);
-    ;
+        .service(create)
+        .service(update)
+        .service(delete);
+
     conf.service(scope);
 }
 
@@ -34,8 +34,7 @@ async fn get_payment(
         }
         Err(_) => {
             let message = format!("Payment with ID: {} not found", id);
-            return HttpResponse::NotFound()
-                .json(json!({"status": "fail","message": message}));
+            return HttpResponse::NotFound().json(json!({"status": "fail","message": message}));
         }
     }
 }
@@ -69,6 +68,118 @@ async fn get_payments(
         "totalItems": count,
     });
 
-    HttpResponse::Ok().json(json_response)    
+    HttpResponse::Ok().json(json_response)
+}
 
+#[post("")]
+async fn create(body: web::Json<OrderPayment>, app_state: web::Data<AppState>) -> impl Responder {
+    let data = body.into_inner();
+    let query_result = app_state.db_client.order_payment_create(data).await;
+
+    match query_result {
+        Ok(o) => {
+            let op = o.unwrap();
+            let response = json!({
+                "status": "success",
+                "data": json!(op)
+            });
+
+            return HttpResponse::Created().json(response);
+        }
+        Err(e) => {
+            if e.to_string()
+                .contains("duplicate key value violates unique constraint")
+            {
+                return HttpResponse::BadRequest().json(json!({
+                    "status": "fail",
+                    "message": "Note with that name already exists"
+                }));
+            }
+
+            return HttpResponse::InternalServerError().json(json!({
+                "status": "error",
+                "message": format!("{:?}", e)
+            }));
+        }
+    }
+}
+
+#[put("/{id}")]
+async fn update(
+    path: web::Path<uuid::Uuid>,
+    body: web::Json<OrderPayment>,
+    app_state: web::Data<AppState>,
+) -> impl Responder {
+    let pid = path.into_inner();
+    let query_result = app_state.db_client.get_order_payment(pid).await;
+
+    if query_result.is_err() {
+        return HttpResponse::BadRequest().json(json!({"status": "fail","message": "Bad request"}));
+    }
+    // let old = ; //_or(None);
+
+    if query_result.unwrap().is_none() {
+        let message = format!("Order payment with ID: {} not found", pid);
+        return HttpResponse::NotFound().json(json!({"status": "fail","message": message}));
+    }
+
+    let data = body.into_inner();
+    let query_result = app_state
+        .db_client
+        .order_payment_update(pid, data)
+        .await;
+
+    match query_result {
+        Ok(payment) => {
+            let order_response = json!({
+            "status": "success",
+            "data": json!({
+                "account": payment
+            })});
+
+            return HttpResponse::Ok().json(order_response);
+        }
+        Err(err) => {
+            let message = format!("Error: {:?}", err);
+            return HttpResponse::InternalServerError()
+                .json(json!({"status": "error","message": message}));
+        }
+    }
+}
+
+
+#[delete("/{id}")]
+async fn delete(path: web::Path<uuid::Uuid>, app_state: web::Data<AppState>) -> impl Responder {
+    let pid = path.into_inner();
+
+    let query_result = app_state.db_client.order_payment_delete(pid).await;
+
+    match query_result {
+        Ok(rows_affected) => {
+            if rows_affected == 0 {
+                let message = format!("Order payment with ID: {} not found", pid);
+
+                return HttpResponse::NotFound()
+                    .json(json!({
+                        "status": "fail",
+                        "message": message
+                    }));
+            }
+
+            let json = HttpResponse::Ok()
+                .json(json!({
+                    "status": "success",
+                    "data": rows_affected
+                }));
+            return json;
+        }
+        Err(err) => {
+            let message = format!("Error: {:?}", err);
+            return HttpResponse::InternalServerError()
+                .json(json!({
+                    "status": "error",
+                    "message": message
+                }));
+        }
+    }
 }

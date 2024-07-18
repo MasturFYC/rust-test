@@ -3,12 +3,12 @@
 CREATE TYPE user_role AS ENUM ('admin', 'moderator', 'user');
 
 CREATE TYPE order_enum AS ENUM (
-   'order', 'stock', 'orderreturn', 'stockreturn', 'mutation'
+   'order', 'stock', 'order_return', 'stock_return', 'mutation'
 );
 
 CREATE TYPE payment_enum AS ENUM ('cash', 'pending', 'loans', 'lunas');
 
-CREATE TYPE ledger_enum AS ENUM ('order', 'stock', 'orderreturn', 'stockreturn', 'loan', 'orderpayment', 'stockpayment', 'loanpayment');
+CREATE TYPE ledger_enum AS ENUM ('order', 'stock', 'order_return', 'stock_return', 'loan', 'order_payment', 'stock_payment', 'loan_payment');
 
 CREATE TYPE relation_enum AS ENUM ('customer', 'employee', 'member', 'supplier');
 

@@ -1,13 +1,12 @@
 use bigdecimal::BigDecimal;
 use chrono::prelude::*;
-use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
 use sqlx::{types::Json, FromRow, Row};
 use uuid::Uuid;
 use validator::Validate;
 
 #[derive(Debug, Deserialize, Serialize, Clone, Copy, sqlx::Type, PartialEq)]
-#[sqlx(type_name = "ledger_enum", rename_all = "lowercase")]
+#[sqlx(type_name = "ledger_enum", rename_all = "snake_case")]
 pub enum LedgerType {
     Order,
     Stock,
@@ -24,11 +23,11 @@ impl LedgerType {
         match self {
             LedgerType::Order => "order",
             LedgerType::Stock => "stock",
-            LedgerType::OrderReturn => "orderreturn",
-            LedgerType::StockReturn => "stockreturn",
+            LedgerType::OrderReturn => "order_return",
+            LedgerType::StockReturn => "stock_return",
             LedgerType::Loan => "loan",
-            LedgerType::OrderPayment => "orderpayment",
-            LedgerType::StockPaymnent => "stockpayment"
+            LedgerType::OrderPayment => "order_payment",
+            LedgerType::StockPaymnent => "stock_payment"
         }
     }
 }
@@ -39,36 +38,29 @@ impl Default for LedgerType {
     }
 }
 
-#[derive(Builder, Debug, Deserialize, Serialize, FromRow, Clone)]
-#[builder(derive(PartialEq))]
+#[derive(Debug, Deserialize, Serialize, FromRow, Clone)]
 pub struct LedgerDetail {
     
-    #[builder(setter(prefix = "with"))]
     #[serde(rename = "ledgerId")]
     pub ledger_id: Uuid,
     
-    #[builder(setter(prefix = "with", into))]
     pub id: i16,
     
     #[serde(rename = "accountId")]
-    #[builder(setter(prefix = "with", into))]
     pub account_id: i16,
     
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[builder(setter(prefix = "with", into, strip_option))]
     pub descriptions: Option<String>,    
     
     /// nominal
-    #[builder(setter(prefix = "with"))]
     pub amount: BigDecimal,
 
-    #[builder(setter(prefix = "with"))]
     pub direction: i16,
     
     #[serde(skip_serializing_if = "Option::is_none", rename = "refId")]
-    #[builder(setter(prefix = "with"))]
     pub ref_id: Option<Uuid>,
 }
+
 
 #[derive(Deserialize, Serialize, FromRow, Clone)]
 pub struct LedgerResult {
@@ -119,8 +111,7 @@ pub struct LedgerWithDetails {
     pub details: Json<Vec<LedgerDetail>>,
 }
 
-#[derive(Builder, Debug, Validate, Serialize, Deserialize)]
-#[builder(setter(into))]
+#[derive(Debug, Validate, Serialize, Deserialize)]
 pub struct LedgerSchema {
     #[serde(rename = "relationId")]
     pub relation_id: Uuid,

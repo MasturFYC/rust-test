@@ -185,7 +185,7 @@ impl OrderPaymentExt for DBClient {
         .await?;
 
         let (ledger_details, count) =
-            util::LedgerUtil::from_order_payment(&op.amount, Some(pid), pid);
+            util::LedgerUtil::from_order_payment(&op.amount, pid, pid);
 
         let mut i: usize = 0;
 
@@ -367,7 +367,7 @@ impl OrderPaymentExt for DBClient {
         .await?;
 
         let (ledger_details, count) =
-            util::LedgerUtil::from_order_payment(&op.amount, Some(pid), pid);
+            util::LedgerUtil::from_order_payment(&op.amount, pid, pid);
 
         let mut i: usize = 0;
 
