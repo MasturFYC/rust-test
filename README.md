@@ -21,3 +21,7 @@ chmod +x ~/.local/bin/rust-analyzer
 
 references:
 https://blog.logrocket.com/configuring-vim-rust-development/
+
+
+## vs-code extention :
+ Error Lens usernamehw

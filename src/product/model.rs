@@ -65,11 +65,11 @@ pub struct Product {
     pub updated_at: Option<DateTime<Utc>>,
 }
 
-#[derive(Debug, Deserialize, Default)]
-pub struct PageOptions {
-    pub page: Option<usize>,
-    pub limit: Option<usize>,
-}
+// #[derive(Debug, Deserialize, Default)]
+// pub struct PageOptions {
+//     pub page: Option<usize>,
+//     pub limit: Option<usize>,
+// }
 
 #[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
 pub struct Products {
