@@ -710,6 +710,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sqlx",
+ "test_library",
  "utoipa",
  "utoipa-rapidoc",
  "utoipa-redoc",
@@ -2962,6 +2963,17 @@ dependencies = [
  "fastrand 2.1.0",
  "rustix 0.38.34",
  "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "test_library"
+version = "0.1.0"
+dependencies = [
+ "bigdecimal",
+ "serde",
+ "serde_json",
+ "uuid",
+ "validator",
 ]
 
 [[package]]

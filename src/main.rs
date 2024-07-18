@@ -14,8 +14,6 @@ mod utils;
 mod ledger;
 mod payment;
 
-// mod order_detail;
-
 use actix_cors::Cors;
 use actix_web::{
     get, http::header, middleware::Logger, web, App, HttpResponse, HttpServer, Responder

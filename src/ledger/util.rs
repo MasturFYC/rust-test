@@ -1,7 +1,10 @@
 use bigdecimal::BigDecimal;
 use uuid::Uuid;
 
-use super::{builder::{Coa, LedgerDetailBuilder}, LedgerDetail};
+use super::{
+    builder::{Coa, LedgerDetailBuilder},
+    LedgerDetail,
+};
 
 pub struct LedgerUtil {}
 
@@ -29,6 +32,7 @@ impl LedgerUtil {
     ///
     /// **`ledger_id`** biasanya sama dengan order id
     ///
+    #[allow(dead_code)]
     pub fn from_order(
         total: &BigDecimal,
         dp: &BigDecimal,
@@ -46,7 +50,7 @@ impl LedgerUtil {
             .with_ledger_id(ledger_id)
             .with_id(i)
             .with_account_id(Coa::Revenue)
-            .with_direction(-1_i16)
+            .with_direction(-1)
             .with_amount(total.to_owned())
             .with_descriptions("Penjualan barang")
             .build();
@@ -61,10 +65,11 @@ impl LedgerUtil {
                 .with_ledger_id(ledger_id)
                 .with_id(i)
                 .with_account_id(Coa::Cash)
-                .with_direction(1_i16)
+                .with_direction(1)
                 .with_amount(total.to_owned())
                 .with_descriptions("Cash payment")
                 .build();
+
             details.push(detail);
         } else {
             // sisa pembayaran
@@ -74,10 +79,11 @@ impl LedgerUtil {
                 .with_ledger_id(ledger_id)
                 .with_id(i)
                 .with_account_id(Coa::Loan)
-                .with_direction(1_i16)
+                .with_direction(1)
                 .with_amount(remain)
                 .with_descriptions("Piutang barang")
                 .build();
+
             details.push(detail);
 
             // jika ada pembayaran
@@ -88,10 +94,11 @@ impl LedgerUtil {
                     .with_ledger_id(ledger_id)
                     .with_id(i)
                     .with_account_id(Coa::Cash)
-                    .with_direction(1_i16)
+                    .with_direction(1)
                     .with_amount(dp.to_owned())
                     .with_descriptions("Cash DP")
                     .build();
+
                 details.push(detail);
             }
         }
@@ -103,7 +110,7 @@ impl LedgerUtil {
             .with_ledger_id(ledger_id)
             .with_id(i)
             .with_account_id(Coa::Inventory)
-            .with_direction(-1_i16)
+            .with_direction(-1)
             .with_amount(hpp.to_owned())
             .with_descriptions("Persediaan barang")
             .build();
@@ -117,7 +124,7 @@ impl LedgerUtil {
             .with_ledger_id(ledger_id)
             .with_id(i)
             .with_account_id(Coa::GoodCost)
-            .with_direction(1_i16)
+            .with_direction(1)
             .with_amount(hpp.to_owned())
             .with_descriptions("Biaya Beli Barang")
             .build();
@@ -137,6 +144,7 @@ impl LedgerUtil {
     ///
     /// **`ledger_id`** ledger id biasanya sama dengan payment id
     ///
+    #[allow(dead_code)]
     pub fn from_order_payment(
         amount: &BigDecimal,
         ref_id: Uuid,
@@ -150,7 +158,7 @@ impl LedgerUtil {
             .with_ledger_id(ledger_id)
             .with_id(i)
             .with_account_id(Coa::Cash)
-            .with_direction(1_i16)
+            .with_direction(1)
             .with_amount(amount.to_owned())
             .with_descriptions("Titip bayar")
             .build();
@@ -164,7 +172,7 @@ impl LedgerUtil {
             .with_ledger_id(ledger_id)
             .with_id(i)
             .with_account_id(Coa::Loan)
-            .with_direction(-1_i16)
+            .with_direction(-1)
             .with_amount(amount.to_owned())
             .with_descriptions("Piutang penjualan")
             .build();
@@ -172,5 +180,33 @@ impl LedgerUtil {
         details.push(detail);
 
         (details, i as usize)
+    }
+}
+
+#[allow(dead_code)]
+#[cfg(test)]
+mod test {
+    use super::*;
+    extern crate test_library;
+
+    #[allow(dead_code)]
+    #[test]
+    fn test_create_schema_builder() {
+        let amount = bigdecimal::BigDecimal::from(25_000);
+        let (data, _) = LedgerUtil::from_order_payment(&amount, Uuid::new_v4(), Uuid::new_v4());
+
+        for (_, d) in data.iter().enumerate() {
+            println!("{:#?}", d);
+        }
+    }
+
+    #[allow(dead_code)]
+    #[test]
+    fn test_test_library() {
+        let amount = bigdecimal::BigDecimal::from(25_000);
+        let (data, _) = test_library::LedgerUtil::from_order_payment(&amount, Uuid::new_v4(), Uuid::new_v4());
+        for (_, d) in data.iter().enumerate() {
+            println!("{:#?}", d);
+        }
     }
 }
