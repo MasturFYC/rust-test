@@ -1,13 +1,22 @@
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use serde_json::json;
 
-use crate::{
-    dtos::RequestQueryDto, 
-    extractors::auth::RequireAuth, 
-    models::UserRole, AppState
-};
+use crate::{dtos::RequestQueryDto, extractors::auth::RequireAuth, AppState};
 
-use super::{db::OrderExt, RequestQueryOrderDtos};
+use database::{model::{RequestQueryOrderDtos, UserRole}, order::db::OrderExt};
+
+pub fn order_scope(conf: &mut web::ServiceConfig) {
+    let scope = web::scope("/api/orders")
+        .wrap(RequireAuth::allowed_roles(vec![UserRole::Admin]))
+        .service(get_order)
+        .service(get_orders)
+        // .service(get_relations_by_type)
+        .service(create)
+        .service(update)
+        .service(delete);
+
+    conf.service(scope);
+}
 
 #[get("/{id}")]
 async fn get_order(path: web::Path<uuid::Uuid>, app_state: web::Data<AppState>) -> impl Responder {
@@ -19,11 +28,10 @@ async fn get_order(path: web::Path<uuid::Uuid>, app_state: web::Data<AppState>) 
             match order {
                 None => {
                     let message = format!("Order with ID: {} not found", order_id);
-                    return HttpResponse::NotFound()
-                        .json(json!({
-                            "status": "fail",
-                            "message": message
-                        }));
+                    return HttpResponse::NotFound().json(json!({
+                        "status": "fail",
+                        "message": message
+                    }));
                 }
                 Some(x) => {
                     let order_response = json!({"status": "success","data": x});
@@ -53,7 +61,7 @@ async fn get_orders(
     opts: web::Query<RequestQueryDto>,
     app_state: web::Data<AppState>,
 ) -> impl Responder {
-    let query_params: RequestQueryDto = opts.into_inner();
+    let query_params = opts.into_inner();
 
     // let map_err = query_params
     //     .validate()
@@ -70,11 +78,10 @@ async fn get_orders(
 
     if query_result.is_err() {
         let message = "Something bad happened while fetching all order items";
-        return HttpResponse::InternalServerError()
-            .json(json!({
-                "status": "error",
-                "message": message
-            }));
+        return HttpResponse::InternalServerError().json(json!({
+            "status": "error",
+            "message": message
+        }));
     }
 
     // let (orders, length) = query_result.unwrap();
@@ -108,40 +115,38 @@ async fn create(
         .order_create(data.order, data.details)
         .await;
 
-        match query_result {
-            Ok(o) => {
-                let order = o.0;
-                let details = o.1;
-                let detail_response = json!({
-                    "status": "success",
-                    "data": json!({
-                        "order" : order,
-                        "details" : details
-                    })
-                });
-    
-                // println!("{:?}", v);
-    
-                return HttpResponse::Created().json(detail_response);
-            }
-            Err(e) => {
-                if e.to_string()
-                    .contains("duplicate key value violates unique constraint")
-                {
-                    return HttpResponse::BadRequest()
-                   .json(json!({
-                       "status": "fail",
-                       "message": "Note with that name already exists"
-                   }));
-                }
-    
-                return HttpResponse::InternalServerError()
-                    .json(json!({ 
-                        "status": "error",
-                        "message": format!("{:?}", e)
-                    }));
-            }
+    match query_result {
+        Ok(o) => {
+            let order = o.0;
+            let details = o.1;
+            let detail_response = json!({
+                "status": "success",
+                "data": json!({
+                    "order" : order,
+                    "details" : details
+                })
+            });
+
+            // println!("{:?}", v);
+
+            return HttpResponse::Created().json(detail_response);
         }
+        Err(e) => {
+            if e.to_string()
+                .contains("duplicate key value violates unique constraint")
+            {
+                return HttpResponse::BadRequest().json(json!({
+                    "status": "fail",
+                    "message": "Note with that name already exists"
+                }));
+            }
+
+            return HttpResponse::InternalServerError().json(json!({
+                "status": "error",
+                "message": format!("{:?}", e)
+            }));
+        }
+    }
 }
 
 #[put("/{id}")]
@@ -155,15 +160,13 @@ async fn update(
     let query_result = app_state.db_client.get_order(order_id).await;
 
     if query_result.is_err() {
-        return HttpResponse::BadRequest()
-            .json(json!({"status": "fail","message": "Bad request"}));
+        return HttpResponse::BadRequest().json(json!({"status": "fail","message": "Bad request"}));
     }
     // let old = ; //_or(None);
 
     if query_result.unwrap().is_none() {
         let message = format!("Order with ID: {} not found", order_id);
-        return HttpResponse::NotFound()
-            .json(json!({"status": "fail","message": message}));
+        return HttpResponse::NotFound().json(json!({"status": "fail","message": message}));
     }
 
     let data = body.into_inner();
@@ -175,10 +178,10 @@ async fn update(
     match query_result {
         Ok(order) => {
             let order_response = json!({
-                "status": "success",
-                "data": json!({
-                    "account": order
-                })});
+            "status": "success",
+            "data": json!({
+                "account": order
+            })});
 
             return HttpResponse::Ok().json(order_response);
         }
@@ -201,40 +204,24 @@ async fn delete(path: web::Path<uuid::Uuid>, app_state: web::Data<AppState>) -> 
             if rows_affected == 0 {
                 let message = format!("Order with ID: {} not found", order_id);
 
-                return HttpResponse::NotFound()
-                    .json(json!({
-                        "status": "fail",
-                        "message": message
-                    }));
+                return HttpResponse::NotFound().json(json!({
+                    "status": "fail",
+                    "message": message
+                }));
             }
 
-            let json = HttpResponse::Ok()
-                .json(json!({
-                    "status": "success",
-                    "data": rows_affected
-                }));
+            let json = HttpResponse::Ok().json(json!({
+                "status": "success",
+                "data": rows_affected
+            }));
             return json;
         }
         Err(err) => {
             let message = format!("Error: {:?}", err);
-            return HttpResponse::InternalServerError()
-                .json(json!({
-                    "status": "error",
-                    "message": message
-                }));
+            return HttpResponse::InternalServerError().json(json!({
+                "status": "error",
+                "message": message
+            }));
         }
     }
-}
-
-pub fn order_scope(conf: &mut web::ServiceConfig) {
-    let scope = web::scope("/api/orders")
-        .wrap(RequireAuth::allowed_roles(vec![UserRole::Admin]))
-        .service(get_order)
-        .service(get_orders)
-        // .service(get_relations_by_type)
-        .service(create)
-        .service(update)
-        .service(delete);
-
-    conf.service(scope);
 }

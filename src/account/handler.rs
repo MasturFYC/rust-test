@@ -1,8 +1,8 @@
-use crate::{category::PageOptions, extractors::auth::RequireAuth, models::UserRole, AppState};
+use crate::{extractors::auth::RequireAuth, AppState};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use database::{account::db::AccountExt, PageOptions, model::UserRole};
 use serde_json::json;
 
-use super::{db::AccountExt, CreateAccountSchema, UpdateAccountSchema};
 
 #[get("/{id}")]
 async fn get_account(path: web::Path<i16>, app_state: web::Data<AppState>) -> impl Responder {
@@ -61,7 +61,7 @@ async fn get_accounts(
 
 #[post("")]
 async fn create(
-    body: web::Json<CreateAccountSchema>,
+    body: web::Json<database::account::Account>,
     app_state: web::Data<AppState>,
 ) -> impl Responder {
     let data = body.into_inner();
@@ -97,7 +97,7 @@ async fn create(
 #[put("/{id}")]
 async fn update(
     path: web::Path<i16>,
-    body: web::Json<UpdateAccountSchema>,
+    body: web::Json<database::account::Account>,
     app_state: web::Data<AppState>,
 ) -> impl Responder {
     let acc_id = path.into_inner();

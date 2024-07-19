@@ -1,172 +1,10 @@
 use bigdecimal::BigDecimal;
-use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use validator::Validate;
+
+use crate::model::{Coa, Direction, LedgerBuilder, LedgerDetail, LedgerDetailBuilder, LedgerSchema, LedgerType};
 
 // #[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq)]
 // #[serde(rename_all = "snake_case")]
-#[derive(Debug, Deserialize, Serialize, Clone, Copy, sqlx::Type, PartialEq)]
-#[sqlx(type_name = "ledger_enum", rename_all = "snake_case")]
-pub enum LedgerType {
-    Order,
-    Stock,
-    OrderReturn,
-    StockReturn,
-    Loan,
-    OrderPayment,
-    StockPaymnent,
-}
-
-impl Default for LedgerType {
-    fn default() -> Self {
-        LedgerType::Order
-    }
-}
-
-#[derive(Clone, Default)]
-pub struct LedgerBuilder {
-    pub relation_id: Option<Uuid>,
-    pub ledger_type: Option<LedgerType>,
-    pub is_valid: Option<bool>,
-    pub updated_by: Option<String>,
-    pub descriptions: Option<String>,
-}
-
-#[derive(Debug, Validate, Serialize, Deserialize)]
-pub struct LedgerSchema {
-    /// customer, supplier, employee
-    #[serde(rename = "relationId")]
-    pub relation_id: Uuid,
-    #[serde(rename = "LedgerType")]
-    pub ledger_type: LedgerType,
-    #[serde(rename = "isValid")]
-    pub is_valid: bool,
-
-    /// active user login
-    #[serde(rename = "updatedBy")]
-    pub updated_by: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub descriptions: Option<String>,
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct LedgerDetail {
-    #[serde(rename = "ledgerId")]
-    pub ledger_id: Uuid,
-
-    pub id: i16,
-
-    #[serde(rename = "accountId")]
-    pub account_id: i16,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub descriptions: Option<String>,
-
-    /// nominal transaksi
-    pub amount: BigDecimal,
-
-    pub direction: i16,
-    /// diambil dari no id transaksi lain
-    #[serde(skip_serializing_if = "Option::is_none", rename = "refId")]
-    pub ref_id: Option<Uuid>,
-}
-
-// #[derive(Debug, Clone, Copy)]
-// pub enum MixedInts {
-//     Fromi16(i16),
-//     Fromi32(i32),
-// }
-
-// impl Into<i16> for MixedInts {
-//     fn into(self) -> i16 {
-//         match self {
-//             MixedInts::Fromi16(value) => value,
-//             MixedInts::Fromi32(value) => value as i16
-//         }
-//     }
-// }
-
-// impl From<i32> for MixedInts {
-//     fn from(value: i32) -> MixedInts {
-//         MixedInts::Fromi32(value)
-//     }
-// }
-
-// impl From<i16> for MixedInts {
-//     fn from(value: i16) -> MixedInts {
-//         MixedInts::Fromi16(value)
-//     }
-// }
-
-pub trait Direction {
-    fn into_i16(&self) -> i16;
-}
-
-impl Direction for i32 {
-    fn into_i16(&self) -> i16 {
-        *self as i16
-    }
-}
-
-impl Direction for i16 {
-    fn into_i16(&self) -> i16 {
-        *self
-    }
-}
-
-// /// 106 - persediaan barang
-// const ACC_INVENTORY: i16 = 0x6A;
-// /// 521 - biaya beli barang
-// const ACC_GOODS_COST: i16 = 0x209;
-// /// 421 - penjualan barang
-// // const ACC_REVENUE: i16 = 0x1A5;
-// /// 111 - piutang penjualan
-// const ACC_PIUTANG: i16 = 0x6F;
-// /// 111 - kas
-// const ACC_KAS: i16 = 0x65;
-
-#[derive(Copy, Clone)]
-pub enum Coa {
-    /// 106 - persediaan barang
-    Inventory = 0x6A,
-
-    /// 521 - biaya beli barang
-    GoodCost = 0x209,
-
-    /// 421 - penjualan barang
-    Revenue = 0x1A5,
-
-    /// 111 - piutang penjualan
-    Loan = 0x6F,
-
-    /// 111 - kas
-    Cash = 0x65,
-}
-
-impl From<Coa> for i16 {
-    fn from(val: Coa) -> Self {
-        val as i16
-    }
-}
-/*
-impl Into<i16> for Coa {
-    fn into(self) -> i16 {
-        self as i16
-    }
-}
-*/
-
-#[derive(Clone, Default, Debug, PartialEq)]
-pub struct LedgerDetailBuilder {
-    pub ledger_id: Option<Uuid>,
-    pub id: Option<i16>,
-    pub account_id: Option<i16>,
-    pub descriptions: Option<String>,
-    pub amount: Option<BigDecimal>,
-    pub direction: Option<i16>,
-    pub ref_id: Option<Uuid>,
-}
-
 
 impl LedgerDetailBuilder {
     pub fn with_ledger_id<T: Into<Uuid>>(mut self, value: T) -> LedgerDetailBuilder {
@@ -441,3 +279,121 @@ impl LedgerUtil {
 //         assert_eq!(result, 4);
 //     }
 // }
+
+pub mod db {
+    use crate::{db::DBClient, model::{Ledger, LedgerResult, LedgerWithDetails, MatchResult}};
+    use async_trait::async_trait;
+    use crate::model::{LedgerSchema, LedgerType, LedgerDetail};
+    use sqlx::{self, types::Json, Acquire, Error};
+    use uuid::Uuid;
+    
+    #[async_trait]
+    pub trait LedgerExt {
+        async fn get_ledger(&self, id: Uuid) -> Result<Option<LedgerWithDetails>, Error>;
+        async fn get_ledgers(&self, page: usize, limit: usize) -> Result<MatchResult, Error>;
+        async fn ledger_create<T>(&self, data: T) -> Result<Option<LedgerResult>, Error>
+        where
+            T: Into<LedgerSchema> + Send;
+        async fn ledger_update<T>(&self, id: Uuid, data: T) -> Result<Option<LedgerResult>, Error>
+        where
+            T: Into<LedgerSchema> + Send;
+        async fn ledger_delete(&self, id: Uuid) -> Result<u64, Error>;
+    }
+    
+    #[async_trait]
+    impl LedgerExt for DBClient {
+        async fn get_ledger(&self, id: Uuid) -> Result<Option<LedgerWithDetails>, Error> {
+            let query = sqlx::query_file_as!(LedgerWithDetails, "sql/ledger-get-by-id.sql", id);
+            let ledger = query.fetch_optional(&self.pool).await?;
+    
+            Ok(ledger)
+        }
+    
+        async fn get_ledgers(&self, page: usize, limit: usize) -> Result<MatchResult, Error> {
+            let x: usize = 1;
+            let offset = (page - x) * limit;
+    
+            // acquire pg connection from current pool
+            let mut conn = self.pool.acquire().await?; //.unwrap();
+    
+            // get transaction pool from pg connection
+            let mut tx = conn.begin().await?;
+    
+            // start transaction
+            // get orders data from database
+            let query = sqlx::query_file_as!(
+                Ledger,
+                "sql/ledger-get-all.sql",
+                limit as i64,
+                offset as i64
+            );
+            let ledgers = query.fetch_all(&mut *tx).await?;
+    
+            // start transacrion
+            // get total record of orders
+            let scalar = sqlx::query_file_scalar!("sql/ledger-count.sql");
+            let row = scalar.fetch_one(&mut *tx).await?;
+    
+            // finish transaction
+            tx.commit().await?;
+    
+            Ok((ledgers, row.unwrap_or(0)))
+        }
+    
+        async fn ledger_create<T>(&self, data: T) -> Result<Option<LedgerResult>, Error>
+        where
+            T: Into<LedgerSchema> + Send,
+        {
+            let t: LedgerSchema = data.try_into().unwrap();
+            let ledger = sqlx::query_file_as!(
+                LedgerResult,
+                "sql/ledger-insert.sql",
+                t.relation_id,
+                t.ledger_type as LedgerType,
+                t.updated_by,
+                t.is_valid,
+                t.descriptions,
+            )
+            .fetch_optional(&self.pool)
+            .await?;
+    
+            Ok(ledger)
+        }
+    
+        async fn ledger_update<T: Into<LedgerSchema> + Send>(
+            &self,
+            id: Uuid,
+            data: T,
+        ) -> Result<Option<LedgerResult>, Error>
+        where
+            T: Into<LedgerSchema> + Send,
+        {
+            let t: LedgerSchema = data.try_into().unwrap();
+            let ledger = sqlx::query_file_as!(
+                LedgerResult,
+                "sql/ledger-update.sql",
+                id,
+                t.relation_id.to_owned(),
+                t.ledger_type as LedgerType,
+                t.updated_by.to_owned(),
+                t.is_valid.to_owned(),
+                t.descriptions.to_owned()
+            )
+            .fetch_optional(&self.pool)
+            .await?;
+    
+            Ok(ledger)
+        }
+    
+        async fn ledger_delete(&self, id: Uuid) -> Result<u64, Error> {
+            let rows_affected: u64 = sqlx::query_file!("sql/ledger-delete.sql", id)
+                .execute(&self.pool)
+                .await
+                .unwrap()
+                .rows_affected();
+    
+            Ok(rows_affected)
+        }
+    }
+    
+}

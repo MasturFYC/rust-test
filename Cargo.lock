@@ -710,7 +710,6 @@ dependencies = [
  "openssl-probe",
  "serde",
  "serde_json",
- "sqlx",
  "utoipa",
  "utoipa-rapidoc",
  "utoipa-redoc",
@@ -864,7 +863,9 @@ dependencies = [
 name = "database"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "bigdecimal",
+ "chrono",
  "serde",
  "serde_json",
  "sqlx",

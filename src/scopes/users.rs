@@ -2,13 +2,12 @@ use actix_web::{web, HttpResponse, Scope};
 use validator::Validate;
 
 use crate::{
-    db::UserExt,
     dtos::{FilterUserDto, RequestQueryDto, UserData, UserListResponseDto, UserResponseDto},
     error::HttpError,
     extractors::auth::{Authenticated, RequireAuth},
-    models::UserRole,
     AppState,
 };
+use database::{model::UserRole, db::UserExt};
 
 pub fn users_scope() -> Scope {
     web::scope("/api/users")

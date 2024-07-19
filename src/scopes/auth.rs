@@ -6,17 +6,18 @@ use validator::Validate;
 use uuid::Uuid;
 
 use crate::{
-    db::UserExt,
     dtos::{
         FilterUserDto, LoginUserDto, RegisterUserDto, UserData, UserLoginResponseDto,
         UserResponseDto, UpdateUserDto
     },
     error::{ErrorMessage, HttpError},
     extractors::auth::RequireAuth,
-    models::UserRole,
     utils::{password, token},
     AppState,
 };
+
+use database::db::UserExt;
+use database::model::UserRole;
 
 pub fn auth_scope() -> Scope {
     web::scope("/api/auth")
@@ -68,15 +69,15 @@ pub async fn register(
                 user: FilterUserDto::filter_user(&user),
             },
         })),
-        Err(sqlx::Error::Database(db_err)) => {
-            if db_err.is_unique_violation() {
-                Err(HttpError::unique_constraint_voilation(
-                    ErrorMessage::EmailExist,
-                ))
-            } else {
-                Err(HttpError::server_error(db_err.to_string()))
-            }
-        }
+        // Err(sqlx::Error::Database(db_err)) => {
+        //     if db_err.is_unique_violation() {
+        //         Err(HttpError::unique_constraint_voilation(
+        //             ErrorMessage::EmailExist,
+        //         ))
+        //     } else {
+        //         Err(HttpError::server_error(db_err.to_string()))
+        //     }
+        // }
         Err(e) => Err(HttpError::server_error(e.to_string())),
     }
 }
@@ -131,15 +132,15 @@ pub async fn update(
                 user: FilterUserDto::filter_user(&user),
             },
         })),
-        Err(sqlx::Error::Database(db_err)) => {
-            if db_err.is_unique_violation() {
-                Err(HttpError::unique_constraint_voilation(
-                    ErrorMessage::EmailExist,
-                ))
-            } else {
-                Err(HttpError::server_error(db_err.to_string()))
-            }
-        }
+        // Err(sqlx::Error::Database(db_err)) => {
+        //     if db_err.is_unique_violation() {
+        //         Err(HttpError::unique_constraint_voilation(
+        //             ErrorMessage::EmailExist,
+        //         ))
+        //     } else {
+        //         Err(HttpError::server_error(db_err.to_string()))
+        //     }
+        // }
         Err(e) => Err(HttpError::server_error(e.to_string())),
     }
 

@@ -1,6 +1,6 @@
-use super::{db::OrderPaymentExt, OrderPayment};
-use crate::{dtos::RequestQueryDto, extractors::auth::RequireAuth, models::UserRole, AppState};
+use crate::{dtos::RequestQueryDto, extractors::auth::RequireAuth, AppState};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use database::{model::{OrderPayment,UserRole}, order_payment::db::OrderPaymentExt};
 use serde_json::json;
 
 pub fn payment_scope(conf: &mut web::ServiceConfig) {
@@ -124,10 +124,7 @@ async fn update(
     }
 
     let data = body.into_inner();
-    let query_result = app_state
-        .db_client
-        .order_payment_update(pid, data)
-        .await;
+    let query_result = app_state.db_client.order_payment_update(pid, data).await;
 
     match query_result {
         Ok(payment) => {
@@ -147,7 +144,6 @@ async fn update(
     }
 }
 
-
 #[delete("/{id}")]
 async fn delete(path: web::Path<uuid::Uuid>, app_state: web::Data<AppState>) -> impl Responder {
     let pid = path.into_inner();
@@ -159,27 +155,24 @@ async fn delete(path: web::Path<uuid::Uuid>, app_state: web::Data<AppState>) -> 
             if rows_affected == 0 {
                 let message = format!("Order payment with ID: {} not found", pid);
 
-                return HttpResponse::NotFound()
-                    .json(json!({
-                        "status": "fail",
-                        "message": message
-                    }));
+                return HttpResponse::NotFound().json(json!({
+                    "status": "fail",
+                    "message": message
+                }));
             }
 
-            let json = HttpResponse::Ok()
-                .json(json!({
-                    "status": "success",
-                    "data": rows_affected
-                }));
+            let json = HttpResponse::Ok().json(json!({
+                "status": "success",
+                "data": rows_affected
+            }));
             return json;
         }
         Err(err) => {
             let message = format!("Error: {:?}", err);
-            return HttpResponse::InternalServerError()
-                .json(json!({
-                    "status": "error",
-                    "message": message
-                }));
+            return HttpResponse::InternalServerError().json(json!({
+                "status": "error",
+                "message": message
+            }));
         }
     }
 }

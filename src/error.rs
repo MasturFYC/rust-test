@@ -26,12 +26,12 @@ pub enum ErrorMessage {
     InvalidToken,
     ServerError,
     WrongCredentials,
-    EmailExist,
+    // EmailExist,
     UserNoLongerExist,
     TokenNotProvided,
     PermissionDenied,
-    ProductExist,
-    DataCannotBeDeleted,
+    // ProductExist,
+    // DataCannotBeDeleted,
     DataNotFound
 }
 
@@ -52,7 +52,7 @@ impl ErrorMessage {
         match self {
             ErrorMessage::ServerError => "Server Error. Please try again later".to_string(),
             ErrorMessage::WrongCredentials => "Email or password is wrong".to_string(),
-            ErrorMessage::EmailExist => "An User with this email already exists".to_string(),
+            // ErrorMessage::EmailExist => "An User with this email already exists".to_string(),
             ErrorMessage::UserNoLongerExist => "User belonging to this token no longer exists".to_string(),
             ErrorMessage::EmptyPassword => "Password cannot be empty".to_string(),
             ErrorMessage::HashingError => "Error while hashing password".to_string(),
@@ -61,8 +61,8 @@ impl ErrorMessage {
             ErrorMessage::InvalidToken => "Authentication token is invalid or expired".to_string(),
             ErrorMessage::TokenNotProvided => "You are not logged in, please provide token".to_string(),
             ErrorMessage::PermissionDenied => "You are not allowed to perform this action".to_string(),
-            ErrorMessage::ProductExist => "Product with barcode already exists".to_string(),
-            ErrorMessage::DataCannotBeDeleted => "Product cannot be deleted".to_string(),
+            // ErrorMessage::ProductExist => "Product with barcode already exists".to_string(),
+            // ErrorMessage::DataCannotBeDeleted => "Product cannot be deleted".to_string(),
             ErrorMessage::DataNotFound => "Data not found".to_string()
         }
     }
@@ -96,12 +96,12 @@ impl HttpError {
         }
     }
 
-    pub fn unique_constraint_voilation(message: impl Into<String>) -> Self {
-        HttpError {
-            message: message.into(),
-            status: 409,
-        }
-    }
+    // pub fn unique_constraint_voilation(message: impl Into<String>) -> Self {
+    //     HttpError {
+    //         message: message.into(),
+    //         status: 409,
+    //     }
+    // }
 
     pub fn unauthorized(message: impl Into<String>) -> Self {
         HttpError {

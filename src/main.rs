@@ -1,9 +1,9 @@
 mod config;
-mod db;
+// mod db;
 mod dtos;
 mod error;
 mod extractors;
-mod models;
+// mod models;
 mod category;
 mod order;
 mod product;
@@ -28,7 +28,7 @@ use dtos::{
 };
 
 use scopes::{auth, users};
-use sqlx::postgres::PgPoolOptions;
+// use sqlx::postgres::PgPoolOptions;
 use utoipa::{
     openapi::security::{HttpAuthScheme, HttpBuilder, SecurityScheme},
     Modify, OpenApi,
@@ -97,15 +97,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let config = Config::init();
 
-    let pool = PgPoolOptions::new()
-        .max_connections(10)
-        .connect(&config.database_url)
-        .await?;
+    // let pool = PgPoolOptions::new()
+    //     .max_connections(10)
+    //     .connect(&config.database_url)
+    //     .await?;
+    let pool = database::load_pool(&config.database_url).await?;
+    database::migrate(&pool).await;
 
-    match sqlx::migrate!("./migrations").run(&pool).await {
-        Ok(_) => println!("Migrations executed successfully."),
-        Err(e) => eprintln!("Error executing migrations: {}", e),
-    };
+    // match sqlx::migrate!("./migrations").run(&pool).await {
+    //     Ok(_) => println!("Migrations executed successfully."),
+    //     Err(e) => eprintln!("Error executing migrations: {}", e),
+    // };
 
     let db_client = DBClient::new(pool);
     let app_state: AppState = AppState {

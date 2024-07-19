@@ -1,10 +1,11 @@
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use serde_json::json;
 // use validator::Validate;
+use database::model::UserRole;
 
-use crate::{dtos::RequestQueryDto, extractors::auth::RequireAuth, models::UserRole, AppState};
+use crate::{dtos::RequestQueryDto, extractors::auth::RequireAuth, AppState};
 
-use super::{db::RelationExt, CreateRelationSchema, RelationType};
+use database::{relation::db::RelationExt, model::{CreateRelationSchema, RelationType}};
 
 pub fn relation_scope(conf: &mut web::ServiceConfig) {
     let scope = web::scope("/api/relations")

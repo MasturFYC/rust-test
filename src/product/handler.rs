@@ -2,20 +2,13 @@ use actix_web::{web, HttpResponse, Scope};
 use serde_json::json;
 use uuid::Uuid;
 use validator::Validate;
+use database::product::{db::ProductExt, DeleteResponseDto, ProductResponseDto};
+use database::model::UserRole;
 
-use super::{
-    db::ProductExt,
-    CreateProductSchema,
-    CreateResponseDto,
-    DeleteResponseDto,
-    // ProductListResponseDto,
-    ProductResponseDto,
-};
 use crate::{
     dtos::RequestQueryDto,
     error::{ErrorMessage, HttpError},
     extractors::auth::RequireAuth,
-    models::UserRole,
     AppState,
 };
 
@@ -99,15 +92,15 @@ pub async fn get_product(
                 }))
             }
         }
-        Err(sqlx::Error::Database(db_err)) => {
-            if db_err.is_unique_violation() {
-                Err(HttpError::unique_constraint_voilation(
-                    ErrorMessage::UserNoLongerExist,
-                ))
-            } else {
-                Err(HttpError::server_error(db_err.to_string()))
-            }
-        }
+        // Err(sqlx::Error::Database(db_err)) => {
+        //     if db_err.is_unique_violation() {
+        //         Err(HttpError::unique_constraint_voilation(
+        //             ErrorMessage::UserNoLongerExist,
+        //         ))
+        //     } else {
+        //         Err(HttpError::server_error(db_err.to_string()))
+        //     }
+        // }
 
         Err(e) => Err(HttpError::server_error(e.to_string())),
     }
@@ -256,7 +249,7 @@ pub async fn get_by_supplier(
     post,
     path = "/api/products",
     tag = "Create product Endpoint",
-    request_body(content = CreateProductSchema, description = "Credentials to create product"), // example = json!({"email": "johndoe@example.com","name": "John Doe","password": "password123","passwordConfirm": "password123"})),
+    request_body(content = database::product::Product, description = "Credentials to create product"), // example = json!({"email": "johndoe@example.com","name": "John Doe","password": "password123","passwordConfirm": "password123"})),
     responses(
         (status=201, description="Product created successfully", body=CreateResponseDto),
         (status=400, description="Validation Errors", body=Response),
@@ -264,31 +257,32 @@ pub async fn get_by_supplier(
         (status=500, description="Internal Server Error", body=Response ),
     )
 )]
+
 pub async fn create_product(
-    body: web::Json<CreateProductSchema>,
+    body: web::Json<database::product::Product>,
     app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, HttpError> {
     body.validate()
         .map_err(|e| HttpError::bad_request(e.to_string()))?;
 
-    let data = body.into_inner();
+    let new_product = body.into_inner();
 
-    let result = app_state.db_client.product_create(data).await;
+    let result = app_state.db_client.product_create(new_product).await;
 
     match result {
-        Ok(product) => Ok(HttpResponse::Created().json(CreateResponseDto {
-            status: "success".to_string(),
-            data: product,
-        })),
-        Err(sqlx::Error::Database(db_err)) => {
-            if db_err.is_unique_violation() {
-                Err(HttpError::unique_constraint_voilation(
-                    ErrorMessage::ProductExist,
-                ))
-            } else {
-                Err(HttpError::server_error(db_err.to_string()))
-            }
-        }
+        Ok(product) => Ok(HttpResponse::Created().json(json!({
+            "status": "success".to_string(),
+            "data": product,
+        }))),
+        // Err(sqlx::Error::Database(db_err)) => {
+        //     if db_err.is_unique_violation() {
+        //         Err(HttpError::unique_constraint_voilation(
+        //             ErrorMessage::ProductExist,
+        //         ))
+        //     } else {
+        //         Err(HttpError::server_error(db_err.to_string()))
+        //     }
+        // }
         Err(e) => Err(HttpError::server_error(e.to_string())),
     }
 }
@@ -297,7 +291,7 @@ pub async fn create_product(
     put,
     path = "/api/products/{id}",
     tag = "Create product Endpoint",
-    request_body(content = UpdateProductSchema, description = "Schema data to update product"), // example = json!({"email": "johndoe@example.com","name": "John Doe","password": "password123","passwordConfirm": "password123"})),
+    request_body(content = ProductOriginal, description = "Schema data to update product"), // example = json!({"email": "johndoe@example.com","name": "John Doe","password": "password123","passwordConfirm": "password123"})),
     responses(
         (status=201, description="Product udpated successfully", body=CreateResponseDto),
         (status=400, description="Validation Errors", body=Response),
@@ -307,7 +301,7 @@ pub async fn create_product(
 )]
 async fn update_product(
     path: web::Path<Uuid>,
-    body: web::Json<CreateProductSchema>,
+    body: web::Json<database::product::Product>,
     app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, HttpError> {
     body.validate()
@@ -330,19 +324,19 @@ async fn update_product(
         .await;
 
     match result {
-        Ok(product) => Ok(HttpResponse::Ok().json(CreateResponseDto {
-            status: "success".to_string(),
-            data: product,
-        })),
-        Err(sqlx::Error::Database(db_err)) => {
-            if db_err.is_unique_violation() {
-                Err(HttpError::unique_constraint_voilation(
-                    ErrorMessage::ProductExist,
-                ))
-            } else {
-                Err(HttpError::server_error(db_err.to_string()))
-            }
-        }
+        Ok(product) => Ok(HttpResponse::Ok().json(json!({
+            "status": "success".to_string(),
+            "data": product,
+        }))),
+        // Err(sqlx::Error::Database(db_err)) => {
+        //     if db_err.is_unique_violation() {
+        //         Err(HttpError::unique_constraint_voilation(
+        //             ErrorMessage::ProductExist,
+        //         ))
+        //     } else {
+        //         Err(HttpError::server_error(db_err.to_string()))
+        //     }
+        // }
         Err(e) => Err(HttpError::server_error(e.to_string())),
     }
 }
@@ -375,15 +369,15 @@ async fn delete_product(
             },
             data: rows_affected,
         })),
-        Err(sqlx::Error::Database(db_err)) => {
-            if db_err.is_foreign_key_violation() {
-                Err(HttpError::unique_constraint_voilation(
-                    ErrorMessage::DataCannotBeDeleted,
-                ))
-            } else {
-                Err(HttpError::server_error(db_err.to_string()))
-            }
-        }
+        // Err(sqlx::Error::Database(db_err)) => {
+        //     if db_err.is_foreign_key_violation() {
+        //         Err(HttpError::unique_constraint_voilation(
+        //             ErrorMessage::DataCannotBeDeleted,
+        //         ))
+        //     } else {
+        //         Err(HttpError::server_error(db_err.to_string()))
+        //     }
+        // }
         Err(e) => Err(HttpError::server_error(e.to_string())),
     }
 }
