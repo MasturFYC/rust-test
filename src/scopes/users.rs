@@ -7,7 +7,7 @@ use crate::{
     extractors::auth::{Authenticated, RequireAuth},
     AppState,
 };
-use database::{model::UserRole, db::UserExt};
+use resdb::{model::UserRole, db::UserExt};
 
 pub fn users_scope() -> Scope {
     web::scope("/api/users")

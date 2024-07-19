@@ -6,6 +6,48 @@ use validator::Validate;
 use sqlx::{self, types::Json, Row};
 
 
+// #[serde_as]
+#[derive(Debug, Deserialize, Serialize, sqlx::FromRow, Clone)]
+pub struct Accounts {
+    pub id: i16,
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub root: Option<i16>,
+    pub normal: i16,
+    #[serde(rename = "enName")]
+    // #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub en_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    // #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub descriptions: Option<String>,
+    #[serde(rename = "isActive")]
+    pub is_active: bool,
+    pub payable: bool,
+    #[serde(rename = "createdAt")]
+    pub created_at: Option<DateTime<Utc>>,
+    #[serde(rename = "updatedAt")]
+    pub updated_at: Option<DateTime<Utc>>,    
+}
+
+#[derive(Validate, Serialize, Deserialize, Debug, Clone)]
+pub struct Account {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<i16>,
+    #[validate(length(min = 1, message = "Name is required"))]
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub root: Option<i16>,
+    pub normal: i16,
+    #[serde(rename = "enName",skip_serializing_if = "Option::is_none")]
+    pub en_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub descriptions: Option<String>,
+    #[serde(rename = "isActive")]
+    pub is_active: bool,
+    pub payable: bool,
+}
+
+
 #[derive(Debug, Deserialize, Serialize, Clone, Copy, sqlx::Type, PartialEq)]
 #[sqlx(type_name = "order_enum", rename_all = "snake_case")]
 pub enum OrderType {

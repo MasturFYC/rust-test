@@ -16,8 +16,7 @@ use crate::{
     AppState,
 };
 
-use database::db::UserExt;
-use database::model::UserRole;
+use resdb::{db::UserExt, model::UserRole};
 
 pub fn auth_scope() -> Scope {
     web::scope("/api/auth")

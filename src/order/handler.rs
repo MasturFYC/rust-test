@@ -3,7 +3,7 @@ use serde_json::json;
 
 use crate::{dtos::RequestQueryDto, extractors::auth::RequireAuth, AppState};
 
-use database::{model::{RequestQueryOrderDtos, UserRole}, order::db::OrderExt};
+use resdb::{model::{RequestQueryOrderDtos, UserRole}, order::db::OrderExt};
 
 pub fn order_scope(conf: &mut web::ServiceConfig) {
     let scope = web::scope("/api/orders")

@@ -1,6 +1,6 @@
 use crate::{dtos::RequestQueryDto, extractors::auth::RequireAuth, AppState};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
-use database::{model::{OrderPayment,UserRole}, order_payment::db::OrderPaymentExt};
+use resdb::{model::{OrderPayment,UserRole}, order_payment::db::OrderPaymentExt};
 use serde_json::json;
 
 pub fn payment_scope(conf: &mut web::ServiceConfig) {

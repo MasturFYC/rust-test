@@ -2,8 +2,7 @@ use actix_web::{web, HttpResponse, Scope};
 use serde_json::json;
 use uuid::Uuid;
 use validator::Validate;
-use database::product::{db::ProductExt, DeleteResponseDto, ProductResponseDto};
-use database::model::UserRole;
+use resdb::{model::UserRole, product::{db::ProductExt, Product, DeleteResponseDto, ProductResponseDto}};
 
 use crate::{
     dtos::RequestQueryDto,
@@ -259,7 +258,7 @@ pub async fn get_by_supplier(
 )]
 
 pub async fn create_product(
-    body: web::Json<database::product::Product>,
+    body: web::Json<Product>,
     app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, HttpError> {
     body.validate()
@@ -301,7 +300,7 @@ pub async fn create_product(
 )]
 async fn update_product(
     path: web::Path<Uuid>,
-    body: web::Json<database::product::Product>,
+    body: web::Json<Product>,
     app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, HttpError> {
     body.validate()

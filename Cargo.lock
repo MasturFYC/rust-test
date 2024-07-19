@@ -700,14 +700,13 @@ dependencies = [
  "actix-web",
  "argon2",
  "async-trait",
- "bigdecimal",
  "chrono",
- "database",
  "dotenv",
  "env_logger",
  "futures-util",
  "jsonwebtoken",
  "openssl-probe",
+ "resdb",
  "serde",
  "serde_json",
  "utoipa",
@@ -857,20 +856,6 @@ dependencies = [
  "darling_core",
  "quote",
  "syn 2.0.71",
-]
-
-[[package]]
-name = "database"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "bigdecimal",
- "chrono",
- "serde",
- "serde_json",
- "sqlx",
- "uuid",
- "validator",
 ]
 
 [[package]]
@@ -2329,6 +2314,20 @@ dependencies = [
  "web-sys",
  "webpki-roots",
  "winreg",
+]
+
+[[package]]
+name = "resdb"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "bigdecimal",
+ "chrono",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "uuid",
+ "validator",
 ]
 
 [[package]]

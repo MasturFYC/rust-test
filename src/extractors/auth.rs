@@ -6,10 +6,12 @@ use futures_util::FutureExt;
 use std::rc::Rc;
 use std::task::{Context, Poll};
 
-use database::db::UserExt;
 use crate::error::{ErrorMessage, ErrorResponse, HttpError};
-use database::model::{User, UserRole};
 use crate::{utils, AppState};
+use resdb::{
+    db::UserExt,
+    model::{User, UserRole},
+};
 
 pub struct Authenticated(User);
 

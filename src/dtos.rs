@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 use validator::Validate;
 
-use database::model::User;
+use resdb::model::User;
 
 #[derive(Validate, Debug, Default, Clone, Serialize, Deserialize, ToSchema)]
 pub struct RegisterUserDto {

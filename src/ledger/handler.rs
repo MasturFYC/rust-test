@@ -1,10 +1,8 @@
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
-use database::model::LedgerSchema;
-use database::ledger::db::LedgerExt;
+use resdb::{ledger::db::LedgerExt, model::{LedgerSchema, UserRole}};
 use serde_json::json;
 
 use crate::{dtos::RequestQueryDto, extractors::auth::RequireAuth, AppState};
-use database::model::UserRole;
 
 #[get("/{id}")]
 async fn get_ledger(path: web::Path<uuid::Uuid>, app_state: web::Data<AppState>) -> impl Responder {
@@ -47,8 +45,8 @@ async fn get_ledgers(
     //let result = query_result;//.unwrap();
 
     let (ledgers, count) = query_result.unwrap(); //.expect("No data found");
-    // let ledgers = result.0;
-    // let count = result.1;
+                                                  // let ledgers = result.0;
+                                                  // let count = result.1;
     let lim = limit as i64;
 
     let json_response = json!({
@@ -63,10 +61,7 @@ async fn get_ledgers(
 }
 
 #[post("")]
-async fn create(
-    body: web::Json<LedgerSchema>,
-    app_state: web::Data<AppState>,
-) -> impl Responder {
+async fn create(body: web::Json<LedgerSchema>, app_state: web::Data<AppState>) -> impl Responder {
     let data = body.into_inner();
     let query_result = app_state.db_client.ledger_create(data).await;
 

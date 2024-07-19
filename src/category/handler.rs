@@ -1,8 +1,7 @@
 use crate::{extractors::auth::RequireAuth, AppState};
 
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
-use database::category::{db::CategoryExt, Category};
-use database::model::UserRole;
+use resdb::{model::UserRole, category::{db::CategoryExt, Category}};
 use serde_json::json;
 
 pub fn category_scope(conf: &mut web::ServiceConfig) {

@@ -20,7 +20,7 @@ use actix_web::{
 };
 
 use config::Config;
-use database::db::DBClient;
+use resdb::db::DBClient;
 use dotenv::dotenv;
 use dtos::{
     FilterUserDto, LoginUserDto, RegisterUserDto, Response, UserData, UserListResponseDto,
@@ -101,8 +101,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     //     .max_connections(10)
     //     .connect(&config.database_url)
     //     .await?;
-    let pool = database::load_pool(&config.database_url).await?;
-    database::migrate(&pool).await;
+    let pool = resdb::load_pool(&config.database_url).await?;
+    resdb::migrate(&pool).await;
 
     // match sqlx::migrate!("./migrations").run(&pool).await {
     //     Ok(_) => println!("Migrations executed successfully."),
