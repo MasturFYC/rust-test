@@ -1,52 +1,61 @@
 pub mod db {
-    use crate::ledger::LedgerUtil;
-    use crate::model::LedgerType;
-    use async_trait::async_trait;
-    use sqlx::{self, pool::PoolConnection, Acquire, Error, Postgres, Transaction};
-    use uuid::Uuid;
+	use crate::ledger::LedgerUtil;
+	use crate::model::LedgerType;
+	use async_trait::async_trait;
+	use sqlx::{self, pool::PoolConnection, Acquire, Error, Postgres, Transaction};
+	use uuid::Uuid;
 
-    use crate::db::DBClient;
-    use crate::model::{OrderPayment, OrderPayments};
+	use crate::db::DBClient;
+	use crate::model::{OrderPayment, OrderPayments};
 
-    #[derive(serde::Deserialize, serde::Serialize, sqlx::FromRow, Clone)]
-    struct OrderInfo {
-        id: Uuid,
-        customer_id: Uuid,
-        customer_name: String,
-        payment: bigdecimal::BigDecimal,
-    }
-    #[derive(serde::Deserialize, serde::Serialize, sqlx::FromRow, Clone)]
-    struct PaymentInfo {
-        order_id: Uuid,
-        amount: bigdecimal::BigDecimal,
-    }
+	#[derive(serde::Deserialize, serde::Serialize, sqlx::FromRow, Clone)]
+	struct OrderInfo {
+		id: Uuid,
+		customer_id: Uuid,
+		customer_name: String,
+		payment: bigdecimal::BigDecimal,
+	}
+	#[derive(serde::Deserialize, serde::Serialize, sqlx::FromRow, Clone)]
+	struct PaymentInfo {
+		order_id: Uuid,
+		amount: bigdecimal::BigDecimal,
+	}
 
-    #[async_trait]
-    pub trait OrderPaymentExt {
-        async fn get_order_payment(&self, id: Uuid) -> Result<Option<OrderPayments>, Error>;
-        async fn get_order_payments(
-            &self,
-            page: usize,
-            limit: usize,
-        ) -> Result<(Vec<OrderPayments>, i64), Error>;
-        async fn order_payment_create<T>(&self, data: T) -> Result<Option<OrderPayments>, Error>
-        where
-            T: Into<OrderPayment> + Send;
-        async fn order_payment_update<T>(
-            &self,
-            pid: Uuid,
-            data: T,
-        ) -> Result<Option<OrderPayments>, Error>
-        where
-            T: Into<OrderPayment> + Send;
-        async fn order_payment_delete(&self, pid: Uuid) -> Result<u64, Error>;
-    }
+	#[async_trait]
+	pub trait OrderPaymentExt {
+		async fn get_order_payment(
+			&self,
+			id: Uuid,
+		) -> Result<Option<OrderPayments>, Error>;
+		async fn get_order_payments(
+			&self,
+			page: usize,
+			limit: usize,
+		) -> Result<(Vec<OrderPayments>, i64), Error>;
+		async fn order_payment_create<T>(
+			&self,
+			data: T,
+		) -> Result<Option<OrderPayments>, Error>
+		where
+			T: Into<OrderPayment> + Send;
+		async fn order_payment_update<T>(
+			&self,
+			pid: Uuid,
+			data: T,
+		) -> Result<Option<OrderPayments>, Error>
+		where
+			T: Into<OrderPayment> + Send;
+		async fn order_payment_delete(&self, pid: Uuid) -> Result<u64, Error>;
+	}
 
-    #[async_trait]
-    impl OrderPaymentExt for DBClient {
-        async fn get_order_payment(&self, id: Uuid) -> Result<Option<OrderPayments>, Error> {
-            let payment = sqlx::query_as!(
-                OrderPayments,
+	#[async_trait]
+	impl OrderPaymentExt for DBClient {
+		async fn get_order_payment(
+			&self,
+			id: Uuid,
+		) -> Result<Option<OrderPayments>, Error> {
+			let payment = sqlx::query_as!(
+				OrderPayments,
                 r#"
             SELECT
                 id, order_id, amount, updated_by, via_by, descriptions, created_at, updated_at
@@ -59,31 +68,31 @@ pub mod db {
             )
             .fetch_optional(&self.pool)
             .await?;
-            Ok(payment)
-        }
+			Ok(payment)
+		}
 
-        async fn get_order_payments(
-            &self,
-            page: usize,
-            limit: usize,
-        ) -> Result<(Vec<OrderPayments>, i64), Error> {
-            let x: usize = 1;
-            let offset: usize = (page - x) * limit;
+		async fn get_order_payments(
+			&self,
+			page: usize,
+			limit: usize,
+		) -> Result<(Vec<OrderPayments>, i64), Error> {
+			let x: usize = 1;
+			let offset: usize = (page - x) * limit;
 
-            let mut cnn: PoolConnection<Postgres> = self.pool.acquire().await?;
-            let mut tx: Transaction<Postgres> = cnn.begin().await?;
+			let mut cnn: PoolConnection<Postgres> = self.pool.acquire().await?;
+			let mut tx: Transaction<Postgres> = cnn.begin().await?;
 
-            let payments = sqlx::query_as!(
-                OrderPayments,
-                r#"
-            SELECT
-                id, order_id, amount, updated_by, via_by, descriptions, created_at, updated_at
-            FROM
-                order_payments
-            ORDER BY
-                created_at
-            OFFSET $1
-            LIMIT $2
+			let payments = sqlx::query_as!(
+				OrderPayments,
+				r#"
+				SELECT
+             	id, order_id, amount, updated_by, via_by, descriptions, created_at, updated_at
+         	FROM
+            	order_payments
+         	ORDER BY
+            	created_at
+         	OFFSET $1
+         	LIMIT $2
             "#,
                 limit as i64,
                 offset as i64
@@ -91,35 +100,38 @@ pub mod db {
             .fetch_all(&mut *tx)
             .await?;
 
-            let count = sqlx::query_scalar!(
-                r#"
+			let count = sqlx::query_scalar!(
+				r#"
             SELECT
                 COUNT(*)
             FROM
                 order_payments
             "#
-            )
-            .fetch_one(&mut *tx)
-            .await?
-            .unwrap_or(0);
+			)
+			.fetch_one(&mut *tx)
+			.await?
+			.unwrap_or(0);
 
-            tx.commit().await?;
+			tx.commit().await?;
 
-            Ok((payments, count))
-        }
+			Ok((payments, count))
+		}
 
-        async fn order_payment_create<T>(&self, data: T) -> Result<Option<OrderPayments>, Error>
-        where
-            T: Into<OrderPayment> + Send,
-        {
-            let op: OrderPayment = data.try_into().unwrap();
+		async fn order_payment_create<T>(
+			&self,
+			data: T,
+		) -> Result<Option<OrderPayments>, Error>
+		where
+			T: Into<OrderPayment> + Send,
+		{
+			let op: OrderPayment = data.try_into().unwrap();
 
-            let mut cnn: PoolConnection<Postgres> = self.pool.acquire().await?;
-            let mut tx: Transaction<Postgres> = cnn.begin().await?;
+			let mut cnn: PoolConnection<Postgres> = self.pool.acquire().await?;
+			let mut tx: Transaction<Postgres> = cnn.begin().await?;
 
-            let order = sqlx::query_as!(
-                OrderInfo,
-                r#"
+			let order = sqlx::query_as!(
+				OrderInfo,
+				r#"
             SELECT
                 o.id,
                 o.customer_id,
@@ -131,14 +143,14 @@ pub mod db {
             WHERE
                 o.id = $1
             "#,
-                op.order_id
-            )
-            .fetch_one(&mut *tx)
-            .await?;
+				op.order_id
+			)
+			.fetch_one(&mut *tx)
+			.await?;
 
-            let query = sqlx::query_as!(
-                OrderPayments,
-                r#"
+			let query = sqlx::query_as!(
+				OrderPayments,
+				r#"
             INSERT INTO 
                 order_payments (
                     order_id,
@@ -150,19 +162,19 @@ pub mod db {
             VALUES ($1, $2, $3, $4, $5)
             RETURNING *
             "#,
-                op.order_id,
-                op.amount,
-                op.updated_by,
-                op.via_by,
-                op.descriptions
-            )
-            .fetch_optional(&mut *tx)
-            .await?;
+				op.order_id,
+				op.amount,
+				op.updated_by,
+				op.via_by,
+				op.descriptions
+			)
+			.fetch_optional(&mut *tx)
+			.await?;
 
-            let payment = query.unwrap();
-            let pid = payment.id;
+			let payment = query.unwrap();
+			let pid = payment.id;
 
-            let _ = sqlx::query!(
+			let _ = sqlx::query!(
                 r#"
             INSERT INTO
                 ledgers (
@@ -184,15 +196,16 @@ pub mod db {
             .execute(&mut *tx)
             .await?;
 
-            let (ledger_details, count) = LedgerUtil::from_order_payment(&op.amount, pid, pid);
+			let (ledger_details, count) =
+				LedgerUtil::from_order_payment(&op.amount, pid, pid);
 
-            let mut i: usize = 0;
+			let mut i: usize = 0;
 
-            loop {
-                let detail = ledger_details.get(i).unwrap();
+			loop {
+				let detail = ledger_details.get(i).unwrap();
 
-                let _ = sqlx::query!(
-                    r#"
+				let _ = sqlx::query!(
+					r#"
                 INSERT INTO
                     ledger_details(
                         ledger_id,
@@ -206,25 +219,25 @@ pub mod db {
                 VALUES
                     ($1, $2, $3, $4, $5, $6, $7)
                 "#,
-                    detail.ledger_id,
-                    detail.id,
-                    detail.account_id,
-                    detail.descriptions,
-                    detail.amount,
-                    detail.direction,
-                    detail.ref_id
-                )
-                .execute(&mut *tx)
-                .await?;
+					detail.ledger_id,
+					detail.id,
+					detail.account_id,
+					detail.descriptions,
+					detail.amount,
+					detail.direction,
+					detail.ref_id
+				)
+				.execute(&mut *tx)
+				.await?;
 
-                i = i.checked_add(1).unwrap();
+				i = i.checked_add(1).unwrap();
 
-                if i == count {
-                    break;
-                }
-            }
+				if i == count {
+					break;
+				}
+			}
 
-            let _ = sqlx::query!(
+			let _ = sqlx::query!(
                 r#"
             UPDATE
                 orders
@@ -246,27 +259,27 @@ pub mod db {
             .execute(&mut *tx)
             .await?;
 
-            tx.commit().await?;
+			tx.commit().await?;
 
-            Ok(Some(payment))
-        }
+			Ok(Some(payment))
+		}
 
-        async fn order_payment_update<T>(
-            &self,
-            pid: Uuid,
-            data: T,
-        ) -> Result<Option<OrderPayments>, Error>
-        where
-            T: Into<OrderPayment> + Send,
-        {
-            let op: OrderPayment = data.try_into().unwrap();
+		async fn order_payment_update<T>(
+			&self,
+			pid: Uuid,
+			data: T,
+		) -> Result<Option<OrderPayments>, Error>
+		where
+			T: Into<OrderPayment> + Send,
+		{
+			let op: OrderPayment = data.try_into().unwrap();
 
-            let mut cnn: PoolConnection<Postgres> = self.pool.acquire().await?;
-            let mut tx: Transaction<Postgres> = cnn.begin().await?;
+			let mut cnn: PoolConnection<Postgres> = self.pool.acquire().await?;
+			let mut tx: Transaction<Postgres> = cnn.begin().await?;
 
-            let order = sqlx::query_as!(
-                OrderInfo,
-                r#"
+			let order = sqlx::query_as!(
+				OrderInfo,
+				r#"
             SELECT
                 o.id,
                 o.customer_id,
@@ -278,14 +291,14 @@ pub mod db {
             WHERE
                 o.id = $1
             "#,
-                op.order_id
-            )
-            .fetch_one(&mut *tx)
-            .await?;
+				op.order_id
+			)
+			.fetch_one(&mut *tx)
+			.await?;
 
-            let old_op = sqlx::query_as!(
-                PaymentInfo,
-                r#"
+			let old_op = sqlx::query_as!(
+				PaymentInfo,
+				r#"
             SELECT
                 order_id,
                 amount
@@ -294,14 +307,14 @@ pub mod db {
             WHERE
                 id = $1
             "#,
-                pid
-            )
-            .fetch_one(&mut *tx)
-            .await?;
+				pid
+			)
+			.fetch_one(&mut *tx)
+			.await?;
 
-            let query = sqlx::query_as!(
-                OrderPayments,
-                r#"
+			let query = sqlx::query_as!(
+				OrderPayments,
+				r#"
             UPDATE
                 order_payments
             SET
@@ -314,20 +327,20 @@ pub mod db {
             WHERE id = $1
             RETURNING *
             "#,
-                pid,
-                op.order_id,
-                op.amount,
-                op.updated_by,
-                op.via_by,
-                op.descriptions
-            )
-            .fetch_optional(&mut *tx)
-            .await?;
+				pid,
+				op.order_id,
+				op.amount,
+				op.updated_by,
+				op.via_by,
+				op.descriptions
+			)
+			.fetch_optional(&mut *tx)
+			.await?;
 
-            let payment = query.unwrap();
+			let payment = query.unwrap();
 
-            let _ = sqlx::query!(
-                r#"
+			let _ = sqlx::query!(
+				r#"
             UPDATE
                 ledgers
             SET
@@ -339,40 +352,41 @@ pub mod db {
             WHERE
                 id = $1                
             "#,
-                pid,
-                order.customer_id,
-                LedgerType::OrderPayment as LedgerType,
-                format!(
-                    "Titip bayar {}, No order {} lewat ...",
-                    order.customer_name, order.id
-                ),
-                op.updated_by,
-                false
-            )
-            .execute(&mut *tx)
-            .await?;
+				pid,
+				order.customer_id,
+				LedgerType::OrderPayment as LedgerType,
+				format!(
+					"Titip bayar {}, No order {} lewat ...",
+					order.customer_name, order.id
+				),
+				op.updated_by,
+				false
+			)
+			.execute(&mut *tx)
+			.await?;
 
-            let _ = sqlx::query!(
-                r#"
+			let _ = sqlx::query!(
+				r#"
             DELETE FROM
                 ledger_details
             WHERE
                 ledger_id = $1
             "#,
-                pid
-            )
-            .execute(&mut *tx)
-            .await?;
+				pid
+			)
+			.execute(&mut *tx)
+			.await?;
 
-            let (ledger_details, count) = LedgerUtil::from_order_payment(&op.amount, pid, pid);
+			let (ledger_details, count) =
+				LedgerUtil::from_order_payment(&op.amount, pid, pid);
 
-            let mut i: usize = 0;
+			let mut i: usize = 0;
 
-            loop {
-                let detail = ledger_details.get(i).unwrap();
+			loop {
+				let detail = ledger_details.get(i).unwrap();
 
-                let _ = sqlx::query!(
-                    r#"
+				let _ = sqlx::query!(
+					r#"
                 INSERT INTO
                     ledger_details(
                         ledger_id,
@@ -386,25 +400,25 @@ pub mod db {
                 VALUES
                     ($1, $2, $3, $4, $5, $6, $7)
                 "#,
-                    detail.ledger_id,
-                    detail.id,
-                    detail.account_id,
-                    detail.descriptions,
-                    detail.amount,
-                    detail.direction,
-                    detail.ref_id
-                )
-                .execute(&mut *tx)
-                .await?;
+					detail.ledger_id,
+					detail.id,
+					detail.account_id,
+					detail.descriptions,
+					detail.amount,
+					detail.direction,
+					detail.ref_id
+				)
+				.execute(&mut *tx)
+				.await?;
 
-                i = i.checked_add(1).unwrap();
+				i = i.checked_add(1).unwrap();
 
-                if i == count {
-                    break;
-                }
-            }
+				if i == count {
+					break;
+				}
+			}
 
-            let _ = sqlx::query!(
+			let _ = sqlx::query!(
             r#"
             UPDATE
                 orders
@@ -427,31 +441,31 @@ pub mod db {
         .execute(&mut *tx)
         .await?;
 
-            tx.commit().await?;
+			tx.commit().await?;
 
-            Ok(Some(payment))
-        }
+			Ok(Some(payment))
+		}
 
-        /// Hapus **data pembayaran order** dan **data ledger**.
-        async fn order_payment_delete(&self, pid: Uuid) -> Result<u64, Error> {
-            let mut cnn: PoolConnection<Postgres> = self.pool.acquire().await?;
-            let mut tx: Transaction<Postgres> = cnn.begin().await?;
+		/// Hapus **data pembayaran order** dan **data ledger**.
+		async fn order_payment_delete(&self, pid: Uuid) -> Result<u64, Error> {
+			let mut cnn: PoolConnection<Postgres> = self.pool.acquire().await?;
+			let mut tx: Transaction<Postgres> = cnn.begin().await?;
 
-            let _ = sqlx::query!(
-                r#"
+			let _ = sqlx::query!(
+				r#"
             DELETE FROM
                 ledgers
             WHERE
                 id = $1
             "#,
-                pid,
-            )
-            .execute(&mut *tx)
-            .await?;
+				pid,
+			)
+			.execute(&mut *tx)
+			.await?;
 
-            let op = sqlx::query_as!(
-                PaymentInfo,
-                r#"
+			let op = sqlx::query_as!(
+				PaymentInfo,
+				r#"
             DELETE FROM
                 order_payments
             WHERE
@@ -459,15 +473,15 @@ pub mod db {
             RETURNING
                 order_id, amount
             "#,
-                pid,
-            )
-            .fetch_optional(&mut *tx)
-            .await?;
+				pid,
+			)
+			.fetch_optional(&mut *tx)
+			.await?;
 
-            let affected = if op.is_none() { 0 } else { 1 };
-            let payment = op.unwrap();
+			let affected = if op.is_none() { 0 } else { 1 };
+			let payment = op.unwrap();
 
-            let _ = sqlx::query!(
+			let _ = sqlx::query!(
                 r#"
             UPDATE
                 orders
@@ -489,9 +503,9 @@ pub mod db {
             .execute(&mut *tx)
             .await?;
 
-            tx.commit().await?;
+			tx.commit().await?;
 
-            Ok(affected)
-        }
-    }
+			Ok(affected)
+		}
+	}
 }

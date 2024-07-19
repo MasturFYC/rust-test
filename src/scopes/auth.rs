@@ -1,38 +1,38 @@
 use actix_web::{
-    cookie::time::Duration as ActixWebDuration, cookie::Cookie, web, HttpResponse, Responder, Scope,
+	cookie::time::Duration as ActixWebDuration, cookie::Cookie, web,
+	HttpResponse, Responder, Scope,
 };
 use serde_json::json;
 use validator::Validate;
 use uuid::Uuid;
 
 use crate::{
-    dtos::{
-        FilterUserDto, LoginUserDto, RegisterUserDto, UserData, UserLoginResponseDto,
-        UserResponseDto, UpdateUserDto
-    },
-    error::{ErrorMessage, HttpError},
-    extractors::auth::RequireAuth,
-    utils::{password, token},
-    AppState,
+	dtos::{
+		FilterUserDto, LoginUserDto, RegisterUserDto, UserData,
+		UserLoginResponseDto, UserResponseDto, UpdateUserDto,
+	},
+	error::{ErrorMessage, HttpError},
+	extractors::auth::RequireAuth,
+	utils::{password, token},
+	AppState,
 };
 
-use resdb::{db::UserExt, model::UserRole};
+use resdb::{user::UserExt, model::UserRole};
 
 pub fn auth_scope() -> Scope {
-    web::scope("/api/auth")
-        .route("/register", web::post().to(register))
-        .route("/update/{user_id}", web::put().to(update))
-        .route("/login", web::post().to(login))
-        .route(
-            "/logout",
-            web::post().to(logout).wrap(RequireAuth::allowed_roles(vec![
-                UserRole::User,
-                UserRole::Moderator,
-                UserRole::Admin,
-            ])),
-        )
+	web::scope("/api/auth")
+		.route("/register", web::post().to(register))
+		.route("/update/{user_id}", web::put().to(update))
+		.route("/login", web::post().to(login))
+		.route(
+			"/logout",
+			web::post().to(logout).wrap(RequireAuth::allowed_roles(vec![
+				UserRole::User,
+				UserRole::Moderator,
+				UserRole::Admin,
+			])),
+		)
 }
-
 
 #[utoipa::path(
     post,
@@ -47,38 +47,38 @@ pub fn auth_scope() -> Scope {
     )
 )]
 pub async fn register(
-    app_state: web::Data<AppState>,
-    body: web::Json<RegisterUserDto>,
+	app_state: web::Data<AppState>,
+	body: web::Json<RegisterUserDto>,
 ) -> Result<HttpResponse, HttpError> {
-    body.validate()
-        .map_err(|e| HttpError::bad_request(e.to_string()))?;
+	body.validate()
+		.map_err(|e| HttpError::bad_request(e.to_string()))?;
 
-    let hashed_password =
-        password::hash(&body.password).map_err(|e| HttpError::server_error(e.to_string()))?;
+	let hashed_password = password::hash(&body.password)
+		.map_err(|e| HttpError::server_error(e.to_string()))?;
 
-    let result = app_state
-        .db_client
-        .save_user(&body.name, &body.email, &hashed_password)
-        .await;
+	let result = app_state
+		.db_client
+		.save_user(&body.name, &body.email, &hashed_password)
+		.await;
 
-    match result {
-        Ok(user) => Ok(HttpResponse::Created().json(UserResponseDto {
-            status: "success".to_string(),
-            data: UserData {
-                user: FilterUserDto::filter_user(&user),
-            },
-        })),
-        // Err(sqlx::Error::Database(db_err)) => {
-        //     if db_err.is_unique_violation() {
-        //         Err(HttpError::unique_constraint_voilation(
-        //             ErrorMessage::EmailExist,
-        //         ))
-        //     } else {
-        //         Err(HttpError::server_error(db_err.to_string()))
-        //     }
-        // }
-        Err(e) => Err(HttpError::server_error(e.to_string())),
-    }
+	match result {
+		Ok(user) => Ok(HttpResponse::Created().json(UserResponseDto {
+			status: "success".to_string(),
+			data: UserData {
+				user: FilterUserDto::filter_user(&user),
+			},
+		})),
+		// Err(sqlx::Error::Database(db_err)) => {
+		//     if db_err.is_unique_violation() {
+		//         Err(HttpError::unique_constraint_voilation(
+		//             ErrorMessage::EmailExist,
+		//         ))
+		//     } else {
+		//         Err(HttpError::server_error(db_err.to_string()))
+		//     }
+		// }
+		Err(e) => Err(HttpError::server_error(e.to_string())),
+	}
 }
 
 #[utoipa::path(
@@ -94,55 +94,54 @@ pub async fn register(
     )
 )]
 pub async fn update(
-    app_state: web::Data<AppState>,
-    user_id: web::Path<String>,
-    body: web::Json<UpdateUserDto>,
+	app_state: web::Data<AppState>,
+	user_id: web::Path<String>,
+	body: web::Json<UpdateUserDto>,
 ) -> Result<HttpResponse, HttpError> {
+	let id = Uuid::parse_str(&user_id).unwrap();
 
-    let id =  Uuid::parse_str(&user_id).unwrap();
+	// println!("Welcome {}", id);
 
-    // println!("Welcome {}", id);
+	body.validate()
+		.map_err(|e| HttpError::bad_request(e.to_string()))?;
 
-    body.validate()
-        .map_err(|e| HttpError::bad_request(e.to_string()))?;
+	// println!("Welcome {}", body.name);
 
-        // println!("Welcome {}", body.name);
+	let result = app_state
+		.db_client
+		.get_user(Some(id), None, None)
+		.await
+		.map_err(|e| HttpError::server_error(e.to_string()))?;
 
-    let result = app_state
-        .db_client
-        .get_user(Some(id), None, None)
-        .await
-        .map_err(|e| HttpError::server_error(e.to_string()))?;
+	let user = result
+		.ok_or(HttpError::bad_request(ErrorMessage::UserNoLongerExist))?;
 
-    let user = result.ok_or(HttpError::bad_request(ErrorMessage::UserNoLongerExist))?;
+	// let hashed_password =
+	//     password::hash(&body.password).map_err(|e| HttpError::server_error(e.to_string()))?;
 
-    // let hashed_password =
-    //     password::hash(&body.password).map_err(|e| HttpError::server_error(e.to_string()))?;
+	let result = app_state
+		.db_client
+		.user_update(Some(user.id), &body.name, &body.email)
+		.await;
 
-    let result = app_state
-        .db_client
-        .user_update(Some(user.id), &body.name, &body.email)
-        .await;
-
-    match result {
-        Ok(user) => Ok(HttpResponse::Created().json(UserResponseDto {
-            status: "success".to_string(),
-            data: UserData {
-                user: FilterUserDto::filter_user(&user),
-            },
-        })),
-        // Err(sqlx::Error::Database(db_err)) => {
-        //     if db_err.is_unique_violation() {
-        //         Err(HttpError::unique_constraint_voilation(
-        //             ErrorMessage::EmailExist,
-        //         ))
-        //     } else {
-        //         Err(HttpError::server_error(db_err.to_string()))
-        //     }
-        // }
-        Err(e) => Err(HttpError::server_error(e.to_string())),
-    }
-
+	match result {
+		Ok(user) => Ok(HttpResponse::Created().json(UserResponseDto {
+			status: "success".to_string(),
+			data: UserData {
+				user: FilterUserDto::filter_user(&user),
+			},
+		})),
+		// Err(sqlx::Error::Database(db_err)) => {
+		//     if db_err.is_unique_violation() {
+		//         Err(HttpError::unique_constraint_voilation(
+		//             ErrorMessage::EmailExist,
+		//         ))
+		//     } else {
+		//         Err(HttpError::server_error(db_err.to_string()))
+		//     }
+		// }
+		Err(e) => Err(HttpError::server_error(e.to_string())),
+	}
 }
 
 #[utoipa::path(
@@ -157,45 +156,46 @@ pub async fn update(
     )
 )]
 pub async fn login(
-    app_state: web::Data<AppState>,
-    body: web::Json<LoginUserDto>,
+	app_state: web::Data<AppState>,
+	body: web::Json<LoginUserDto>,
 ) -> Result<HttpResponse, HttpError> {
-    body.validate()
-        .map_err(|e| HttpError::bad_request(e.to_string()))?;
+	body.validate()
+		.map_err(|e| HttpError::bad_request(e.to_string()))?;
 
-    let result = app_state
-        .db_client
-        .get_user(None, None, Some(&body.email))
-        .await
-        .map_err(|e| HttpError::server_error(e.to_string()))?;
+	let result = app_state
+		.db_client
+		.get_user(None, None, Some(&body.email))
+		.await
+		.map_err(|e| HttpError::server_error(e.to_string()))?;
 
-    let user = result.ok_or(HttpError::unauthorized(ErrorMessage::WrongCredentials))?;
+	let user = result
+		.ok_or(HttpError::unauthorized(ErrorMessage::WrongCredentials))?;
 
-    let password_matches = password::compare(&body.password, &user.password)
-        .map_err(|_| HttpError::unauthorized(ErrorMessage::WrongCredentials))?;
+	let password_matches = password::compare(&body.password, &user.password)
+		.map_err(|_| HttpError::unauthorized(ErrorMessage::WrongCredentials))?;
 
-    if password_matches {
-        let token = token::create_token(
-            &user.id.to_string(),
-            &app_state.env.jwt_secret.as_bytes(),
-            app_state.env.jwt_maxage,
-        )
-        .map_err(|e| HttpError::server_error(e.to_string()))?;
-        let cookie = Cookie::build("token", token.to_owned())
-            .path("/")
-            .max_age(ActixWebDuration::new(60 * &app_state.env.jwt_maxage, 0))
-            .http_only(true)
-            .finish();
+	if password_matches {
+		let token = token::create_token(
+			&user.id.to_string(),
+			&app_state.env.jwt_secret.as_bytes(),
+			app_state.env.jwt_maxage,
+		)
+		.map_err(|e| HttpError::server_error(e.to_string()))?;
+		let cookie = Cookie::build("token", token.to_owned())
+			.path("/")
+			.max_age(ActixWebDuration::new(60 * &app_state.env.jwt_maxage, 0))
+			.http_only(true)
+			.finish();
 
-        Ok(HttpResponse::Ok()
-            .cookie(cookie)
-            .json(UserLoginResponseDto {
-                status: "success".to_string(),
-                token,
-            }))
-    } else {
-        Err(HttpError::unauthorized(ErrorMessage::WrongCredentials))
-    }
+		Ok(HttpResponse::Ok()
+			.cookie(cookie)
+			.json(UserLoginResponseDto {
+				status: "success".to_string(),
+				token,
+			}))
+	} else {
+		Err(HttpError::unauthorized(ErrorMessage::WrongCredentials))
+	}
 }
 
 #[utoipa::path(
@@ -213,15 +213,15 @@ pub async fn login(
    )
 )]
 pub async fn logout() -> impl Responder {
-    let cookie = Cookie::build("token", "")
-        .path("/")
-        .max_age(ActixWebDuration::new(-1, 0))
-        .http_only(true)
-        .finish();
+	let cookie = Cookie::build("token", "")
+		.path("/")
+		.max_age(ActixWebDuration::new(-1, 0))
+		.http_only(true)
+		.finish();
 
-    HttpResponse::Ok()
-        .cookie(cookie)
-        .json(json!({"status": "success"}))
+	HttpResponse::Ok()
+		.cookie(cookie)
+		.json(json!({"status": "success"}))
 }
 
 // #[cfg(test)]
