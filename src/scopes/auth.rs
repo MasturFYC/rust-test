@@ -9,7 +9,7 @@ use uuid::Uuid;
 use crate::{
 	dtos::{
 		FilterUserDto, LoginUserDto, RegisterUserDto, UserData,
-		UserLoginResponseDto, UserResponseDto, UpdateUserDto,
+		UserResponseDto, UpdateUserDto,
 	},
 	error::{ErrorMessage, HttpError},
 	extractors::auth::RequireAuth,
@@ -26,7 +26,7 @@ pub fn auth_scope() -> Scope {
 		.route("/login", web::post().to(login))
 		.route(
 			"/logout",
-			web::post().to(logout).wrap(RequireAuth::allowed_roles(vec![
+			web::get().to(logout).wrap(RequireAuth::allowed_roles(vec![
 				UserRole::User,
 				UserRole::Moderator,
 				UserRole::Admin,
@@ -183,23 +183,26 @@ pub async fn login(
 		.map_err(|e| HttpError::server_error(e.to_string()))?;
 		let cookie = Cookie::build("token", token.to_owned())
 			.path("/")
+			.same_site(actix_web::cookie::SameSite::Lax)
 			.max_age(ActixWebDuration::new(60 * &app_state.env.jwt_maxage, 0))
 			.http_only(true)
+			.secure(true)
 			.finish();
+
 
 		Ok(HttpResponse::Ok()
 			.cookie(cookie)
-			.json(UserLoginResponseDto {
-				status: "success".to_string(),
-				token,
-			}))
+			.json(json!({
+				"status": "success".to_string(),
+				"token" : token,
+			})))
 	} else {
 		Err(HttpError::unauthorized(ErrorMessage::WrongCredentials))
 	}
 }
 
 #[utoipa::path(
-    post,
+    get,
     path = "/api/auth/logout",
     tag = "Logout Endpoint",
     responses(

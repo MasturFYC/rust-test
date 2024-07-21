@@ -77,8 +77,8 @@ impl Modify for SecurityAddon {
 		components.add_security_scheme(
 			"token",
 			SecurityScheme::Http(
-				HttpBuilder::new()
-					.scheme(HttpAuthScheme::Bearer)
+				HttpBuilder::new()					
+					.scheme(HttpAuthScheme::Bearer)					
 					.bearer_format("JWT")
 					.build(),
 			),
@@ -127,8 +127,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 		let cors = Cors::default()
 			.allowed_origin("http://localhost:3000")
 			.allowed_origin("http://localhost:8000")
+			.allowed_origin("http://localhost:8080")
+			.allowed_origin("https://fyc.sapulidi.site")
+			.allowed_origin("http://localhost")
+			.allowed_origin("http://127.0.0.1:8080")
 			.allowed_origin("https://rust.codevoweb.com")
-			.allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
+			.allowed_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 			.allowed_headers(vec![
 				header::CONTENT_TYPE,
 				header::AUTHORIZATION,
