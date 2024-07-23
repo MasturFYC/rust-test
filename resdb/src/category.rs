@@ -166,8 +166,7 @@ pub mod db {
 			let rows_affected =
 				sqlx::query_file!("sql/category-delete.sql", id)
 					.execute(&self.pool)
-					.await
-					.unwrap()
+					.await?		
 					.rows_affected();
 
 			Ok(Some(rows_affected))

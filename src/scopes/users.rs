@@ -1,10 +1,11 @@
 use actix_web::{web, HttpResponse, Scope};
 use validator::Validate;
+use serde_json::json;
 
 use crate::{
 	dtos::{
-		FilterUserDto, RequestQueryDto, UserData, UserListResponseDto,
-		UserResponseDto,
+		FilterUserDto, RequestQueryDto, UserListResponseDto
+		
 	},
 	error::HttpError,
 	extractors::auth::{Authenticated, RequireAuth},
@@ -25,7 +26,7 @@ pub fn users_scope() -> Scope {
 			web::get().to(get_me).wrap(RequireAuth::allowed_roles(vec![
 				UserRole::User,
 				UserRole::Moderator,
-				UserRole::Admin,
+UserRole::Admin,
 			])),
 		)
 }
@@ -45,12 +46,11 @@ pub fn users_scope() -> Scope {
 async fn get_me(user: Authenticated) -> Result<HttpResponse, HttpError> {
 	let filtered_user = FilterUserDto::filter_user(&user);
 
-	let response_data = UserResponseDto {
-		status: "success".to_string(),
-		data: UserData {
-			user: filtered_user,
-		},
-	};
+	let response_data = json! ({
+		"status": "success".to_string(),
+		"data": filtered_user
+		});
+	
 
 	Ok(HttpResponse::Ok().json(response_data))
 }

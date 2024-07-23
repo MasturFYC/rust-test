@@ -127,16 +127,24 @@ async fn update(
 
 	match query_result {
 		Ok(cat) => {
-			let cat_response = serde_json::json!({"status": "success","data": serde_json::json!({
-				"category": cat
-			})});
+			let cat_response = serde_json::json!({
+                "status": "success",
+                "data": serde_json::json!(cat)
+            });
 
 			return HttpResponse::Ok().json(cat_response);
 		}
 		Err(err) => {
-			let message = format!("Error: {:?}", err);
+		    if err.to_string()
+				.contains("duplicate key value violates unique constraint")
+			{
+				return HttpResponse::BadRequest().json(
+					json!({"status": "fail","message": "Note with that title already exists"}),
+				);
+			}
+
 			return HttpResponse::InternalServerError().json(
-				serde_json::json!({"status": "error","message": message}),
+				json!({"status": "error","message": format!("{:?}", err)}),
 			);
 		}
 	}
@@ -150,6 +158,13 @@ async fn delete(
 	let cat_id = path.into_inner();
 	let query_result = app_state.db_client.category_delete(cat_id).await;
 
+    if query_result.is_err() {
+		let message = format!("Category with ID: {} cannot be deleted", cat_id);
+		return HttpResponse::BadRequest()
+			.json(json!({"status": "fail","message": message}));
+
+    }
+
 	let rows_affected = query_result.unwrap().unwrap();
 	if rows_affected == 0 {
 		let message = format!("Category with ID: {} not found", cat_id);
@@ -157,7 +172,12 @@ async fn delete(
 			.json(json!({"status": "fail","message": message}));
 	}
 
-	HttpResponse::NoContent().finish()
+    return HttpResponse::Ok().json(json!({
+        "status" : "success",
+        "affected": rows_affected
+    }));
+
+    //	HttpResponse::NoContent().finish()
 }
 
 #[get("/products/{id}")]
