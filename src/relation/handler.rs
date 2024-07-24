@@ -62,6 +62,7 @@ async fn get_relations(
 
 	let limit = query_params.limit.unwrap_or(10);
 	let page = query_params.page.unwrap_or(1);
+	let lim = limit as i64;
 
 	let query_result = app_state.db_client.get_relations(page, limit).await;
 
@@ -72,13 +73,17 @@ async fn get_relations(
 			.json(json!({"status": "error","message": message}));
 	}
 
-	let rels = query_result.unwrap();
+    let (rels, length) = query_result.unwrap();
+	//let rels = query_result.unwrap();
 
-	let json_response = serde_json::json!({
+    let json_response = json!({
 		"status": "success",
-		"count": rels.len(),
-		"data": rels
+		"totalPages": (length / lim) + (if length % lim == 0 {0} else {1}),
+		"count": rels.len(), // count of selected orders
+		"data": rels, // selected orders
+		"totalItems": length, // all item orders in database
 	});
+
 	HttpResponse::Ok().json(json_response)
 }
 
@@ -102,6 +107,7 @@ async fn get_relations_by_type(
 
 	let limit = query_params.limit.unwrap_or(10);
 	let page = query_params.page.unwrap_or(1);
+	let lim = limit as i64;
 
 	let query_result = app_state
 		.db_client
@@ -115,13 +121,16 @@ async fn get_relations_by_type(
 			.json(json!({"status": "error","message": message}));
 	}
 
-	let rels = query_result.unwrap();
+	let (rels, length) = query_result.unwrap();
 
-	let json_response = serde_json::json!({
+    let json_response = json!({
 		"status": "success",
-		"count": rels.len(),
-		"data": rels
+		"totalPages": (length / lim) + (if length % lim == 0 {0} else {1}),
+		"count": rels.len(), // count of selected orders
+		"data": rels, // selected orders
+		"totalItems": length, // all item orders in database
 	});
+
 	HttpResponse::Ok().json(json_response)
 }
 
@@ -142,7 +151,7 @@ async fn create(
 			}
 
 			let acc_response =
-				serde_json::json!({"status": "success", "data": rel.unwrap()});
+				serde_json::json!({"status": "success", "data": rel});
 
 			return HttpResponse::Created().json(acc_response);
 		}
@@ -189,10 +198,11 @@ async fn update(
 	let query_result = app_state.db_client.relation_update(rel_id, data).await;
 
 	match query_result {
-		Ok(acc) => {
-			let acc_response = serde_json::json!({"status": "success","data": serde_json::json!({
-				"account": acc
-			})});
+		Ok(rel) => {
+			let acc_response = serde_json::json!({
+                "status": "success",
+                "data": serde_json::json!(rel)
+            });
 
 			return HttpResponse::Ok().json(acc_response);
 		}

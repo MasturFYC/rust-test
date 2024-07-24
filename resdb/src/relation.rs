@@ -1,6 +1,6 @@
 pub mod db {
 	use async_trait::async_trait;
-	use sqlx;
+	use sqlx::{self, Acquire};
 
 	use crate::model::{CreateRelationSchema, Relation, RelationType};
 	use crate::db::DBClient;
@@ -15,13 +15,13 @@ pub mod db {
 			&self,
 			page: usize,
 			limit: usize,
-		) -> Result<Vec<Relation>, sqlx::Error>;
+		) -> Result<(Vec<Relation>, i64), sqlx::Error>;
 		async fn get_relations_by_type(
 			&self,
 			page: usize,
 			limit: usize,
 			rels: Vec<RelationType>,
-		) -> Result<Vec<Relation>, sqlx::Error>;
+		) -> Result<(Vec<Relation>, i64), sqlx::Error>;
 		async fn relation_create<T: Into<CreateRelationSchema> + Send>(
 			&self,
 			data: T,
@@ -58,17 +58,35 @@ pub mod db {
 			&self,
 			page: usize,
 			limit: usize,
-		) -> Result<Vec<Relation>, sqlx::Error> {
+		) -> Result<(Vec<Relation>, i64), sqlx::Error> {
 			let offset = (page - 1) * limit;
-			let relations = sqlx::query_file_as!(
+				// acquire pg connection from current pool
+			let mut conn = self.pool.acquire().await?;
+
+			// get transaction pool from pg connection
+			let mut tx = conn.begin().await?;
+
+		    let relations = sqlx::query_file_as!(
 				Relation,
 				"sql/relation-get-all.sql",
 				limit as i64,
 				offset as i64
 			)
-			.fetch_all(&self.pool)
+			.fetch_all(&mut *tx)
 			.await?;
-			Ok(relations)
+ 		
+            let row = sqlx::query_scalar!(
+            r#"
+            SELECT 
+                COUNT(*)
+            FROM
+                relations
+            "#)
+				.fetch_one(&mut *tx)
+				.await?;
+           
+            tx.commit().await?;
+			Ok((relations, row.unwrap_or(0)))
 		}
 
 		async fn get_relations_by_type(
@@ -76,7 +94,7 @@ pub mod db {
 			page: usize,
 			limit: usize,
 			rels: Vec<RelationType>,
-		) -> Result<Vec<Relation>, sqlx::Error> {
+		) -> Result<(Vec<Relation>, i64), sqlx::Error> {
 			let offset: usize = (page - 1) * limit;
 			// let mut params: Vec<String>;
 
@@ -85,7 +103,13 @@ pub mod db {
 				.map(|item| item.to_str().to_string())
 				.collect();
 
-			// for i in rels {
+			// acquire pg connection from current pool
+			let mut conn = self.pool.acquire().await?;
+
+			// get transaction pool from pg connection
+			let mut tx = conn.begin().await?;
+
+	    	// for i in rels {
 			//     params.push(i.to_str().to_string());
 			// }
 
@@ -96,10 +120,25 @@ pub mod db {
 				limit as i64,
 				offset as i64,
 			)
-			.fetch_all(&self.pool)
+			.fetch_all(&mut *tx)
 			.await?;
 
-			Ok(relations)
+            let row = sqlx::query_scalar!(
+            r#"
+            SELECT 
+                COUNT(*)
+            FROM
+                relations
+            WHERE
+                relation_type::TEXT[] && $1
+            "#,
+            &test)
+				.fetch_one(&mut *tx)
+				.await?;
+
+            tx.commit().await?;
+
+			Ok((relations, row.unwrap_or(0)))
 		}
 
 		async fn relation_create<T: Into<CreateRelationSchema> + Send>(
@@ -122,7 +161,8 @@ pub mod db {
 				data.phone.to_owned(),
 				data.is_active.to_owned(),
 				data.is_special.to_owned(),
-				&test as _
+				&test as _,
+                data.photo
 			)
 			.fetch_optional(&self.pool)
 			.await?;
@@ -154,6 +194,7 @@ pub mod db {
 				data.is_active.to_owned(),
 				data.is_special.to_owned(),
 				&test as _,
+                data.photo,
 				chrono::offset::Utc::now()
 			)
 			.fetch_optional(&self.pool)

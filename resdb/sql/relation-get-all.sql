@@ -6,6 +6,7 @@ SELECT  id,
         is_active,
         is_special,
         relation_type AS "relation_type: Vec<RelationType>",
+        photo,
         created_at,
         updated_at
     FROM relations

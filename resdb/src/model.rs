@@ -396,6 +396,7 @@ pub enum RelationType {
 	Employee,
 	Member,
 	Supplier,
+    Sales
 }
 
 impl RelationType {
@@ -405,6 +406,7 @@ impl RelationType {
 			RelationType::Employee => "employee",
 			RelationType::Member => "member",
 			RelationType::Supplier => "supplier",
+            RelationType::Sales => "sales",
 		}
 	}
 }
@@ -422,7 +424,9 @@ pub struct Relation {
 	pub is_special: bool,
 	#[serde(rename = "relationType")]
 	pub relation_type: Vec<RelationType>,
-	#[serde(rename = "createdAt")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+	pub photo: Option<String>,
+    #[serde(rename = "createdAt")]
 	pub created_at: Option<DateTime<Utc>>,
 	#[serde(rename = "updatedAt")]
 	pub updated_at: Option<DateTime<Utc>>,
@@ -443,6 +447,8 @@ pub struct CreateRelationSchema {
 	#[serde(rename = "relationType")]
 	#[validate(length(min = 1, message = "Type is required"))]
 	pub relation_type: Vec<RelationType>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub photo: Option<String>
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, Copy, sqlx::Type, PartialEq)]

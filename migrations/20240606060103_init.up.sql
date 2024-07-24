@@ -10,7 +10,7 @@ CREATE TYPE payment_enum AS ENUM ('cash', 'pending', 'loans', 'lunas');
 
 CREATE TYPE ledger_enum AS ENUM ('order', 'stock', 'order_return', 'stock_return', 'loan', 'order_payment', 'stock_payment', 'loan_payment');
 
-CREATE TYPE relation_enum AS ENUM ('customer', 'employee', 'member', 'supplier');
+CREATE TYPE relation_enum AS ENUM ('customer', 'employee', 'member', 'supplier', 'Sales');
 
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -81,6 +81,7 @@ CREATE TABLE
         is_active BOOLEAN NOT NULL DEFAULT TRUE,
         is_special BOOLEAN NOT NULL DEFAULT FALSE,
         relation_type relation_enum[] NOT NULL DEFAULT '{customer}',
+        photo VARCHAR(256),
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         PRIMARY KEY (id)
