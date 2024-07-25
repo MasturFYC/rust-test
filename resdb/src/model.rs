@@ -396,7 +396,7 @@ pub enum RelationType {
 	Employee,
 	Member,
 	Supplier,
-    Sales
+	Sales,
 }
 
 impl RelationType {
@@ -406,7 +406,7 @@ impl RelationType {
 			RelationType::Employee => "employee",
 			RelationType::Member => "member",
 			RelationType::Supplier => "supplier",
-            RelationType::Sales => "sales",
+			RelationType::Sales => "sales",
 		}
 	}
 }
@@ -424,9 +424,9 @@ pub struct Relation {
 	pub is_special: bool,
 	#[serde(rename = "relationType")]
 	pub relation_type: Vec<RelationType>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub photo: Option<String>,
-    #[serde(rename = "createdAt")]
+	#[serde(rename = "createdAt")]
 	pub created_at: Option<DateTime<Utc>>,
 	#[serde(rename = "updatedAt")]
 	pub updated_at: Option<DateTime<Utc>>,
@@ -434,9 +434,9 @@ pub struct Relation {
 
 #[derive(Validate, Debug, Default, Clone, Serialize, Deserialize)]
 pub struct CreateRelationSchema {
-	#[validate(length(min = 1, message = "Name is required"))]
+	#[validate(length(min = 2, message = "Name is required"))]
 	pub name: String,
-	#[validate(length(min = 1, message = "City is required"))]
+	#[validate(length(min = 2, message = "City is required"))]
 	pub city: String,
 	pub street: Option<String>,
 	pub phone: Option<String>,
@@ -447,8 +447,8 @@ pub struct CreateRelationSchema {
 	#[serde(rename = "relationType")]
 	#[validate(length(min = 1, message = "Type is required"))]
 	pub relation_type: Vec<RelationType>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub photo: Option<String>
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub photo: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, Copy, sqlx::Type, PartialEq)]
