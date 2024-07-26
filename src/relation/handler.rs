@@ -14,6 +14,7 @@ pub fn relation_scope(conf: &mut web::ServiceConfig) {
 		.service(get_relation)
 		.service(get_relations)
 		.service(get_relations_by_type)
+		.service(get_relation_property_type)
 		.service(create)
 		.service(update)
 		.service(delete);
@@ -31,16 +32,14 @@ async fn get_relation(
 
 	match query_result {
 		Ok(relation) => {
-			let relation_response =
-				serde_json::json!({"status": "success","data": relation});
+			let relation_response = serde_json::json!({"status": "success","data": relation});
 
 			return HttpResponse::Ok().json(relation_response);
 		}
 		Err(_) => {
 			let message = format!("Category with ID: {} not found", rel_id);
-			return HttpResponse::NotFound().json(
-				serde_json::json!({"status": "fail","message": message}),
-			);
+			return HttpResponse::NotFound()
+				.json(serde_json::json!({"status": "fail","message": message}));
 		}
 	}
 }
@@ -67,16 +66,15 @@ async fn get_relations(
 	let query_result = app_state.db_client.get_relations(page, limit).await;
 
 	if query_result.is_err() {
-		let message =
-			"Something bad happened while fetching all relation items";
+		let message = "Something bad happened while fetching all relation items";
 		return HttpResponse::InternalServerError()
 			.json(json!({"status": "error","message": message}));
 	}
 
-    let (rels, length) = query_result.unwrap();
+	let (rels, length) = query_result.unwrap();
 	//let rels = query_result.unwrap();
 
-    let json_response = json!({
+	let json_response = json!({
 		"status": "success",
 		"totalPages": (length / lim) + (if length % lim == 0 {0} else {1}),
 		"count": rels.len(), // count of selected orders
@@ -95,14 +93,6 @@ async fn get_relations_by_type(
 ) -> impl Responder {
 	let query_params: RequestQueryDto = opts.into_inner();
 
-	// let map_err = query_params
-	//     .validate()
-	//     .map_err(|e| e);
-
-	// if map_err.is_err() {
-	//     return HttpResponse::BadRequest().json(json!({"status":"fail", "message": "Bad request"}));
-	// }
-
 	let rels = body.into_inner();
 
 	let limit = query_params.limit.unwrap_or(10);
@@ -115,20 +105,44 @@ async fn get_relations_by_type(
 		.await;
 
 	if query_result.is_err() {
-		let message =
-			"Something bad happened while fetching all relation items";
+		let message = "Something bad happened while fetching all relation items";
 		return HttpResponse::InternalServerError()
 			.json(json!({"status": "error","message": message}));
 	}
 
 	let (rels, length) = query_result.unwrap();
 
-    let json_response = json!({
+	let json_response = json!({
 		"status": "success",
 		"totalPages": (length / lim) + (if length % lim == 0 {0} else {1}),
 		"count": rels.len(), // count of selected orders
 		"data": rels, // selected orders
 		"totalItems": length, // all item orders in database
+	});
+
+	HttpResponse::Ok().json(json_response)
+}
+
+#[post("/property")]
+async fn get_relation_property_type(
+	body: web::Json<Vec<RelationType>>,
+	app_state: web::Data<AppState>,
+) -> impl Responder {
+	let rels = body.into_inner();
+
+	let query_result = app_state.db_client.get_relation_property(rels).await;
+
+	if query_result.is_err() {
+		let message = "Something bad happened while fetching relation property";
+		return HttpResponse::InternalServerError()
+			.json(json!({"status": "error","message": message}));
+	}
+
+	let props = query_result.unwrap();
+
+	let json_response = json!({
+		"status": "success",
+		"data": props,
 	});
 
 	HttpResponse::Ok().json(json_response)
@@ -150,8 +164,7 @@ async fn create(
 				);
 			}
 
-			let acc_response =
-				serde_json::json!({"status": "success", "data": rel});
+			let acc_response = serde_json::json!({"status": "success", "data": rel});
 
 			return HttpResponse::Created().json(acc_response);
 		}
@@ -159,13 +172,13 @@ async fn create(
 			if e.to_string()
 				.contains("duplicate key value violates unique constraint")
 			{
-				return HttpResponse::BadRequest()
-                .json(serde_json::json!({"status": "fail","message": "Note with that name already exists"}));
+				return HttpResponse::BadRequest().json(
+					serde_json::json!({"status": "fail","message": "Note with that name already exists"}),
+				);
 			}
 
-			return HttpResponse::InternalServerError().json(
-				serde_json::json!({"status": "error","message": format!("{:?}", e)}),
-			);
+			return HttpResponse::InternalServerError()
+				.json(serde_json::json!({"status": "error","message": format!("{:?}", e)}));
 		}
 	}
 }
@@ -181,9 +194,8 @@ async fn update(
 	let query_result = app_state.db_client.get_relation(rel_id).await;
 
 	if query_result.is_err() {
-		return HttpResponse::BadRequest().json(
-			serde_json::json!({"status": "fail","message": "Bad request"}),
-		);
+		return HttpResponse::BadRequest()
+			.json(serde_json::json!({"status": "fail","message": "Bad request"}));
 	}
 
 	let old = query_result.unwrap_or(None);
@@ -200,26 +212,22 @@ async fn update(
 	match query_result {
 		Ok(rel) => {
 			let acc_response = serde_json::json!({
-                "status": "success",
-                "data": serde_json::json!(rel)
-            });
+				"status": "success",
+				"data": serde_json::json!(rel)
+			});
 
 			return HttpResponse::Ok().json(acc_response);
 		}
 		Err(err) => {
 			let message = format!("Error: {:?}", err);
-			return HttpResponse::InternalServerError().json(
-				serde_json::json!({"status": "error","message": message}),
-			);
+			return HttpResponse::InternalServerError()
+				.json(serde_json::json!({"status": "error","message": message}));
 		}
 	}
 }
 
 #[delete("/{id}")]
-async fn delete(
-	path: web::Path<uuid::Uuid>,
-	app_state: web::Data<AppState>,
-) -> impl Responder {
+async fn delete(path: web::Path<uuid::Uuid>, app_state: web::Data<AppState>) -> impl Responder {
 	let rel_id = path.into_inner();
 
 	let query_result = app_state.db_client.relation_delete(rel_id).await;
@@ -229,21 +237,18 @@ async fn delete(
 			if rows_affected == 0 {
 				let message = format!("Relation with ID: {} not found", rel_id);
 
-				return HttpResponse::NotFound().json(
-					serde_json::json!({"status": "fail","message": message}),
-				);
+				return HttpResponse::NotFound()
+					.json(serde_json::json!({"status": "fail","message": message}));
 			}
 
-			let json = HttpResponse::Ok().json(
-				serde_json::json!({"status": "success","data": rows_affected}),
-			);
+			let json = HttpResponse::Ok()
+				.json(serde_json::json!({"status": "success","data": rows_affected}));
 			return json;
 		}
 		Err(err) => {
 			let message = format!("Error: {:?}", err);
-			return HttpResponse::InternalServerError().json(
-				serde_json::json!({"status": "error","message": message}),
-			);
+			return HttpResponse::InternalServerError()
+				.json(serde_json::json!({"status": "error","message": message}));
 		}
 	}
 }

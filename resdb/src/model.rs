@@ -412,6 +412,12 @@ impl RelationType {
 }
 
 #[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
+pub struct Property {
+	pub id: uuid::Uuid,
+	pub name: String,
+}
+
+#[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
 pub struct Relation {
 	pub id: uuid::Uuid,
 	pub name: String,
