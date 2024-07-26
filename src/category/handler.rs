@@ -12,6 +12,7 @@ pub fn category_scope(conf: &mut web::ServiceConfig) {
 		// .service(health_checker_handler)
 		.wrap(RequireAuth::allowed_roles(vec![UserRole::Admin]))
 		.service(get_category)
+		.service(get_category_property)
 		.service(get_categories)
 		.service(create)
 		.service(update)
@@ -22,10 +23,7 @@ pub fn category_scope(conf: &mut web::ServiceConfig) {
 }
 
 #[get("/{id}")]
-async fn get_category(
-	path: web::Path<i16>,
-	app_state: web::Data<AppState>,
-) -> impl Responder {
+async fn get_category(path: web::Path<i16>, app_state: web::Data<AppState>) -> impl Responder {
 	let cat_id = path.into_inner();
 
 	let query_result = app_state.db_client.get_category(cat_id).await;
@@ -40,8 +38,7 @@ async fn get_category(
 		}
 		Err(_) => {
 			let message = format!("Category with ID: {} not found", cat_id);
-			return HttpResponse::NotFound()
-				.json(json!({"status": "fail","message": message}));
+			return HttpResponse::NotFound().json(json!({"status": "fail","message": message}));
 		}
 	}
 }
@@ -57,8 +54,27 @@ async fn get_categories(
 	let query_result = app_state.db_client.get_categories().await;
 
 	if query_result.is_err() {
-		let message =
-			"Something bad happened while fetching all category items";
+		let message = "Something bad happened while fetching all category items";
+		return HttpResponse::InternalServerError()
+			.json(json!({"status": "error","message": message}));
+	}
+
+	let cats = query_result.unwrap();
+
+	let json_response = json!({
+		"status": "success",
+		"count": cats.len(),
+		"data": cats
+	});
+	HttpResponse::Ok().json(json_response)
+}
+
+#[get("/property/list")]
+async fn get_category_property(app_state: web::Data<AppState>) -> impl Responder {
+	let query_result = app_state.db_client.get_category_property().await;
+
+	if query_result.is_err() {
+		let message = "Something bad happened while fetching all category items";
 		return HttpResponse::InternalServerError()
 			.json(json!({"status": "error","message": message}));
 	}
@@ -74,10 +90,7 @@ async fn get_categories(
 }
 
 #[post("")]
-async fn create(
-	body: web::Json<Category>,
-	app_state: web::Data<AppState>,
-) -> impl Responder {
+async fn create(body: web::Json<Category>, app_state: web::Data<AppState>) -> impl Responder {
 	let data = body.into_inner();
 
 	let query_result = app_state.db_client.category_create(data).await;
@@ -97,9 +110,8 @@ async fn create(
 				);
 			}
 
-			return HttpResponse::InternalServerError().json(
-				json!({"status": "error","message": format!("{:?}", e)}),
-			);
+			return HttpResponse::InternalServerError()
+				.json(json!({"status": "error","message": format!("{:?}", e)}));
 		}
 	}
 }
@@ -128,14 +140,15 @@ async fn update(
 	match query_result {
 		Ok(cat) => {
 			let cat_response = serde_json::json!({
-                "status": "success",
-                "data": serde_json::json!(cat)
-            });
+				"status": "success",
+				"data": serde_json::json!(cat)
+			});
 
 			return HttpResponse::Ok().json(cat_response);
 		}
 		Err(err) => {
-		    if err.to_string()
+			if err
+				.to_string()
 				.contains("duplicate key value violates unique constraint")
 			{
 				return HttpResponse::BadRequest().json(
@@ -143,41 +156,34 @@ async fn update(
 				);
 			}
 
-			return HttpResponse::InternalServerError().json(
-				json!({"status": "error","message": format!("{:?}", err)}),
-			);
+			return HttpResponse::InternalServerError()
+				.json(json!({"status": "error","message": format!("{:?}", err)}));
 		}
 	}
 }
 
 #[delete("/{id}")]
-async fn delete(
-	path: web::Path<i16>,
-	app_state: web::Data<AppState>,
-) -> impl Responder {
+async fn delete(path: web::Path<i16>, app_state: web::Data<AppState>) -> impl Responder {
 	let cat_id = path.into_inner();
 	let query_result = app_state.db_client.category_delete(cat_id).await;
 
-    if query_result.is_err() {
+	if query_result.is_err() {
 		let message = format!("Category with ID: {} cannot be deleted", cat_id);
-		return HttpResponse::BadRequest()
-			.json(json!({"status": "fail","message": message}));
-
-    }
+		return HttpResponse::BadRequest().json(json!({"status": "fail","message": message}));
+	}
 
 	let rows_affected = query_result.unwrap().unwrap();
 	if rows_affected == 0 {
 		let message = format!("Category with ID: {} not found", cat_id);
-		return HttpResponse::NotFound()
-			.json(json!({"status": "fail","message": message}));
+		return HttpResponse::NotFound().json(json!({"status": "fail","message": message}));
 	}
 
-    return HttpResponse::Ok().json(json!({
-        "status" : "success",
-        "affected": rows_affected
-    }));
+	return HttpResponse::Ok().json(json!({
+		"status" : "success",
+		"affected": rows_affected
+	}));
 
-    //	HttpResponse::NoContent().finish()
+	//	HttpResponse::NoContent().finish()
 }
 
 #[get("/products/{id}")]
@@ -200,9 +206,8 @@ pub async fn get_category_with_products(
 		Err(e) => {
 			println!("{:?}", e);
 			let message = format!("Category with ID: {} not found", cat_id);
-			return HttpResponse::NotFound().json(
-				serde_json::json!({"status": "fail","message": message}),
-			);
+			return HttpResponse::NotFound()
+				.json(serde_json::json!({"status": "fail","message": message}));
 		}
 	}
 }

@@ -57,7 +57,7 @@ impl<'r> sqlx::FromRow<'r, sqlx::postgres::PgRow> for CategoryWithProduct {
 
 pub mod db {
 	use super::*;
-	use crate::db::DBClient;
+	use crate::{db::DBClient, model::PropertyWithId};
 	use async_trait::async_trait;
 	use sqlx;
 
@@ -68,7 +68,8 @@ pub mod db {
 			id: i16,
 		) -> Result<Option<Categories>, sqlx::Error>;
 		async fn get_categories(&self) -> Result<Vec<Categories>, sqlx::Error>;
-		async fn get_category_with_products(
+		async fn get_category_property(&self) -> Result<Vec<PropertyWithId>, sqlx::Error>;
+        async fn get_category_with_products(
 			&self,
 			id: i16,
 		) -> Result<Option<CategoryWithProduct>, sqlx::Error>;
@@ -118,6 +119,24 @@ pub mod db {
 
 			Ok(query_result)
 		}
+	    
+        async fn get_category_property(&self) -> Result<Vec<PropertyWithId>, sqlx::Error> {
+			let query_result = sqlx::query_as!(
+                PropertyWithId, 
+                r#"
+                SELECT
+                    id,
+                    name
+                FROM
+                    categories
+                ORDER
+                    BY name
+                "#)
+                .fetch_all(&self.pool)
+                .await?;
+
+			Ok(query_result)
+        }
 
 		async fn category_create<T>(
 			&self,
