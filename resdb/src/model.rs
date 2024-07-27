@@ -412,10 +412,19 @@ impl RelationType {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct Property {
+pub struct RelationProperty {
 	pub id: uuid::Uuid,
-    #[serde(rename="text")]
+	#[serde(rename = "text")]
 	pub name: String,
+	pub city: String,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub street: Option<String>,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub phone: Option<String>,
+	#[serde(rename = "isSpecial")]
+	pub is_special: bool,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub photo: Option<String>,
 }
 
 /*
@@ -429,7 +438,7 @@ pub struct Categories {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct PropertyWithId {
 	pub id: i16,
-    #[serde(rename="text")]
+	#[serde(rename = "text")]
 	pub name: String,
 }
 

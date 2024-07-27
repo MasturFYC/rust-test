@@ -2,7 +2,7 @@ pub mod db {
 	use async_trait::async_trait;
 	use sqlx::{self, Acquire};
 
-	use crate::model::{CreateRelationSchema, Property, Relation, RelationType};
+	use crate::model::{CreateRelationSchema, RelationProperty, Relation, RelationType};
 	use crate::db::DBClient;
 
 	#[async_trait]
@@ -22,7 +22,7 @@ pub mod db {
 		async fn get_relation_property(
 			&self,
 			rels: Vec<RelationType>,
-		) -> Result<Vec<Property>, sqlx::Error>;
+		) -> Result<Vec<RelationProperty>, sqlx::Error>;
 		async fn relation_create<T: Into<CreateRelationSchema> + Send>(
 			&self,
 			data: T,
@@ -137,22 +137,28 @@ pub mod db {
 		async fn get_relation_property(
 			&self,
 			rels: Vec<RelationType>,
-		) -> Result<Vec<Property>, sqlx::Error> {
+		) -> Result<Vec<RelationProperty>, sqlx::Error> {
 			let prop: Vec<String> = rels
 				.into_iter()
 				.map(|item| item.to_str().to_string())
 				.collect();
 
 			let properties = sqlx::query_as!(
-				Property,
+				RelationProperty,
 				r#"
                 SELECT 
                     id, 
-                    name
+                    name,
+                    city,
+                    street,
+                    phone,
+                    is_special,
+                    photo
                 FROM 
                     relations
                 WHERE 
                     relation_type::TEXT[] && $1
+                    AND is_active = true
                 ORDER
                     BY name
                "#,
