@@ -15,17 +15,14 @@ mod scopes;
 mod utils;
 
 use actix_cors::Cors;
-use actix_web::{
-	get, http::header, middleware::Logger, web, App, HttpResponse, HttpServer,
-	Responder,
-};
+use actix_web::{get, http::header, middleware::Logger, web, App, HttpResponse, HttpServer, Responder};
 
 use config::Config;
 use resdb::db::DBClient;
 use dotenv::dotenv;
 use dtos::{
-	FilterUserDto, LoginUserDto, RegisterUserDto, Response, UserData,
-	UserListResponseDto, UserLoginResponseDto, UserResponseDto,
+	FilterUserDto, LoginUserDto, RegisterUserDto, Response, UserData, UserListResponseDto,
+	UserLoginResponseDto, UserResponseDto,
 };
 
 use scopes::{auth, users};
@@ -77,8 +74,8 @@ impl Modify for SecurityAddon {
 		components.add_security_scheme(
 			"token",
 			SecurityScheme::Http(
-				HttpBuilder::new()					
-					.scheme(HttpAuthScheme::Bearer)					
+				HttpBuilder::new()
+					.scheme(HttpAuthScheme::Bearer)
 					.bearer_format("JWT")
 					.build(),
 			),
@@ -125,14 +122,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 	HttpServer::new(move || {
 		let cors = Cors::default()
-			.allowed_origin("http://localhost:3000")
+			//			.allowed_origin("http://localhost:3000")
 			.allowed_origin("http://localhost:8000")
-			.allowed_origin("http://localhost:8080")
+			//			.allowed_origin("http://localhost:8080")
 			.allowed_origin("https://fyc.sapulidi.site")
-			.allowed_origin("http://localhost")
-            .allowed_origin("http://localhost:5173")
-			.allowed_origin("http://127.0.0.1:8080")
-			.allowed_origin("https://rust.codevoweb.com")
+			//			.allowed_origin("http://localhost")
+			.allowed_origin("http://localhost:5173")
+			//			.allowed_origin("http://127.0.0.1:8080")
+			//			.allowed_origin("https://rust.codevoweb.com")
 			.allowed_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 			.allowed_headers(vec![
 				header::CONTENT_TYPE,
@@ -157,10 +154,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 			.configure(payment::handler::payment_scope)
 			.service(Redoc::with_url("/redoc", openapi.clone()))
 			.service(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc"))
-			.service(
-				SwaggerUi::new("/{_:.*}")
-					.url("/api-docs/openapi.json", openapi.clone()),
-			)
+			.service(SwaggerUi::new("/{_:.*}").url("/api-docs/openapi.json", openapi.clone()))
 	})
 	.bind(("0.0.0.0", config.port))?
 	.run()
@@ -181,8 +175,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 async fn health_checker_handler() -> impl Responder {
 	const MESSAGE: &str = "Complete Restful API in Rust";
 
-	HttpResponse::Ok()
-		.json(serde_json::json!({"status": "success", "message": MESSAGE}))
+	HttpResponse::Ok().json(serde_json::json!({"status": "success", "message": MESSAGE}))
 }
 
 #[cfg(test)]
@@ -192,9 +185,7 @@ mod tests {
 
 	#[actix_web::test]
 	async fn test_health_checker_handler() {
-		let app =
-			test::init_service(App::new().service(health_checker_handler))
-				.await;
+		let app = test::init_service(App::new().service(health_checker_handler)).await;
 
 		let req = test::TestRequest::get()
 			.uri("/api/healthchecker")
@@ -204,7 +195,8 @@ mod tests {
 		assert_eq!(resp.status(), StatusCode::OK);
 
 		let body = test::read_body(resp).await;
-		let expected_json = serde_json::json!({"status": "success", "message": "Complete Restful API in Rust"});
+		let expected_json =
+			serde_json::json!({"status": "success", "message": "Complete Restful API in Rust"});
 
 		assert_eq!(body, serde_json::to_string(&expected_json).unwrap());
 	}
