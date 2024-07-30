@@ -134,14 +134,14 @@ pub mod db {
 			&self,
 			id: uuid::Uuid,
 		) -> Result<Option<ProductOriginal>, sqlx::Error>;
-		async fn get_product(
-			&self,
-			id: uuid::Uuid,
-		) -> Result<Option<Products>, sqlx::Error>;
+		async fn get_product(&self, id: uuid::Uuid) -> Result<Option<Products>, sqlx::Error>;
 		async fn get_products(
 			&self,
 			page: u32,
 			limit: usize,
+			opt: Option<i8>,
+			txt: Option<String>,
+			relid: Option<Uuid>,
 		) -> Result<(Vec<Products>, i64), sqlx::Error>;
 		async fn get_products_by_category(
 			&self,
@@ -155,20 +155,14 @@ pub mod db {
 			page: u32,
 			limit: usize,
 		) -> Result<(Vec<Products>, i64), sqlx::Error>;
-		async fn product_create(
-			&self,
-			data: Product,
-		) -> Result<ProductOriginal, sqlx::Error>;
+		async fn product_create(&self, data: Product) -> Result<ProductOriginal, sqlx::Error>;
 		async fn product_update(
 			&self,
 			id: uuid::Uuid,
 			data: Product,
 			old: ProductOriginal,
 		) -> Result<ProductOriginal, sqlx::Error>;
-		async fn product_delete(
-			&self,
-			id: uuid::Uuid,
-		) -> Result<u64, sqlx::Error>;
+		async fn product_delete(&self, id: uuid::Uuid) -> Result<u64, sqlx::Error>;
 	}
 
 	#[async_trait]
@@ -177,25 +171,18 @@ pub mod db {
 			&self,
 			id: uuid::Uuid,
 		) -> Result<Option<ProductOriginal>, sqlx::Error> {
-			let product = sqlx::query_file_as!(
-				ProductOriginal,
-				"sql/product-get-origin-by-id.sql",
-				id
-			)
-			.fetch_optional(&self.pool)
-			.await?;
+			let product =
+				sqlx::query_file_as!(ProductOriginal, "sql/product-get-origin-by-id.sql", id)
+					.fetch_optional(&self.pool)
+					.await?;
 
 			Ok(product)
 		}
 
-		async fn get_product(
-			&self,
-			id: uuid::Uuid,
-		) -> Result<Option<Products>, sqlx::Error> {
-			let product =
-				sqlx::query_file_as!(Products, "sql/product-get-by-id.sql", id)
-					.fetch_optional(&self.pool)
-					.await?;
+		async fn get_product(&self, id: uuid::Uuid) -> Result<Option<Products>, sqlx::Error> {
+			let product = sqlx::query_file_as!(Products, "sql/product-get-by-id.sql", id)
+				.fetch_optional(&self.pool)
+				.await?;
 
 			Ok(product)
 		}
@@ -204,25 +191,100 @@ pub mod db {
 			&self,
 			page: u32,
 			limit: usize,
+			opt: Option<i8>,
+			txt: Option<String>,
+			relid: Option<Uuid>,
 		) -> Result<(Vec<Products>, i64), sqlx::Error> {
+            // calculate offset from page
 			let offset = (page - 1) * limit as u32;
-
+            // get connection from current pool
 			let mut conn = self.pool.acquire().await?;
+            // start transaction
 			let mut tx = conn.begin().await?;
+            // remove space and convert to lower case from search parameter
+			let search_text = txt.unwrap_or("".to_string()).trim().to_lowercase();
+            //get supplier id
+            let op = opt.unwrap_or(0_18);
 
-			let count = sqlx::query_scalar!("SELECT COUNT(*) FROM products")
-				.fetch_one(&mut *tx)
-				.await?;
+            // get total count of product
+			let count = match op {
+				1_i8 =>	sqlx::query_scalar!(r#"
+                        SELECT 
+                            COUNT(p.*)
+                        FROM 
+                            products AS p
+                            INNER JOIN categories AS c ON c.id = p.category_id
+                            INNER JOIN relations AS r ON r.id = p.supplier_id
+                        WHERE 
+                            POSITION($1 IN LOWER(r.name||' '||c.name||' '||p.name||' '||p.barcode||' '||COALESCE(p.variant_name,'')||' '||COALESCE(p.descriptions, ''))) > 0"#
+                            , 
+                            search_text,
+                            )
+                        .fetch_one(&mut *tx)
+                        .await?,
+				
+				2_i8 => {
+                    let sup_id = relid.unwrap();
+                    sqlx::query_scalar!("SELECT COUNT(*) FROM products WHERE supplier_id = $1", sup_id)
+						.fetch_one(&mut *tx)
+						.await?
+                },			
+				_ => sqlx::query_scalar!("SELECT COUNT(*) FROM products")
+						.fetch_one(&mut *tx)
+						.await?,				
+			};
 
-			let products = sqlx::query_file_as!(
-				Products,
-				"sql/product-get-all.sql",
-				limit as i64,
-				offset as i64
-			)
-			.fetch_all(&mut *tx)
-			.await?;
+			//			let count = sqlx::query_scalar!("SELECT COUNT(*) FROM products")
+			//				.fetch_one(&mut *tx)
+			//				.await?;
 
+			let products = match op {
+                    1_i8 => sqlx::query_as!(
+                        Products,r#"
+                        SELECT
+                            p.*,
+                            c.name AS category_name,
+                            r.name AS supplier_name
+                        FROM 
+                            products AS p
+                            INNER JOIN categories AS c ON c.id = p.category_id
+                            INNER JOIN relations AS r ON r.id = p.supplier_id
+                        WHERE 
+                            POSITION($1 IN LOWER(r.name||' '||c.name||' '||p.name||' '||p.barcode||' '||COALESCE(p.variant_name,'')||' '||COALESCE(p.descriptions, ''))) > 0
+                        LIMIT $2
+                        OFFSET $3"#,
+                        search_text,
+                        limit as i64,
+                        offset as i64,
+                        )
+                    .fetch_all(&mut *tx)
+                    .await?,
+                    2_i8 => sqlx::query_as!(
+                        Products,r#"
+                        SELECT
+                            p.*,
+                            c.name AS category_name,
+                            r.name AS supplier_name
+                        FROM 
+                            products AS p
+                            INNER JOIN categories AS c ON c.id = p.category_id
+                            INNER JOIN relations AS r ON r.id = p.supplier_id
+                        WHERE 
+                            supplier_id = $1
+                        LIMIT $2
+                        OFFSET $3"#,
+                        relid.unwrap(),
+                        limit as i64,
+                        offset as i64,
+                        )
+                    .fetch_all(&mut *tx)
+                    .await?,
+                    _ => sqlx::query_file_as!(
+                        Products, "sql/product-get-all.sql", limit as i64, offset as i64)
+                        .fetch_all(&mut * tx)
+                        .await?,
+            };
+                    
 			tx.commit().await?;
 
 			Ok((products, count.unwrap_or(0)))
@@ -294,10 +356,7 @@ pub mod db {
 			Ok((products, count.unwrap_or(0)))
 		}
 
-		async fn product_create(
-			&self,
-			data: Product,
-		) -> Result<ProductOriginal, sqlx::Error> {
+		async fn product_create(&self, data: Product) -> Result<ProductOriginal, sqlx::Error> {
 			// let mut stmt = self.pool.prepare("SELECT * FROM users WHERE id = $1").await?;
 			let product = sqlx::query_file_as!(
 				ProductOriginal,
@@ -356,16 +415,12 @@ pub mod db {
 			Ok(product)
 		}
 
-		async fn product_delete(
-			&self,
-			id: uuid::Uuid,
-		) -> Result<u64, sqlx::Error> {
-			let rows_affected: u64 =
-				sqlx::query_file!("sql/product-delete.sql", id)
-					.execute(&self.pool)
-					.await
-					.unwrap()
-					.rows_affected();
+		async fn product_delete(&self, id: uuid::Uuid) -> Result<u64, sqlx::Error> {
+			let rows_affected: u64 = sqlx::query_file!("sql/product-delete.sql", id)
+				.execute(&self.pool)
+				.await
+				.unwrap()
+				.rows_affected();
 
 			Ok(rows_affected)
 		}

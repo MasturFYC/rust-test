@@ -8,7 +8,7 @@ use resdb::{
 };
 
 use crate::{
-	dtos::RequestQueryDto,
+	dtos::{RequestQueryDto, RequestProductSearch},
 	error::{ErrorMessage, HttpError},
 	extractors::auth::RequireAuth,
 	AppState,
@@ -118,12 +118,12 @@ pub async fn get_product(
     )
 )]
 pub async fn get_products(
-	query: web::Query<RequestQueryDto>,
+	query: web::Query<RequestProductSearch>,
 	app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, HttpError> {
 	// println!("{}", "Test");
 
-	let query_params: RequestQueryDto = query.into_inner();
+	let query_params = query.into_inner();
 
 	query_params
 		.validate()
@@ -131,11 +131,14 @@ pub async fn get_products(
 
 	let page = query_params.page.unwrap_or(1);
 	let limit = query_params.limit.unwrap_or(10);
+	let opt = query_params.opt;
+	let txt = query_params.txt;
+	let relid = query_params.relid;
 	let lim = limit as i64;
 
 	let (products, count) = app_state
 		.db_client
-		.get_products(page as u32, limit)
+		.get_products(page as u32, limit, opt, txt, relid)
 		.await
 		.map_err(|e| HttpError::server_error(e.to_string()))?;
 
@@ -315,8 +318,7 @@ async fn update_product(
 		.await
 		.map_err(|e| HttpError::server_error(e.to_string()))?;
 
-	let product = result
-		.ok_or(HttpError::bad_request(ErrorMessage::UserNoLongerExist))?;
+	let product = result.ok_or(HttpError::bad_request(ErrorMessage::UserNoLongerExist))?;
 
 	let result = app_state
 		.db_client

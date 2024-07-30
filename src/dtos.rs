@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
+use uuid::Uuid;
 use validator::Validate;
 
 use resdb::model::User;
@@ -62,6 +63,18 @@ pub struct RequestQueryDto {
 	pub page: Option<usize>,
 	#[validate(range(min = 1, max = 50))]
 	pub limit: Option<usize>,
+}
+
+#[derive(Serialize, Deserialize, Validate, IntoParams)]
+pub struct RequestProductSearch {
+	#[validate(range(min = 1))]
+	pub page: Option<usize>,
+	#[validate(range(min = 1, max = 50))]
+	pub limit: Option<usize>,
+	#[validate(range(min = 0, max = 3))]
+	pub opt: Option<i8>,
+	pub txt: Option<String>,
+	pub relid: Option<Uuid>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
