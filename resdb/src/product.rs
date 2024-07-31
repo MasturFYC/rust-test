@@ -142,6 +142,7 @@ pub mod db {
 			opt: Option<i8>,
 			txt: Option<String>,
 			relid: Option<Uuid>,
+			catid: Option<i16>,
 		) -> Result<(Vec<Products>, i64), sqlx::Error>;
 		async fn get_products_by_category(
 			&self,
@@ -194,6 +195,7 @@ pub mod db {
 			opt: Option<i8>,
 			txt: Option<String>,
 			relid: Option<Uuid>,
+			catid: Option<i16>,
 		) -> Result<(Vec<Products>, i64), sqlx::Error> {
             // calculate offset from page
 			let offset = (page - 1) * limit as u32;
@@ -228,7 +230,13 @@ pub mod db {
                     sqlx::query_scalar!("SELECT COUNT(*) FROM products WHERE supplier_id = $1", sup_id)
 						.fetch_one(&mut *tx)
 						.await?
-                },			
+                },
+				3_i8 => {
+                    let cat_id = catid.unwrap_or(0);
+                    sqlx::query_scalar!("SELECT COUNT(*) FROM products WHERE category_id = $1", cat_id)
+						.fetch_one(&mut *tx)
+						.await?
+				},
 				_ => sqlx::query_scalar!("SELECT COUNT(*) FROM products")
 						.fetch_one(&mut *tx)
 						.await?,				
@@ -279,6 +287,29 @@ pub mod db {
                         )
                     .fetch_all(&mut *tx)
                     .await?,
+					3_i8 => {
+						let cat_id = catid.unwrap_or(0);
+						sqlx::query_as!(
+							Products,r#"
+							SELECT
+								p.*,
+								c.name AS category_name,
+								r.name AS supplier_name
+							FROM 
+								products AS p
+								INNER JOIN categories AS c ON c.id = p.category_id
+								INNER JOIN relations AS r ON r.id = p.supplier_id
+							WHERE 
+								category_id = $1
+							LIMIT $2
+							OFFSET $3"#,
+							cat_id,
+							limit as i64,
+							offset as i64,
+							)
+						.fetch_all(&mut *tx)
+						.await?
+					},
                     _ => sqlx::query_file_as!(
                         Products, "sql/product-get-all.sql", limit as i64, offset as i64)
                         .fetch_all(&mut * tx)

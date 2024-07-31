@@ -4,7 +4,7 @@ use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 use validator::Validate;
 
-use resdb::model::User;
+use resdb::model::{RelationType, User};
 
 #[derive(Validate, Debug, Default, Clone, Serialize, Deserialize, ToSchema)]
 pub struct RegisterUserDto {
@@ -75,6 +75,20 @@ pub struct RequestProductSearch {
 	pub opt: Option<i8>,
 	pub txt: Option<String>,
 	pub relid: Option<Uuid>,
+	pub catid: Option<i16>,
+}
+
+
+#[derive(Serialize, Deserialize, Validate, IntoParams)]
+pub struct RequestRelationSearch {
+	#[validate(range(min = 1))]
+	pub page: Option<usize>,
+	#[validate(range(min = 1, max = 50))]
+	pub limit: Option<usize>,
+	#[validate(range(min = 0, max = 3))]
+	pub opt: Option<i8>,
+	pub txt: Option<String>,
+	pub reltype: Option<RelationType>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]

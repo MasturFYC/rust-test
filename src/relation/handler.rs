@@ -1,12 +1,19 @@
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use serde::Serialize;
 use serde_json::json;
 // use validator::Validate;
-use crate::{dtos::RequestQueryDto, extractors::auth::RequireAuth, AppState};
+use crate::{dtos::{RequestQueryDto, RequestRelationSearch}, extractors::auth::RequireAuth, AppState};
 
 use resdb::{
 	model::{CreateRelationSchema, RelationType, UserRole},
 	relation::db::RelationExt,
 };
+
+#[derive(Serialize)]
+struct RelationTypeWIthID {
+	id: RelationType,
+	text: String,
+}
 
 pub fn relation_scope(conf: &mut web::ServiceConfig) {
 	let scope = web::scope("/api/relations")
@@ -15,11 +22,24 @@ pub fn relation_scope(conf: &mut web::ServiceConfig) {
 		.service(get_relations)
 		.service(get_relations_by_type)
 		.service(get_relation_property_type)
+		.service(get_relation_types)
 		.service(create)
 		.service(update)
 		.service(delete);
 
 	conf.service(scope);
+}
+
+#[get("/list/types")]
+async fn get_relation_types() -> impl Responder {
+	let values: [RelationTypeWIthID; 5] = [
+		RelationTypeWIthID {id: RelationType::Customer, text: String::from("Pelanggan")},
+		RelationTypeWIthID {id: RelationType::Supplier, text: String::from("Supplier")},
+		RelationTypeWIthID {id: RelationType::Sales, text: String::from("Sales")},
+		RelationTypeWIthID {id: RelationType::Member, text: String::from("Member")},
+		RelationTypeWIthID {id: RelationType::Employee, text: String::from("Karyawan")},
+	];
+	return HttpResponse::Ok().json(json!(values));
 }
 
 #[get("/{id}")]
@@ -46,10 +66,10 @@ async fn get_relation(
 
 #[get("")]
 async fn get_relations(
-	opts: web::Query<RequestQueryDto>,
+	opts: web::Query<RequestRelationSearch>,
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
-	let query_params: RequestQueryDto = opts.into_inner();
+	let query_params: RequestRelationSearch = opts.into_inner();
 
 	// let map_err = query_params
 	//     .validate()
@@ -62,10 +82,14 @@ async fn get_relations(
 	let limit = query_params.limit.unwrap_or(10);
 	let page = query_params.page.unwrap_or(1);
 	let lim = limit as i64;
+	let opt = query_params.opt;
+	let txt = query_params.txt;
+	let reltype = query_params.reltype;
 
-	let query_result = app_state.db_client.get_relations(page, limit).await;
+	let query_result = app_state.db_client.get_relations(page, limit, opt, txt, reltype).await;
 
 	if query_result.is_err() {
+		println!("{:?}",query_result.err());
 		let message = "Something bad happened while fetching all relation items";
 		return HttpResponse::InternalServerError()
 			.json(json!({"status": "error","message": message}));

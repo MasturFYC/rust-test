@@ -409,6 +409,16 @@ impl RelationType {
 			RelationType::Sales => "sales",
 		}
 	}
+	// #[derive(serde::Serialize)]
+	// pub fn iterator() -> Iter<'static, RelationType> {
+	// 	static RELATION_TYPES: [RelationType; 5] = [
+	// 		RelationType::Customer,
+	// 		RelationType::Employee,
+	// 		RelationType::Member,
+	// 		RelationType::Supplier,
+	// 		RelationType::Sales];
+	// 	RELATION_TYPES.iter()
+	// }
 }
 
 #[derive(Debug, Deserialize, Serialize)]

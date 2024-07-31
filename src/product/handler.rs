@@ -121,7 +121,6 @@ pub async fn get_products(
 	query: web::Query<RequestProductSearch>,
 	app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, HttpError> {
-	// println!("{}", "Test");
 
 	let query_params = query.into_inner();
 
@@ -134,11 +133,12 @@ pub async fn get_products(
 	let opt = query_params.opt;
 	let txt = query_params.txt;
 	let relid = query_params.relid;
+	let catid = query_params.catid;
 	let lim = limit as i64;
 
 	let (products, count) = app_state
 		.db_client
-		.get_products(page as u32, limit, opt, txt, relid)
+		.get_products(page as u32, limit, opt, txt, relid, catid)
 		.await
 		.map_err(|e| HttpError::server_error(e.to_string()))?;
 

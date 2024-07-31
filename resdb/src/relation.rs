@@ -12,6 +12,9 @@ pub mod db {
 			&self,
 			page: usize,
 			limit: usize,
+			opt: Option<i8>,
+			txt: Option<String>,
+			reltype: Option<RelationType>,
 		) -> Result<(Vec<Relation>, i64), sqlx::Error>;
 		async fn get_relations_by_type(
 			&self,
@@ -49,6 +52,9 @@ pub mod db {
 			&self,
 			page: usize,
 			limit: usize,
+			opt: Option<i8>,
+			txt: Option<String>,
+			reltype: Option<RelationType>,
 		) -> Result<(Vec<Relation>, i64), sqlx::Error> {
 			let offset = (page - 1) * limit;
 			// acquire pg connection from current pool
@@ -57,28 +63,95 @@ pub mod db {
 			// get transaction pool from pg connection
 			let mut tx = conn.begin().await?;
 
-			let relations = sqlx::query_file_as!(
-				Relation,
-				"sql/relation-get-all.sql",
-				limit as i64,
-				offset as i64
-			)
-			.fetch_all(&mut *tx)
-			.await?;
+			let op = opt.unwrap_or(0);
 
-			let row = sqlx::query_scalar!(
-				r#"
-            SELECT 
-                COUNT(*)
-            FROM
-                relations
-            "#
-			)
-			.fetch_one(&mut *tx)
-			.await?;
+			let result = match op {
+				1_i8 => {
+					let search_text = txt
+						.expect("No search text was defined")
+						.trim()
+						.to_lowercase();
+					let relations = sqlx::query_file_as!(
+						Relation,
+						"sql/relation-get-search.sql",
+						search_text,
+						limit as i64,
+						offset as i64
+					)
+					.fetch_all(&mut *tx)
+					.await?;
+
+					let row = sqlx::query_scalar!(
+						r#"
+					SELECT 
+						COUNT(*)
+					FROM
+						relations
+					WHERE 
+						POSITION($1 IN LOWER(name||' '||city||' '||COALESCE(phone,' ')||' '||COALESCE(street,' '))) > 0
+					"#,
+						search_text
+					)
+					.fetch_one(&mut *tx)
+					.await?
+					.unwrap_or(0);
+					(relations, row)
+				}
+				2_i8 => {
+					let rel_type: [String; 1]  = [reltype.expect("No relation type was defined!").to_str().to_string()];
+					let relations = sqlx::query_file_as!(
+						Relation,
+						"sql/relation-get-all-byone-type.sql",
+						&rel_type,
+						limit as i64,
+						offset as i64
+					)
+					.fetch_all(&mut *tx)
+					.await?;
+
+					let row = sqlx::query_scalar!(
+						r#"
+					SELECT 
+						COUNT(*)
+					FROM
+						relations					
+					WHERE
+						relation_type::TEXT[] = $1
+					"#,
+						&rel_type
+					)
+					.fetch_one(&mut *tx)
+					.await?
+					.unwrap_or(0);
+					(relations, row)
+				}
+				_ => {
+					let relations = sqlx::query_file_as!(
+						Relation,
+						"sql/relation-get-all.sql",
+						limit as i64,
+						offset as i64
+					)
+					.fetch_all(&mut *tx)
+					.await?;
+
+					let row = sqlx::query_scalar!(
+						r#"
+					SELECT 
+						COUNT(*)
+					FROM
+						relations
+					"#
+					)
+					.fetch_one(&mut *tx)
+					.await?
+					.unwrap_or(0);
+					(relations, row)
+				}
+			};
 
 			tx.commit().await?;
-			Ok((relations, row.unwrap_or(0)))
+			Ok(result)
 		}
 
 		async fn get_relations_by_type(
