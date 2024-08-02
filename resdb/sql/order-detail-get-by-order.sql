@@ -1,5 +1,5 @@
 SELECT order_id,
-   id,
+   detail_id,
    product_id,
    qty,
    direction,
@@ -12,5 +12,4 @@ SELECT order_id,
    subtotal
 FROM order_details
 WHERE order_id = $1
-ORDER BY order_id,
-   created_at
+ORDER BY order_id, detail_id

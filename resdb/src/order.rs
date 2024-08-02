@@ -4,7 +4,7 @@ pub mod db {
 	use bigdecimal::{BigDecimal, FromPrimitive};
 	use chrono::Utc;
 	use sqlx::{self, Acquire};
-	use uuid::Uuid;
+	use i32;
 
 	use crate::{
 		db::DBClient,
@@ -22,7 +22,7 @@ pub mod db {
 	pub trait OrderExt {
 		async fn get_order(
 			&self,
-			id: uuid::Uuid,
+			id: i32,
 		) -> Result<Option<Order>, sqlx::Error>;
 		async fn get_orders(
 			&self,
@@ -44,12 +44,12 @@ pub mod db {
 			details: T,
 		) -> Result<(Option<Order>, Vec<OrderDetail>), sqlx::Error>
 		where
-			S: Into<Uuid> + Send,
+			S: Into<i32> + Send,
 			O: Into<OrderDtos> + Send,
 			T: Into<Vec<CreateOrderDetailSchema>> + Send;
 		async fn order_delete(
 			&self,
-			id: uuid::Uuid,
+			id: i32,
 		) -> Result<u64, sqlx::Error>;
 		// #[allow(dead_code)]
 		// async fn order_count(&self) -> Result<Option<i64>, sqlx::Error>;
@@ -70,7 +70,7 @@ pub mod db {
 	impl OrderExt for DBClient {
 		async fn get_order(
 			&self,
-			id: uuid::Uuid,
+			id: i32,
 		) -> Result<Option<Order>, sqlx::Error> {
 			let order =
 				sqlx::query_file_as!(Order, "sql/order-get-by-id.sql", id)
@@ -308,7 +308,7 @@ pub mod db {
                 INSERT INTO
                     ledger_details(
                         ledger_id,
-                        id,
+                        detail_id,
                         account_id,
                         descriptions,
                         amount,
@@ -319,7 +319,7 @@ pub mod db {
                     ($1, $2, $3, $4, $5, $6, $7)
                 "#,
 					d.ledger_id,
-					d.id,
+					d.detail_id,
 					d.account_id,
 					d.descriptions,
 					d.amount,
@@ -358,9 +358,9 @@ pub mod db {
 		where
 			O: Into<OrderDtos> + Send,
 			T: Into<Vec<CreateOrderDetailSchema>> + Send,
-			S: Into<Uuid> + Send,
+			S: Into<i32> + Send,
 		{
-			let uid: Uuid = id.try_into().unwrap();
+			let uid: i32 = id.try_into().unwrap();
 			let dtos: OrderDtos = data.try_into().unwrap();
 			let details: Vec<CreateOrderDetailSchema> =
 				details.try_into().unwrap();
@@ -455,7 +455,7 @@ pub mod db {
 
 							let _ = sqlx::query_file!(
 								"sql/order-detail-delete.sql",
-								d.id
+								d.detail_id
 							)
 							.execute(&mut *tx)
 							.await?;
@@ -464,7 +464,7 @@ pub mod db {
 						DetailMark::Update => {
 							let _ = sqlx::query_file!(
 								"sql/order-detail-update.sql",
-								d.id,
+								d.detail_id,
 								uid,
 								d.product_id,
 								d.qty,
@@ -595,7 +595,7 @@ pub mod db {
                 INSERT INTO
                     ledger_details (
                         ledger_id,
-                        id,
+                        detail_id,
                         account_id,
                         descriptions,
                         amount,
@@ -606,7 +606,7 @@ pub mod db {
                     ($1, $2, $3, $4, $5, $6, $7)
                 "#,
 					d.ledger_id,
-					d.id,
+					d.detail_id,
 					d.account_id,
 					d.descriptions,
 					d.amount,
@@ -638,7 +638,7 @@ pub mod db {
 
 		async fn order_delete(
 			&self,
-			id: uuid::Uuid,
+			id: i32,
 		) -> Result<u64, sqlx::Error> {
 			let mut conn: sqlx::pool::PoolConnection<sqlx::Postgres> =
 				self.pool.acquire().await?;

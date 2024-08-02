@@ -1,10 +1,9 @@
 use actix_web::{web, HttpResponse, Scope};
 use serde_json::json;
-use uuid::Uuid;
 use validator::Validate;
 use resdb::{
 	model::UserRole,
-	product::{db::ProductExt, Product, DeleteResponseDto, ProductResponseDto},
+	product::{db::ProductExt, model::{Product, DeleteResponseDto, ProductResponseDto}},
 };
 
 use crate::{
@@ -73,7 +72,7 @@ pub fn product_scope() -> Scope {
     )
 )]
 pub async fn get_product(
-	path: web::Path<Uuid>,
+	path: web::Path<i16>,
 	app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, HttpError> {
 	let prod_id = path.into_inner();
@@ -211,7 +210,7 @@ pub async fn get_by_category(
     )
 )]
 pub async fn get_by_supplier(
-	id: web::Path<Uuid>,
+	id: web::Path<i16>,
 	query: web::Query<RequestQueryDto>,
 	app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, HttpError> {
@@ -302,7 +301,7 @@ pub async fn create_product(
 )]
 
 async fn update_product(
-	path: web::Path<Uuid>,
+	path: web::Path<i16>,
 	body: web::Json<Product>,
 	app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, HttpError> {
@@ -355,7 +354,7 @@ async fn update_product(
     )
 )]
 async fn delete_product(
-	path: web::Path<Uuid>,
+	path: web::Path<i16>,
 	app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, HttpError> {
 	let prod_id = path.into_inner();

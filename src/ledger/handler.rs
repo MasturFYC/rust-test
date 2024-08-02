@@ -9,7 +9,7 @@ use crate::{dtos::RequestQueryDto, extractors::auth::RequireAuth, AppState};
 
 #[get("/{id}")]
 async fn get_ledger(
-	path: web::Path<uuid::Uuid>,
+	path: web::Path<i32>,
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
 	let id = path.into_inner();
@@ -105,7 +105,7 @@ async fn create(
 
 #[put("/{id}")]
 async fn update(
-	path: web::Path<uuid::Uuid>,
+	path: web::Path<i32>,
 	body: web::Json<LedgerSchema>,
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
@@ -151,7 +151,7 @@ async fn update(
 
 #[delete("/{id}")]
 async fn delete(
-	path: web::Path<uuid::Uuid>,
+	path: web::Path<i32>,
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
 	let ledger_id = path.into_inner();

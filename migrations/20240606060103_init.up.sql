@@ -1,22 +1,15 @@
 -- Add up migration script here
 
 CREATE TYPE user_role AS ENUM ('admin', 'moderator', 'user');
-
-CREATE TYPE order_enum AS ENUM (
-   'order', 'stock', 'order_return', 'stock_return', 'mutation'
-);
-
+CREATE TYPE order_enum AS ENUM ('order', 'stock', 'order_return', 'stock_return', 'mutation');
 CREATE TYPE payment_enum AS ENUM ('cash', 'pending', 'loans', 'lunas');
-
 CREATE TYPE ledger_enum AS ENUM ('order', 'stock', 'order_return', 'stock_return', 'loan', 'order_payment', 'stock_payment', 'loan_payment');
-
 CREATE TYPE relation_enum AS ENUM ('customer', 'employee', 'member', 'supplier', 'Sales');
-
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-
 CREATE TABLE
+
     "users" (
         id UUID NOT NULL PRIMARY KEY DEFAULT (uuid_generate_v4()),
         name VARCHAR(100) NOT NULL,
@@ -41,9 +34,9 @@ CREATE TABLE "accounts" (
    root SMALLINT,
    normal SMALLINT NOT NULL DEFAULT 0,
    en_name VARCHAR(50),
-   descriptions VARCHAR(128),
    is_active boolean NOT NULL DEFAULT TRUE,
    payable boolean NOT NULL DEFAULT FALSE,
+   descriptions VARCHAR(128),
    created_at TIMESTAMP
       WITH
       TIME ZONE DEFAULT NOW(),
@@ -66,14 +59,18 @@ CREATE SEQUENCE IF NOT EXISTS category_id_seq AS SMALLINT
       START 1;
 
 CREATE TABLE "categories" (
-   id SMALLINT DEFAULT nextval('category_id_seq'::regclass),
+   id SMALLINT NOT NULL DEFAULT nextval('category_id_seq'::regclass),
    name VARCHAR(50) NOT NULL,
    PRIMARY KEY (id)
 );
 
+CREATE SEQUENCE IF NOT EXISTS relation_id_seq AS SMALLINT
+   INCREMENT BY 1
+      START 1;
+
 CREATE TABLE
     "relations" (
-        id UUID NOT NULL DEFAULT (uuid_generate_v4()),
+        id SMALLINT NOT NULL DEFAULT nextval('relation_id_seq'::regclass),
         name VARCHAR(50) NOT NULL,
         city VARCHAR(50) NOT NULL,
         street VARCHAR(255),
@@ -89,10 +86,15 @@ CREATE TABLE
 
 CREATE INDEX idx_relation_name ON relations (name);
 
+CREATE SEQUENCE IF NOT EXISTS product_id_seq AS SMALLINT
+   INCREMENT BY 1
+      START 1;
+
 
 CREATE TABLE "products" (
-   id UUID NOT NULL DEFAULT (uuid_generate_v4()),
-   supplier_id UUID NOT NULL,
+   id SMALLINT NOT NULL DEFAULT nextval('product_id_seq'::regclass),
+   supplier_id SMALLINT NOT NULL,
+   category_id SMALLINT NOT NULL,
    name VARCHAR(50) NOT NULL,
    barcode VARCHAR(25) NOT NULL,
    unit VARCHAR(6) NOT NULL,
@@ -102,10 +104,10 @@ CREATE TABLE "products" (
    margin NUMERIC(5,2) NOT NULL DEFAULT 0,
    price NUMERIC(9,2) NOT NULL DEFAULT 0,
    ppn NUMERIC(5,2) NOT NULL DEFAULT 0,
+   heavy REAL NOT NULL DEFAULT 0,
    is_active BOOLEAN NOT NULL DEFAULT TRUE,
    variant_name VARCHAR(50),
    descriptions VARCHAR(128),
-   category_id SMALLINT NOT NULL DEFAULT 0,
    created_at TIMESTAMP
       WITH
       TIME ZONE DEFAULT NOW(),
@@ -127,13 +129,17 @@ ALTER TABLE "products"
    ADD CONSTRAINT fk_product_supplier FOREIGN KEY (supplier_id)
       REFERENCES relations (id);
 
+CREATE SEQUENCE IF NOT EXISTS order_id_seq AS INT
+   INCREMENT BY 1
+      START 1;
+
 
 CREATE TABLE
     "orders" (
-        id UUID NOT NULL DEFAULT (uuid_generate_v4()),
+        id INT NOT NULL DEFAULT nextval('order_id_seq'::regclass),
         order_type order_enum NOT NULL,
-        customer_id UUID NOT NULL,
-        sales_id UUID NOT NULL,
+        customer_id SMALLINT NOT NULL,
+        sales_id SMALLINT NOT NULL,
         payment_type payment_enum NOT NULL,
         updated_by VARCHAR(50) NOT NULL,
         total NUMERIC(12,2) NOT NULL DEFAULT 0,
@@ -150,7 +156,7 @@ CREATE TABLE
         PRIMARY KEY (id)
     );
 
-CREATE INDEX idx_order_relation
+CREATE INDEX ix_order_relation
    ON "orders" (created_at, customer_id, sales_id, order_type, payment_type);
 
 ALTER TABLE "orders"
@@ -163,9 +169,9 @@ ALTER TABLE "orders"
 
 CREATE TABLE
    "order_details" (
-      order_id UUID NOT NULL,
-      id UUID NOT NULL DEFAULT (uuid_generate_v4()),
-      product_id UUID NOT NULL,
+      order_id INT NOT NULL,
+      detail_id SMALLINT NOT NULL,
+      product_id SMALLINT NOT NULL,
       qty NUMERIC(9,2) NOT NULL DEFAULT 1,
       direction SMALLINT NOT NULL DEFAULT 0,
       unit VARCHAR(6) NOT NULL,
@@ -175,7 +181,7 @@ CREATE TABLE
       subtotal NUMERIC(12,2) NOT NULL DEFAULT 0,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-      PRIMARY KEY (id)
+      PRIMARY KEY (order_id, detail_id)
    );
 CREATE INDEX ix_order_detail
    ON "order_details" (order_id, created_at);
@@ -190,9 +196,13 @@ ALTER TABLE "order_details"
    ADD CONSTRAINT fk_detail_product FOREIGN KEY (product_id)
       REFERENCES "products" (id);
 
+CREATE SEQUENCE IF NOT EXISTS ledger_id_seq AS INT
+   INCREMENT BY 1
+      START 1;
+
 CREATE TABLE "ledgers" (
-   id UUID NOT NULL DEFAULT (uuid_generate_v4()),
-   relation_id UUID NOT NULL,
+   id INT NOT NULL DEFAULT nextval('ledger_id_seq'::regclass),
+   relation_id SMALLINT NOT NULL,
    ledger_type ledger_enum NOT NULL,
    is_valid BOOL NOT NULL DEFAULT TRUE,
    updated_by VARCHAR(50) NOT NULL,
@@ -202,20 +212,21 @@ CREATE TABLE "ledgers" (
    PRIMARY KEY (id)
 );
 
+CREATE INDEX ix_ledger_relation ON ledgers (relation_id);
+
 CREATE TABLE "ledger_details" (
-   ledger_id UUID NOT NULL,
-   id SMALLINT NOT NULL,
+   ledger_id INT NOT NULL,
+   detail_id SMALLINT NOT NULL,
    account_id SMALLINT NOT NULL,
    amount NUMERIC(9,2) NOT NULL DEFAULT 0,
    direction SMALLINT NOT NULL,
-   ref_id UUID,
+   ref_id INT NOT NULL DEFAULT 0,
    descriptions VARCHAR(128),
-   PRIMARY KEY (ledger_id, id)
+   PRIMARY KEY (ledger_id, detail_id)
 );
 
-CREATE INDEX ix_ledger_relation ON ledgers (id);
-CREATE INDEX ix_ledger_detail ON ledger_details(account_id);
-CREATE INDEX ix_ledger_ref ON ledger_details(ref_id);
+CREATE INDEX ix_ledger_detail_account ON ledger_details(account_id);
+CREATE INDEX ix_ledger_detail_ref ON ledger_details(ref_id);
 
 ALTER TABLE ledgers ADD CONSTRAINT fx_ledger_relation
     FOREIGN KEY(relation_id) REFERENCES relations(id);
@@ -226,19 +237,19 @@ ALTER TABLE ledger_details ADD CONSTRAINT fx_ledger_detail_account
 
 CREATE TABLE
     "order_payments" (
-        id UUID NOT NULL DEFAULT (uuid_generate_v4()),
-        order_id UUID NOT NULL,
+        order_id INT NOT NULL,
+        payment_id SMALLINT NOT NULL,
         amount NUMERIC(12,0) NOT NULL DEFAULT 0,
         updated_by VARCHAR(50) NOT NULL,
         via_by VARCHAR(50) NOT NULL,
         descriptions VARCHAR(50),
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-        PRIMARY KEY (id)
+        PRIMARY KEY (order_id, payment_id)
     );
 
 CREATE INDEX ix_order_payment
-   ON order_payments(order_id, id);
+   ON order_payments(order_id, payment_id);
 
 ALTER TABLE "order_payments"
     ADD CONSTRAINT fk_order_payment FOREIGN KEY (order_id)

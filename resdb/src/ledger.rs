@@ -1,5 +1,4 @@
 use bigdecimal::BigDecimal;
-use uuid::Uuid;
 
 use crate::model::{
 	Coa, Direction, LedgerBuilder, LedgerDetail, LedgerDetailBuilder,
@@ -10,7 +9,7 @@ use crate::model::{
 // #[serde(rename_all = "snake_case")]
 
 impl LedgerDetailBuilder {
-	pub fn with_ledger_id<T: Into<Uuid>>(
+	pub fn with_ledger_id<T: Into<i32>>(
 		mut self,
 		value: T,
 	) -> LedgerDetailBuilder {
@@ -22,7 +21,7 @@ impl LedgerDetailBuilder {
 		T: Direction,
 	{
 		// let mi: MixedInts = Into::into(value);
-		self.id = Some(value.into_i16());
+		self.detail_id = Some(value.into_i16());
 		self
 	}
 	pub fn with_account_id<T: Into<i16>>(
@@ -56,7 +55,7 @@ impl LedgerDetailBuilder {
 		self.direction = Some(value.into_i16());
 		self
 	}
-	pub fn with_ref_id<T: Into<Uuid>>(
+	pub fn with_ref_id<T: Into<i32>>(
 		mut self,
 		value: T,
 	) -> LedgerDetailBuilder {
@@ -66,7 +65,7 @@ impl LedgerDetailBuilder {
 	pub fn build(&self) -> LedgerDetail {
 		LedgerDetail {
 			ledger_id: self.ledger_id.expect("ledger_id not define"),
-			id: self.id.expect("id not define"),
+			detail_id: self.detail_id.expect("detail_id not define"),
 			account_id: self.account_id.expect("account_id not define"),
 			descriptions: self.descriptions.to_owned(),
 			amount: self
@@ -80,7 +79,7 @@ impl LedgerDetailBuilder {
 }
 
 impl LedgerBuilder {
-	pub fn relation_id<T: Into<Uuid>>(mut self, value: T) -> LedgerBuilder {
+	pub fn relation_id<T: Into<i16>>(mut self, value: T) -> LedgerBuilder {
 		self.relation_id = Some(value.into());
 		self
 	}
@@ -144,8 +143,8 @@ impl LedgerUtil {
 		total: &BigDecimal,
 		dp: &BigDecimal,
 		hpp: &BigDecimal,
-		ref_id: Uuid,
-		ledger_id: Uuid,
+		ref_id: i32,
+		ledger_id: i32,
 	) -> (Vec<LedgerDetail>, usize) {
 		let mut details: Vec<LedgerDetail> = Vec::new();
 		let mut i: i16 = 1;
@@ -254,8 +253,8 @@ impl LedgerUtil {
 
 	pub fn from_order_payment(
 		amount: &BigDecimal,
-		ref_id: Uuid,
-		ledger_id: Uuid,
+		ref_id: i32,
+		ledger_id: i32,
 	) -> (Vec<LedgerDetail>, usize) {
 		let mut details: Vec<LedgerDetail> = Vec::new();
 		let mut i: i16 = 1;
@@ -309,13 +308,12 @@ pub mod db {
 	use async_trait::async_trait;
 	use crate::model::{LedgerSchema, LedgerType, LedgerDetail};
 	use sqlx::{self, types::Json, Acquire, Error};
-	use uuid::Uuid;
 
 	#[async_trait]
 	pub trait LedgerExt {
 		async fn get_ledger(
 			&self,
-			id: Uuid,
+			id: i32,
 		) -> Result<Option<LedgerWithDetails>, Error>;
 		async fn get_ledgers(
 			&self,
@@ -330,19 +328,19 @@ pub mod db {
 			T: Into<LedgerSchema> + Send;
 		async fn ledger_update<T>(
 			&self,
-			id: Uuid,
+			id: i32,
 			data: T,
 		) -> Result<Option<LedgerResult>, Error>
 		where
 			T: Into<LedgerSchema> + Send;
-		async fn ledger_delete(&self, id: Uuid) -> Result<u64, Error>;
+		async fn ledger_delete(&self, id: i32) -> Result<u64, Error>;
 	}
 
 	#[async_trait]
 	impl LedgerExt for DBClient {
 		async fn get_ledger(
 			&self,
-			id: Uuid,
+			id: i32,
 		) -> Result<Option<LedgerWithDetails>, Error> {
 			let query = sqlx::query_file_as!(
 				LedgerWithDetails,
@@ -414,7 +412,7 @@ pub mod db {
 
 		async fn ledger_update<T: Into<LedgerSchema> + Send>(
 			&self,
-			id: Uuid,
+			id: i32,
 			data: T,
 		) -> Result<Option<LedgerResult>, Error>
 		where
@@ -437,7 +435,7 @@ pub mod db {
 			Ok(ledger)
 		}
 
-		async fn ledger_delete(&self, id: Uuid) -> Result<u64, Error> {
+		async fn ledger_delete(&self, id: i32) -> Result<u64, Error> {
 			let rows_affected: u64 =
 				sqlx::query_file!("sql/ledger-delete.sql", id)
 					.execute(&self.pool)

@@ -8,10 +8,11 @@ SET
    margin = $7,
    price = $8,
    ppn = $9,
-   is_active = $10,
-   variant_name = $11,
-   descriptions = $12,
-   category_id = $13,
-   supplier_id = $14
+   heavy = $10,
+   is_active = $11,
+   variant_name = $12,
+   descriptions = $13,
+   category_id = $14,
+   supplier_id = $15
 WHERE id = $1
    RETURNING *

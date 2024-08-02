@@ -1,147 +1,152 @@
-use bigdecimal::BigDecimal;
-use chrono::prelude::*;
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
-use validator::Validate;
+pub mod model {
+	use bigdecimal::BigDecimal;
+	use chrono::prelude::*;
+	use serde::{Deserialize, Serialize};
+	use validator::Validate;
 
-#[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
-pub struct Products {
-	pub id: Uuid,
-	#[serde(rename = "supplierId")]
-	pub supplier_id: Uuid,
-	pub name: String,
-	pub barcode: String,
-	pub unit: String,
-	#[serde(rename = "unitInStock")]
-	pub unit_in_stock: BigDecimal,
-	pub content: BigDecimal,
-	pub hpp: BigDecimal,
-	pub margin: BigDecimal,
-	pub price: BigDecimal,
-	pub ppn: BigDecimal,
-	#[serde(rename = "isActive")]
-	pub is_active: bool,
-	#[serde(rename = "variantName")]
-	pub variant_name: Option<String>,
-	pub descriptions: Option<String>,
-	#[serde(rename = "categoryId")]
-	pub category_id: i16,
-	#[serde(rename = "createdAt", skip_serializing_if = "Option::is_none")]
-	pub created_at: Option<DateTime<Utc>>,
-	#[serde(rename = "updatedAt", skip_serializing_if = "Option::is_none")]
-	pub updated_at: Option<DateTime<Utc>>,
-	#[serde(rename = "categoryName")]
-	pub category_name: String,
-	#[serde(rename = "supplierName")]
-	pub supplier_name: String,
-}
+	#[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
+	pub struct Products {
+		pub id: i16,
+		#[serde(rename = "supplierId")]
+		pub supplier_id: i16,
+		#[serde(rename = "categoryId")]
+		pub category_id: i16,
+		pub name: String,
+		pub barcode: String,
+		pub unit: String,
+		#[serde(rename = "unitInStock")]
+		pub unit_in_stock: BigDecimal,
+		pub content: BigDecimal,
+		pub hpp: BigDecimal,
+		pub margin: BigDecimal,
+		pub price: BigDecimal,
+		pub ppn: BigDecimal,
+		pub heavy: f32,
+		#[serde(rename = "isActive")]
+		pub is_active: bool,
+		#[serde(rename = "variantName")]
+		pub variant_name: Option<String>,
+		pub descriptions: Option<String>,
+		#[serde(rename = "createdAt", skip_serializing_if = "Option::is_none")]
+		pub created_at: Option<DateTime<Utc>>,
+		#[serde(rename = "updatedAt", skip_serializing_if = "Option::is_none")]
+		pub updated_at: Option<DateTime<Utc>>,
+		#[serde(rename = "categoryName")]
+		pub category_name: String,
+		#[serde(rename = "supplierName")]
+		pub supplier_name: String,
+	}
 
-#[derive(Validate, Debug, Default, Clone, Serialize, Deserialize)]
-pub struct Product {
-	#[serde(skip_serializing_if = "Option::is_none")]
-	pub id: Option<Uuid>,
-	#[serde(rename = "supplierId")]
-	pub supplier_id: Uuid,
-	#[validate(length(min = 1, message = "Name is required"))]
-	pub name: String,
-	#[validate(length(min = 1, message = "Barcode is required"))]
-	pub barcode: String,
-	#[validate(length(min = 1, message = "Unit is required"))]
-	pub unit: String,
-	pub content: BigDecimal,
-	pub hpp: BigDecimal,
-	pub margin: BigDecimal,
-	pub price: BigDecimal,
-	pub ppn: BigDecimal,
-	#[serde(rename = "isActive")]
-	pub is_active: bool,
-	#[serde(rename = "variantName", skip_serializing_if = "Option::is_none")]
-	pub variant_name: Option<String>,
-	#[serde(skip_serializing_if = "Option::is_none")]
-	pub descriptions: Option<String>,
-	#[serde(rename = "categoryId")]
-	pub category_id: i16,
-	// #[serde(rename = "createdAt", skip_serializing_if = "Option::is_none")]
-	// pub created_at: Option<DateTime<Utc>>,
-	// #[serde(rename = "updatedAt", skip_serializing_if = "Option::is_none")]
-	// pub updated_at: Option<DateTime<Utc>>,
-}
+	#[derive(Validate, Debug, Default, Clone, Serialize, Deserialize)]
+	pub struct Product {
+		#[serde(skip_serializing_if = "Option::is_none")]
+		pub id: Option<i16>,
+		#[serde(rename = "supplierId")]
+		pub supplier_id: i16,
+		#[serde(rename = "categoryId")]
+		pub category_id: i16,
+		#[validate(length(min = 1, message = "Name is required"))]
+		pub name: String,
+		#[validate(length(min = 1, message = "Barcode is required"))]
+		pub barcode: String,
+		#[validate(length(min = 1, message = "Unit is required"))]
+		pub unit: String,
+		pub content: BigDecimal,
+		pub hpp: BigDecimal,
+		pub margin: BigDecimal,
+		pub price: BigDecimal,
+		pub ppn: BigDecimal,
+		pub heavy: f32,
+		#[serde(rename = "isActive")]
+		pub is_active: bool,
+		#[serde(rename = "variantName", skip_serializing_if = "Option::is_none")]
+		pub variant_name: Option<String>,
+		#[serde(skip_serializing_if = "Option::is_none")]
+		pub descriptions: Option<String>,
+		// #[serde(rename = "createdAt", skip_serializing_if = "Option::is_none")]
+		// pub created_at: Option<DateTime<Utc>>,
+		// #[serde(rename = "updatedAt", skip_serializing_if = "Option::is_none")]
+		// pub updated_at: Option<DateTime<Utc>>,
+	}
 
-// #[derive(Debug, Serialize, Deserialize, sqlx::FromRow, sqlx::Type, Clone)]
-#[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
-pub struct ProductOriginal {
-	pub id: Uuid,
-	#[serde(rename = "supplierId")]
-	pub supplier_id: Uuid,
-	pub name: String,
-	pub barcode: String,
-	pub unit: String,
-	#[serde(rename = "unitInStock")]
-	pub unit_in_stock: BigDecimal,
-	pub content: BigDecimal,
-	pub hpp: BigDecimal,
-	pub margin: BigDecimal,
-	pub price: BigDecimal,
-	pub ppn: BigDecimal,
-	#[serde(rename = "isActive")]
-	pub is_active: bool,
-	#[serde(rename = "variantName")]
-	pub variant_name: Option<String>,
-	pub descriptions: Option<String>,
-	#[serde(rename = "categoryId")]
-	pub category_id: i16,
-	#[serde(rename = "createdAt", skip_serializing_if = "Option::is_none")]
-	pub created_at: Option<DateTime<Utc>>,
-	#[serde(rename = "updatedAt", skip_serializing_if = "Option::is_none")]
-	pub updated_at: Option<DateTime<Utc>>,
-}
+	// #[derive(Debug, Serialize, Deserialize, sqlx::FromRow, sqlx::Type, Clone)]
+	#[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
+	pub struct ProductOriginal {
+		pub id: i16,
+		#[serde(rename = "supplierId")]
+		pub supplier_id: i16,
+		#[serde(rename = "categoryId")]
+		pub category_id: i16,
+		pub name: String,
+		pub barcode: String,
+		pub unit: String,
+		#[serde(rename = "unitInStock")]
+		pub unit_in_stock: BigDecimal,
+		pub content: BigDecimal,
+		pub hpp: BigDecimal,
+		pub margin: BigDecimal,
+		pub price: BigDecimal,
+		pub ppn: BigDecimal,
+		pub heavy: f32,
+		#[serde(rename = "isActive")]
+		pub is_active: bool,
+		#[serde(rename = "variantName")]
+		pub variant_name: Option<String>,
+		pub descriptions: Option<String>,
+		#[serde(rename = "createdAt", skip_serializing_if = "Option::is_none")]
+		pub created_at: Option<DateTime<Utc>>,
+		#[serde(rename = "updatedAt", skip_serializing_if = "Option::is_none")]
+		pub updated_at: Option<DateTime<Utc>>,
+	}
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ProductResponseDto {
-	pub status: String,
-	pub data: Products,
-}
+	#[derive(Debug, Serialize, Deserialize)]
+	pub struct ProductResponseDto {
+		pub status: String,
+		pub data: Products,
+	}
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct CreateResponseDto {
-	pub status: String,
-	pub data: Product,
-}
+	#[derive(Debug, Serialize, Deserialize)]
+	pub struct CreateResponseDto {
+		pub status: String,
+		pub data: Product,
+	}
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct DeleteResponseDto {
-	pub status: String,
-	pub data: u64,
-}
+	#[derive(Debug, Serialize, Deserialize)]
+	pub struct DeleteResponseDto {
+		pub status: String,
+		pub data: u64,
+	}
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ProductListResponseDto {
-	pub status: String,
-	pub data: Vec<Products>,
-	pub count: usize,
+	#[derive(Debug, Serialize, Deserialize)]
+	pub struct ProductListResponseDto {
+		pub status: String,
+		pub data: Vec<Products>,
+		pub count: usize,
+	}
 }
 
 pub mod db {
 
-	use super::*;
 	use crate::db::DBClient;
 	use async_trait::async_trait;
 	use sqlx::{self, Acquire};
+
+	use super::model::{Product, ProductOriginal, Products};
 
 	#[async_trait]
 	pub trait ProductExt {
 		async fn get_product_origin(
 			&self,
-			id: uuid::Uuid,
+			id: i16,
 		) -> Result<Option<ProductOriginal>, sqlx::Error>;
-		async fn get_product(&self, id: uuid::Uuid) -> Result<Option<Products>, sqlx::Error>;
+		async fn get_product(&self, id: i16) -> Result<Option<Products>, sqlx::Error>;
 		async fn get_products(
 			&self,
 			page: u32,
 			limit: usize,
 			opt: Option<i8>,
 			txt: Option<String>,
-			relid: Option<Uuid>,
+			relid: Option<i16>,
 			catid: Option<i16>,
 		) -> Result<(Vec<Products>, i64), sqlx::Error>;
 		async fn get_products_by_category(
@@ -152,25 +157,25 @@ pub mod db {
 		) -> Result<(Vec<Products>, i64), sqlx::Error>;
 		async fn get_products_by_supplier(
 			&self,
-			supplier_id: uuid::Uuid,
+			supplier_id: i16,
 			page: u32,
 			limit: usize,
 		) -> Result<(Vec<Products>, i64), sqlx::Error>;
 		async fn product_create(&self, data: Product) -> Result<ProductOriginal, sqlx::Error>;
 		async fn product_update(
 			&self,
-			id: uuid::Uuid,
+			id: i16,
 			data: Product,
 			old: ProductOriginal,
 		) -> Result<ProductOriginal, sqlx::Error>;
-		async fn product_delete(&self, id: uuid::Uuid) -> Result<u64, sqlx::Error>;
+		async fn product_delete(&self, id: i16) -> Result<u64, sqlx::Error>;
 	}
 
 	#[async_trait]
 	impl ProductExt for DBClient {
 		async fn get_product_origin(
 			&self,
-			id: uuid::Uuid,
+			id: i16,
 		) -> Result<Option<ProductOriginal>, sqlx::Error> {
 			let product =
 				sqlx::query_file_as!(ProductOriginal, "sql/product-get-origin-by-id.sql", id)
@@ -180,7 +185,7 @@ pub mod db {
 			Ok(product)
 		}
 
-		async fn get_product(&self, id: uuid::Uuid) -> Result<Option<Products>, sqlx::Error> {
+		async fn get_product(&self, id: i16) -> Result<Option<Products>, sqlx::Error> {
 			let product = sqlx::query_file_as!(Products, "sql/product-get-by-id.sql", id)
 				.fetch_optional(&self.pool)
 				.await?;
@@ -194,7 +199,7 @@ pub mod db {
 			limit: usize,
 			opt: Option<i8>,
 			txt: Option<String>,
-			relid: Option<Uuid>,
+			relid: Option<i16>,
 			catid: Option<i16>,
 		) -> Result<(Vec<Products>, i64), sqlx::Error> {
             // calculate offset from page
@@ -356,7 +361,7 @@ pub mod db {
 
 		async fn get_products_by_supplier(
 			&self,
-			supplier_id: uuid::Uuid,
+			supplier_id: i16,
 			page: u32,
 			limit: usize,
 		) -> Result<(Vec<Products>, i64), sqlx::Error> {
@@ -400,6 +405,7 @@ pub mod db {
 				data.margin,
 				data.price,
 				data.ppn,
+				data.heavy,
 				data.is_active,
 				data.variant_name.to_owned().unwrap_or("".to_string()),
 				data.descriptions.to_owned().unwrap_or("".to_string()),
@@ -414,7 +420,7 @@ pub mod db {
 
 		async fn product_update(
 			&self,
-			id: uuid::Uuid,
+			id: i16,
 			data: Product,
 			old: ProductOriginal,
 		) -> Result<ProductOriginal, sqlx::Error> {
@@ -430,6 +436,7 @@ pub mod db {
 				data.margin,
 				data.price,
 				data.ppn,
+				data.heavy,
 				data.is_active,
 				data.variant_name
 					.to_owned()
@@ -446,7 +453,7 @@ pub mod db {
 			Ok(product)
 		}
 
-		async fn product_delete(&self, id: uuid::Uuid) -> Result<u64, sqlx::Error> {
+		async fn product_delete(&self, id: i16) -> Result<u64, sqlx::Error> {
 			let rows_affected: u64 = sqlx::query_file!("sql/product-delete.sql", id)
 				.execute(&self.pool)
 				.await

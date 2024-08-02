@@ -1,7 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
-use uuid::Uuid;
 use validator::Validate;
 
 use resdb::model::{RelationType, User};
@@ -74,7 +73,7 @@ pub struct RequestProductSearch {
 	#[validate(range(min = 0, max = 3))]
 	pub opt: Option<i8>,
 	pub txt: Option<String>,
-	pub relid: Option<Uuid>,
+	pub relid: Option<i16>,
 	pub catid: Option<i16>,
 }
 

@@ -1,2 +1,2 @@
 DELETE FROM order_details
-WHERE id = $1
+WHERE detail_id = $1

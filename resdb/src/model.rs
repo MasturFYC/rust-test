@@ -1,7 +1,6 @@
 use bigdecimal::{BigDecimal, FromPrimitive};
 use chrono::prelude::*;
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 use validator::Validate;
 use sqlx::{self, types::Json, Row};
 
@@ -104,13 +103,13 @@ impl PaymentType {
 
 #[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
 pub struct Order {
-	pub id: Uuid,
+	pub id: i32,
 	#[serde(rename = "orderType")]
 	pub order_type: OrderType,
 	#[serde(rename = "customerId")]
-	pub customer_id: Uuid,
+	pub customer_id: i16,
 	#[serde(rename = "salesId")]
-	pub sales_id: Uuid,
+	pub sales_id: i16,
 	#[serde(rename = "paymentType")]
 	pub payment_type: PaymentType,
 	#[serde(rename = "updatedBy")]
@@ -133,13 +132,13 @@ pub struct Order {
 
 #[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
 pub struct ResponseOrder {
-	pub id: Uuid,
+	pub id: i32,
 	#[serde(rename = "orderType")]
 	pub order_type: OrderType,
 	#[serde(rename = "customerId")]
-	pub customer_id: Uuid,
+	pub customer_id: i16,
 	#[serde(rename = "salesId")]
-	pub sales_id: Uuid,
+	pub sales_id: i16,
 	#[serde(rename = "paymentType")]
 	pub payment_type: PaymentType,
 	#[serde(rename = "updatedBy")]
@@ -169,9 +168,9 @@ pub struct OrderDtos {
 	#[serde(rename = "orderType")]
 	pub order_type: Option<OrderType>,
 	#[serde(rename = "customerId")]
-	pub customer_id: Uuid,
+	pub customer_id: i16,
 	#[serde(rename = "salesId")]
-	pub sales_id: Uuid,
+	pub sales_id: i16,
 	#[serde(rename = "paymentType")]
 	pub payment_type: Option<PaymentType>,
 	#[serde(rename = "updatedBy")]
@@ -203,13 +202,14 @@ pub enum DetailMark {
 #[derive(Validate, Debug, Default, Clone, Serialize, Deserialize)]
 pub struct CreateOrderDetailSchema {
 	#[serde(skip_serializing_if = "Option::is_none")]
-	pub id: Option<Uuid>,
+	#[serde(rename = "detailId")]
+	pub detail_id: Option<i16>,
 	#[serde(rename = "orderId", skip_serializing_if = "Option::is_none")]
-	pub order_id: Option<Uuid>,
+	pub order_id: Option<i32>,
 	#[serde(rename = "productId")]
-	pub product_id: Uuid,
+	pub product_id: i16,
 	#[serde(rename = "oldProductId")]
-	pub old_product_id: Option<Uuid>,
+	pub old_product_id: Option<i16>,
 	pub qty: BigDecimal,
 	#[serde(rename = "oldQty")]
 	pub old_qty: Option<BigDecimal>,
@@ -234,10 +234,11 @@ pub struct RequestQueryOrderDtos {
 #[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
 pub struct OrderDetail {
 	#[serde(rename = "orderId")]
-	pub order_id: Uuid,
-	pub id: Uuid,
+	pub order_id: i32,
+	#[serde(rename = "detailId")]
+	pub detail_id: i16,
 	#[serde(rename = "productId")]
-	pub product_id: Uuid,
+	pub product_id: i16,
 	pub qty: BigDecimal,
 	pub direction: i16,
 	pub unit: String,
@@ -253,8 +254,8 @@ pub struct OrderDetail {
 
 pub struct OrderBuilder {
 	pub order_type: OrderType,
-	pub customer_id: Uuid,
-	pub sales_id: Uuid,
+	pub customer_id: i16,
+	pub sales_id: i16,
 	pub payment_type: PaymentType,
 	pub updated_by: String,
 	pub total: BigDecimal,
@@ -277,8 +278,8 @@ impl OrderBuilder {
 		is_protected: bool,
 		created_at: Option<DateTime<Utc>>,
 		invoice_id: Option<String>,
-		customer_id: Uuid,
-		sales_id: Uuid,
+		customer_id: i16,
+		sales_id: i16,
 	) -> OrderBuilder {
 		OrderBuilder {
 			order_type,
@@ -355,9 +356,10 @@ impl OrderBuilder {
 
 #[derive(Debug, Deserialize, Serialize, sqlx::FromRow, Clone)]
 pub struct OrderPayments {
-	pub id: Uuid,
 	#[serde(rename = "orderId")]
-	pub order_id: Uuid,
+	pub order_id: i32,
+	#[serde(rename = "paymentId")]
+	pub payment_id: i16,
 	pub amount: BigDecimal,
 	#[serde(rename = "updatedBy")]
 	pub updated_by: String,
@@ -375,7 +377,7 @@ pub struct OrderPayments {
 // #[builder(setter(prefix = "with"), derive(PartialEq))]
 pub struct OrderPayment {
 	#[serde(rename = "orderId")]
-	pub order_id: Uuid,
+	pub order_id: i32,
 	pub amount: BigDecimal,
 	#[serde(rename = "updatedBy")]
 	pub updated_by: String,
@@ -423,7 +425,7 @@ impl RelationType {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct RelationProperty {
-	pub id: uuid::Uuid,
+	pub id: i16,
 	#[serde(rename = "text")]
 	pub name: String,
 	pub city: String,
@@ -454,7 +456,7 @@ pub struct PropertyWithId {
 
 #[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
 pub struct Relation {
-	pub id: uuid::Uuid,
+	pub id: i16,
 	pub name: String,
 	pub city: String,
 	pub street: Option<String>,
@@ -545,7 +547,7 @@ impl Default for LedgerType {
 
 #[derive(Clone, Default)]
 pub struct LedgerBuilder {
-	pub relation_id: Option<Uuid>,
+	pub relation_id: Option<i16>,
 	pub ledger_type: Option<LedgerType>,
 	pub is_valid: Option<bool>,
 	pub updated_by: Option<String>,
@@ -556,7 +558,7 @@ pub struct LedgerBuilder {
 pub struct LedgerSchema {
 	/// customer, supplier, employee
 	#[serde(rename = "relationId")]
-	pub relation_id: Uuid,
+	pub relation_id: i16,
 	#[serde(rename = "LedgerType")]
 	pub ledger_type: LedgerType,
 	#[serde(rename = "isValid")]
@@ -572,23 +574,19 @@ pub struct LedgerSchema {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct LedgerDetail {
 	#[serde(rename = "ledgerId")]
-	pub ledger_id: Uuid,
-
-	pub id: i16,
-
+	pub ledger_id: i32,
+	#[serde(rename = "detailId")]
+	pub detail_id: i16,
 	#[serde(rename = "accountId")]
 	pub account_id: i16,
-
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub descriptions: Option<String>,
-
 	/// nominal transaksi
 	pub amount: BigDecimal,
-
 	pub direction: i16,
 	/// diambil dari no id transaksi lain
 	#[serde(skip_serializing_if = "Option::is_none", rename = "refId")]
-	pub ref_id: Option<Uuid>,
+	pub ref_id: Option<i32>,
 }
 
 // #[derive(Debug, Clone, Copy)]
@@ -678,18 +676,18 @@ impl Into<i16> for Coa {
 
 #[derive(Clone, Default, Debug, PartialEq)]
 pub struct LedgerDetailBuilder {
-	pub ledger_id: Option<Uuid>,
-	pub id: Option<i16>,
+	pub ledger_id: Option<i32>,
+	pub detail_id: Option<i16>,
 	pub account_id: Option<i16>,
 	pub descriptions: Option<String>,
 	pub amount: Option<BigDecimal>,
 	pub direction: Option<i16>,
-	pub ref_id: Option<Uuid>,
+	pub ref_id: Option<i32>,
 }
 
 #[derive(Deserialize, Serialize, sqlx::FromRow, Clone)]
 pub struct LedgerResult {
-	pub id: Uuid,
+	pub id: i32,
 	#[serde(rename = "createdAt")]
 	pub created_at: Option<DateTime<Utc>>,
 	#[serde(rename = "updatedAt")]
@@ -698,9 +696,9 @@ pub struct LedgerResult {
 
 #[derive(Debug, Deserialize, Serialize, sqlx::FromRow, Clone)]
 pub struct Ledger {
-	pub id: Uuid,
+	pub id: i32,
 	#[serde(rename = "relationId")]
-	pub relation_id: Uuid,
+	pub relation_id: i16,
 	#[serde(rename = "ledgerType")]
 	pub ledger_type: LedgerType,
 	#[serde(rename = "isValid")]
@@ -717,9 +715,9 @@ pub struct Ledger {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LedgerWithDetails {
-	pub id: Uuid,
+	pub id: i32,
 	#[serde(rename = "relationId")]
-	pub relation_id: Uuid,
+	pub relation_id: i16,
 	#[serde(rename = "ledgerType")]
 	pub ledger_type: LedgerType,
 	#[serde(rename = "isValid")]

@@ -10,7 +10,7 @@ SELECT
     COALESCE((SELECT json_agg(x) FROM (
       SELECT
          d.ledger_id,
-         d.id,
+         d.detail_id,
          d.account_id,
          a.name,
          d.descriptions,
@@ -21,7 +21,7 @@ SELECT
       INNER JOIN accounts AS a
          ON a.id = d.account_id
       WHERE d.ledger_id = t.id
-      ORDER BY d.id
+      ORDER BY d.ledger_id, d.detail_id
         ) AS x), '[]') AS "details!: Json<Vec<LedgerDetail>>"
 FROM
     ledgers AS t

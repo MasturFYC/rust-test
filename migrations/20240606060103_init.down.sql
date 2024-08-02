@@ -11,10 +11,10 @@ ALTER TABLE products DROP CONSTRAINT fk_product_supplier;
 ALTER TABLE products DROP CONSTRAINT fk_product_category;
 
 DROP INDEX ix_order_payment;
-DROP INDEX idx_order_relation;
+DROP INDEX ix_order_relation;
 DROP INDEX ix_ledger_relation;
-DROP INDEX ix_ledger_detail;
-DROP INDEX ix_ledger_ref;
+DROP INDEX ix_ledger_detail_account;
+DROP INDEX ix_ledger_detail_ref;
 DROP INDEX ix_order_detail_updated;
 DROP INDEX ix_order_detail;
 DROP INDEX ix_product_supplier;
@@ -36,6 +36,9 @@ DROP TYPE IF EXISTS payment_enum;
 DROP TYPE IF EXISTS ledger_enum;
 DROP type IF EXISTS relation_enum;
 
-DROP SEQUENCE IF EXISTS "category_id_seq" CASCADE;
-DROP SEQUENCE IF EXISTS "product_id_seq" CASCADE;
+DROP SEQUENCE IF EXISTS "category_id_seq";
+DROP SEQUENCE IF EXISTS "product_id_seq";
+DROP SEQUENCE IF EXISTS "relation_id_seq";
+DROP SEQUENCE IF EXISTS "order_id_seq";
+DROP SEQUENCE IF EXISTS "ledger_id_seq";
 DROP EXTENSION IF EXISTS "uuid-ossp";

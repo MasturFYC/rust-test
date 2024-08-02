@@ -20,7 +20,7 @@ pub fn payment_scope(conf: &mut web::ServiceConfig) {
 
 #[get("/{id}")]
 async fn get_payment(
-	path: web::Path<uuid::Uuid>,
+	path: web::Path<i32>,
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
 	let id = path.into_inner();
@@ -115,7 +115,7 @@ async fn create(
 
 #[put("/{id}")]
 async fn update(
-	path: web::Path<uuid::Uuid>,
+	path: web::Path<i32>,
 	body: web::Json<OrderPayment>,
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
@@ -158,7 +158,7 @@ async fn update(
 
 #[delete("/{id}")]
 async fn delete(
-	path: web::Path<uuid::Uuid>,
+	path: web::Path<i32>,
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
 	let pid = path.into_inner();

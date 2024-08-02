@@ -44,7 +44,7 @@ async fn get_relation_types() -> impl Responder {
 
 #[get("/{id}")]
 async fn get_relation(
-	path: web::Path<uuid::Uuid>,
+	path: web::Path<i16>,
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
 	let rel_id = path.into_inner();
@@ -209,7 +209,7 @@ async fn create(
 
 #[put("/{id}")]
 async fn update(
-	path: web::Path<uuid::Uuid>,
+	path: web::Path<i16>,
 	body: web::Json<CreateRelationSchema>,
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
@@ -251,7 +251,7 @@ async fn update(
 }
 
 #[delete("/{id}")]
-async fn delete(path: web::Path<uuid::Uuid>, app_state: web::Data<AppState>) -> impl Responder {
+async fn delete(path: web::Path<i16>, app_state: web::Data<AppState>) -> impl Responder {
 	let rel_id = path.into_inner();
 
 	let query_result = app_state.db_client.relation_delete(rel_id).await;

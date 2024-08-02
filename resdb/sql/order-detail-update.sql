@@ -9,4 +9,4 @@ SET order_id = $2,
    hpp = $9,
    subtotal = $10,
    updated_at = now()
-WHERE id = $1
+WHERE detail_id = $1

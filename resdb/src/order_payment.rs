@@ -3,21 +3,20 @@ pub mod db {
 	use crate::model::LedgerType;
 	use async_trait::async_trait;
 	use sqlx::{self, pool::PoolConnection, Acquire, Error, Postgres, Transaction};
-	use uuid::Uuid;
 
 	use crate::db::DBClient;
 	use crate::model::{OrderPayment, OrderPayments};
 
 	#[derive(serde::Deserialize, serde::Serialize, sqlx::FromRow, Clone)]
 	struct OrderInfo {
-		id: Uuid,
-		customer_id: Uuid,
+		id: i32,
+		customer_id: i16,
 		customer_name: String,
 		payment: bigdecimal::BigDecimal,
 	}
 	#[derive(serde::Deserialize, serde::Serialize, sqlx::FromRow, Clone)]
 	struct PaymentInfo {
-		order_id: Uuid,
+		order_id: i32,
 		amount: bigdecimal::BigDecimal,
 	}
 
@@ -25,7 +24,7 @@ pub mod db {
 	pub trait OrderPaymentExt {
 		async fn get_order_payment(
 			&self,
-			id: Uuid,
+			id: i32,
 		) -> Result<Option<OrderPayments>, Error>;
 		async fn get_order_payments(
 			&self,
@@ -40,29 +39,29 @@ pub mod db {
 			T: Into<OrderPayment> + Send;
 		async fn order_payment_update<T>(
 			&self,
-			pid: Uuid,
+			pid: i32,
 			data: T,
 		) -> Result<Option<OrderPayments>, Error>
 		where
 			T: Into<OrderPayment> + Send;
-		async fn order_payment_delete(&self, pid: Uuid) -> Result<u64, Error>;
+		async fn order_payment_delete(&self, pid: i32) -> Result<u64, Error>;
 	}
 
 	#[async_trait]
 	impl OrderPaymentExt for DBClient {
 		async fn get_order_payment(
 			&self,
-			id: Uuid,
+			id: i32,
 		) -> Result<Option<OrderPayments>, Error> {
 			let payment = sqlx::query_as!(
 				OrderPayments,
                 r#"
             SELECT
-                id, order_id, amount, updated_by, via_by, descriptions, created_at, updated_at
+                order_id, payment_id, amount, updated_by, via_by, descriptions, created_at, updated_at
             FROM 
                 order_payments
             WHERE
-                id = $1
+                order_id = $1
             "#,
                 id
             )
@@ -86,11 +85,11 @@ pub mod db {
 				OrderPayments,
 				r#"
 				SELECT
-             	id, order_id, amount, updated_by, via_by, descriptions, created_at, updated_at
+             	order_id, payment_id, amount, updated_by, via_by, descriptions, created_at, updated_at
          	FROM
             	order_payments
          	ORDER BY
-            	created_at
+            	order_id, payment_id
          	OFFSET $1
          	LIMIT $2
             "#,
@@ -172,7 +171,7 @@ pub mod db {
 			.await?;
 
 			let payment = query.unwrap();
-			let pid = payment.id;
+			let pid = payment.order_id;
 
 			let _ = sqlx::query!(
                 r#"
@@ -209,7 +208,7 @@ pub mod db {
                 INSERT INTO
                     ledger_details(
                         ledger_id,
-                        id,
+                        detail_id,
                         account_id,
                         descriptions,
                         amount,
@@ -220,7 +219,7 @@ pub mod db {
                     ($1, $2, $3, $4, $5, $6, $7)
                 "#,
 					detail.ledger_id,
-					detail.id,
+					detail.detail_id,
 					detail.account_id,
 					detail.descriptions,
 					detail.amount,
@@ -266,7 +265,7 @@ pub mod db {
 
 		async fn order_payment_update<T>(
 			&self,
-			pid: Uuid,
+			pid: i32,
 			data: T,
 		) -> Result<Option<OrderPayments>, Error>
 		where
@@ -305,7 +304,7 @@ pub mod db {
             FROM
                 order_payments
             WHERE
-                id = $1
+                order_id = $1
             "#,
 				pid
 			)
@@ -324,7 +323,7 @@ pub mod db {
                 via_by = $5,
                 descriptions = $6,
                 updated_at = now()
-            WHERE id = $1
+            WHERE order_id = $1
             RETURNING *
             "#,
 				pid,
@@ -390,7 +389,7 @@ pub mod db {
                 INSERT INTO
                     ledger_details(
                         ledger_id,
-                        id,
+                        detail_id,
                         account_id,
                         descriptions,
                         amount,
@@ -401,7 +400,7 @@ pub mod db {
                     ($1, $2, $3, $4, $5, $6, $7)
                 "#,
 					detail.ledger_id,
-					detail.id,
+					detail.detail_id,
 					detail.account_id,
 					detail.descriptions,
 					detail.amount,
@@ -447,7 +446,7 @@ pub mod db {
 		}
 
 		/// Hapus **data pembayaran order** dan **data ledger**.
-		async fn order_payment_delete(&self, pid: Uuid) -> Result<u64, Error> {
+		async fn order_payment_delete(&self, pid: i32) -> Result<u64, Error> {
 			let mut cnn: PoolConnection<Postgres> = self.pool.acquire().await?;
 			let mut tx: Transaction<Postgres> = cnn.begin().await?;
 
@@ -469,7 +468,7 @@ pub mod db {
             DELETE FROM
                 order_payments
             WHERE
-                id = $1
+                order_id = $1
             RETURNING
                 order_id, amount
             "#,

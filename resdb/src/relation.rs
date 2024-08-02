@@ -7,7 +7,7 @@ pub mod db {
 
 	#[async_trait]
 	pub trait RelationExt {
-		async fn get_relation(&self, id: uuid::Uuid) -> Result<Option<Relation>, sqlx::Error>;
+		async fn get_relation(&self, id: i16) -> Result<Option<Relation>, sqlx::Error>;
 		async fn get_relations(
 			&self,
 			page: usize,
@@ -32,15 +32,15 @@ pub mod db {
 		) -> Result<Option<Relation>, sqlx::Error>;
 		async fn relation_update<T: Into<CreateRelationSchema> + Send>(
 			&self,
-			id: uuid::Uuid,
+			id: i16,
 			data: T,
 		) -> Result<Option<Relation>, sqlx::Error>;
-		async fn relation_delete(&self, id: uuid::Uuid) -> Result<u64, sqlx::Error>;
+		async fn relation_delete(&self, id: i16) -> Result<u64, sqlx::Error>;
 	}
 
 	#[async_trait]
 	impl RelationExt for DBClient {
-		async fn get_relation(&self, id: uuid::Uuid) -> Result<Option<Relation>, sqlx::Error> {
+		async fn get_relation(&self, id: i16) -> Result<Option<Relation>, sqlx::Error> {
 			let relation = sqlx::query_file_as!(Relation, "sql/relation-get-by-id.sql", id)
 				.fetch_optional(&self.pool)
 				.await?;
@@ -274,7 +274,7 @@ pub mod db {
 
 		async fn relation_update<T: Into<CreateRelationSchema> + Send>(
 			&self,
-			id: uuid::Uuid,
+			id: i16,
 			t: T,
 		) -> Result<Option<Relation>, sqlx::Error> {
 			let data: CreateRelationSchema = t.try_into().unwrap();
@@ -305,7 +305,7 @@ pub mod db {
 			Ok(relation)
 		}
 
-		async fn relation_delete(&self, id: uuid::Uuid) -> Result<u64, sqlx::Error> {
+		async fn relation_delete(&self, id: i16) -> Result<u64, sqlx::Error> {
 			let rows_affected: u64 = sqlx::query_file!("sql/relation-delete.sql", id)
 				.execute(&self.pool)
 				.await

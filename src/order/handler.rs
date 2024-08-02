@@ -23,7 +23,7 @@ pub fn order_scope(conf: &mut web::ServiceConfig) {
 
 #[get("/{id}")]
 async fn get_order(
-	path: web::Path<uuid::Uuid>,
+	path: web::Path<i32>,
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
 	let order_id = path.into_inner();
@@ -159,7 +159,7 @@ async fn create(
 
 #[put("/{id}")]
 async fn update(
-	path: web::Path<uuid::Uuid>,
+	path: web::Path<i32>,
 	body: web::Json<RequestQueryOrderDtos>,
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
@@ -205,7 +205,7 @@ async fn update(
 
 #[delete("/{id}")]
 async fn delete(
-	path: web::Path<uuid::Uuid>,
+	path: web::Path<i32>,
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
 	let order_id = path.into_inner();
