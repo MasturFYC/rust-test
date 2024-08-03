@@ -1,7 +1,7 @@
 use bigdecimal::BigDecimal;
 
 use crate::model::{
-	Coa, Direction, LedgerBuilder, LedgerDetail, LedgerDetailBuilder,
+	Coa, LedgerBuilder, LedgerDetail, LedgerDetailBuilder,
 	LedgerSchema, LedgerType,
 };
 
@@ -16,12 +16,10 @@ impl LedgerDetailBuilder {
 		self.ledger_id = Some(value.into());
 		self
 	}
-	pub fn with_id<T>(mut self, value: T) -> LedgerDetailBuilder
-	where
-		T: Direction,
+	pub fn with_detail_id<T: Into<i16>>(mut self, value: T) -> LedgerDetailBuilder
 	{
 		// let mi: MixedInts = Into::into(value);
-		self.detail_id = Some(value.into_i16());
+		self.detail_id = Some(value.into());
 		self
 	}
 	pub fn with_account_id<T: Into<i16>>(
@@ -46,13 +44,13 @@ impl LedgerDetailBuilder {
 		self
 	}
 
-	pub fn with_direction<T>(mut self, value: T) -> LedgerDetailBuilder
-	where
-		T: Direction,
+	pub fn with_direction<T: Into<i16>>(mut self, value: T) -> LedgerDetailBuilder
+	// where
+	// 	T: Direction,
 	{
 		// let v = value.into().into();
 
-		self.direction = Some(value.into_i16());
+		self.direction = Some(value.into());
 		self
 	}
 	pub fn with_ref_id<T: Into<i32>>(
@@ -148,15 +146,16 @@ impl LedgerUtil {
 	) -> (Vec<LedgerDetail>, usize) {
 		let mut details: Vec<LedgerDetail> = Vec::new();
 		let mut i: i16 = 1;
+		let mut direction: i16 = -1;
 		let remain = total - dp;
 		let pass = bigdecimal::BigDecimal::from(0);
 
 		let detail = LedgerDetailBuilder::default()
 			.with_ref_id(ref_id)
 			.with_ledger_id(ledger_id)
-			.with_id(i)
+			.with_detail_id(i)
 			.with_account_id(Coa::Revenue)
-			.with_direction(-1)
+			.with_direction(direction)
 			.with_amount(total.to_owned())
 			.with_descriptions("Penjualan barang")
 			.build();
@@ -165,13 +164,14 @@ impl LedgerUtil {
 
 		if remain.le(&pass) {
 			i += 1;
+			direction = 1;
 
 			let detail = LedgerDetailBuilder::default()
 				.with_ref_id(ref_id)
 				.with_ledger_id(ledger_id)
-				.with_id(i)
+				.with_detail_id(i)
 				.with_account_id(Coa::Cash)
-				.with_direction(1)
+				.with_direction(direction)
 				.with_amount(total.to_owned())
 				.with_descriptions("Cash payment")
 				.build();
@@ -180,12 +180,14 @@ impl LedgerUtil {
 		} else {
 			// sisa pembayaran
 			i += 1;
+			direction = 1;
+
 			let detail = LedgerDetailBuilder::default()
 				.with_ref_id(ref_id)
 				.with_ledger_id(ledger_id)
-				.with_id(i)
+				.with_detail_id(i)
 				.with_account_id(Coa::Loan)
-				.with_direction(1)
+				.with_direction(direction)
 				.with_amount(remain)
 				.with_descriptions("Piutang barang")
 				.build();
@@ -195,12 +197,13 @@ impl LedgerUtil {
 			// jika ada pembayaran
 			if dp.gt(&pass) {
 				i += 1;
+				direction = 1;
 				let detail = LedgerDetailBuilder::default()
 					.with_ref_id(ref_id)
 					.with_ledger_id(ledger_id)
-					.with_id(i)
+					.with_detail_id(i)
 					.with_account_id(Coa::Cash)
-					.with_direction(1)
+					.with_direction(direction)
 					.with_amount(dp.to_owned())
 					.with_descriptions("Cash DP")
 					.build();
@@ -210,13 +213,14 @@ impl LedgerUtil {
 		}
 
 		i += 1;
+		direction = -1;
 
 		let detail = LedgerDetailBuilder::default()
 			.with_ref_id(ref_id)
 			.with_ledger_id(ledger_id)
-			.with_id(i)
+			.with_detail_id(i)
 			.with_account_id(Coa::Inventory)
-			.with_direction(-1)
+			.with_direction(direction)
 			.with_amount(hpp.to_owned())
 			.with_descriptions("Persediaan barang")
 			.build();
@@ -224,13 +228,14 @@ impl LedgerUtil {
 		details.push(detail);
 
 		i += 1;
+		direction = 1;
 
 		let detail = LedgerDetailBuilder::default()
 			.with_ref_id(ref_id)
 			.with_ledger_id(ledger_id)
-			.with_id(i)
+			.with_detail_id(i)
 			.with_account_id(Coa::GoodCost)
-			.with_direction(1)
+			.with_direction(direction)
 			.with_amount(hpp.to_owned())
 			.with_descriptions("Biaya Beli Barang")
 			.build();
@@ -258,13 +263,14 @@ impl LedgerUtil {
 	) -> (Vec<LedgerDetail>, usize) {
 		let mut details: Vec<LedgerDetail> = Vec::new();
 		let mut i: i16 = 1;
+		let mut direction: i16 = 1;
 
 		let detail = LedgerDetailBuilder::default()
 			.with_ref_id(ref_id)
 			.with_ledger_id(ledger_id)
-			.with_id(i)
+			.with_detail_id(i)
 			.with_account_id(Coa::Cash)
-			.with_direction(1)
+			.with_direction(direction)
 			.with_amount(amount.to_owned())
 			.with_descriptions("Titip bayar")
 			.build();
@@ -272,13 +278,14 @@ impl LedgerUtil {
 		details.push(detail);
 
 		i += 1;
+		direction = -1;
 
 		let detail = LedgerDetailBuilder::default()
 			.with_ref_id(ref_id)
 			.with_ledger_id(ledger_id)
-			.with_id(i)
+			.with_detail_id(i)
 			.with_account_id(Coa::Loan)
-			.with_direction(-1)
+			.with_direction(direction)
 			.with_amount(amount.to_owned())
 			.with_descriptions("Piutang penjualan")
 			.build();
