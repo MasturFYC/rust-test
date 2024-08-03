@@ -2,3 +2,33 @@
 /.sqlx
 .env
 /unused
+# Logs
+frontend/logs
+frontend/*.log
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+frontend/lerna-debug.log*
+
+frontend/node_modules
+frontend/node_modules
+frontend/dist
+dist-ssr
+frontend/pixel-build-v3
+frontend/.svelte-kit
+frontend/.kdev4
+frontend/*.local
+frontend/static/css-dist
+
+# Editor directories and files
+frontend/.vscode/*
+frontend/!.vscode/extensions.json
+frontend/.idea
+frontend/.DS_Store
+frontend/*.suo
+frontend/*.ntvs*
+frontend/*.njsproj
+frontend/*.sln
+frontend/*.sw?
+frontend/.env

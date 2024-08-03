@@ -1,0 +1,48 @@
+import { BehaviorSubject, Subject, combineLatest, map, mergeMap, share, startWith, tap } from "rxjs";
+import { ajax } from 'rxjs/ajax';
+
+const usersEndpoint = 'https://api.github.com/users';
+const randomOffset = () => Math.floor(Math.random() * 100000);
+const token = 'your-github-auth-token';
+
+const reload = new Subject();
+
+const suggest = new BehaviorSubject('');
+
+const refresh = () => reload.next(null);
+
+const fetchUsers = () => {
+  return ajax({
+    url: `${usersEndpoint}?since=${randomOffset()}`,
+    headers: {
+      authorization: `token ${token}`
+    }
+  }).pipe(map(res => res.response));
+};
+
+
+const users = reload.pipe(startWith(null), mergeMap(fetchUsers), share());
+
+// wrap the suggest stream in the helper function that we export
+const replace = (username: string) => suggest.next(username);
+
+const userPool = reload.pipe(startWith(null), mergeMap(fetchUsers), share());
+
+// our main suggestions stream
+const suggestions = reload.pipe(
+  // emulate the first click of reload button to trigger the chain
+  startWith(null),
+  // replace `null` with `users` stream
+  mergeMap(() => users),
+  // log to console. useful for debugging
+  tap(console.log),
+  // this is where we handle new user suggestions
+  combineLatest(userPool, suggest, (users, pool, suggest) => {
+    console.log(users, pool, suggest);
+    return users;
+  }),
+  // start with an empty array to keep Svelte store happy
+  startWith([])
+);
+
+export { users, replace, refresh, suggestions };
