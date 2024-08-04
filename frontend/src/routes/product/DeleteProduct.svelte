@@ -4,22 +4,22 @@
 	import { createEventDispatcher } from "svelte";
 
 	const dispatch = createEventDispatcher();
-	export let idData: number = 0;
+	export let productId: number = 0;
 
 	export let isDeleting = false;
 
 	function delete_data() {
 		isDeleting = true;
       setTimeout(() => {
-         dispatch("deleteData", idData);
+         dispatch("deleteData", productId);
       }, 250);
 		
 	}
 </script>
-
+<div class="cell-right">
 <Button
 	skeleton={isDeleting}
-	tooltipPosition="top"
+	tooltipPosition="left"
 	tooltipAlignment="end"
 	size="small"
 	kind="danger-ghost"
@@ -27,3 +27,10 @@
 	iconDescription={"Delete"}
 	on:click={() => delete_data()}
 />
+</div>
+
+<style lang="scss">
+   .cell-right {
+      text-align: right;
+   }
+</style>

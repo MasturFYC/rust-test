@@ -22,7 +22,7 @@ export const cardNumber = (value: string | number) => {
   let test = "0";
 
   if(typeof value === "number") {
-		test = value.toLocaleString("id-ID");
+		test = value.toString();
   } else {
 	  test = value;
   }
@@ -36,13 +36,15 @@ export const cardNumber = (value: string | number) => {
   )
 }
 
-export const cardPercent = (value: string | number) => {
+export const cardPercent = (value: string|number) => {
   let test2 = "0";
 
+  // console.log(value);
+
   if(typeof value === "number") {
-		test2 = value.toLocaleString("id-ID");
+		test2 = value.toString(10);
   } else {
-	  test2 = parseFloat(value).toLocaleString("id-ID");
+	  test2 = value; //"id-ID");
   }
 
 	const onlyNumbers = test2.replace(/[^\d^\,^\.]/g, '')
@@ -64,12 +66,12 @@ export const cardPercent = (value: string | number) => {
 		}
 	}
 
-	return test;
+	return test.replace(/\,0+$/, '');
 }
 
 export const getPercent = (value: string) => {
-  // const onlyNumbers = value.replace(/[^\d^\,]/g, '');
-  return +(value.split(",").join("."));
+  const onlyNumbers = value.replace(/[^\d^\,]/g, '').replace(/[\,]/g,'.');
+  return +onlyNumbers; //  +(value.split(",").join("."));
 }
 
 
@@ -78,6 +80,21 @@ export const cardNumberNoDecimal = (value: string) => {
 }
 export const getNumber = (value: string): number => {
   //const regex = /^(\d{0,3})(\d{0,3})(\d{0,3})(\d{0,3})$/g
-  const onlyNumbers = value.replace(/[^\d]/g, '')
+  const onlyNumbers = value.replace(/[^\d\,]/g, '').replace(/[\,]/g, '.');
   return +onlyNumbers
 }
+
+
+export function formatRupiah(money: number, decimal = 0) {
+  return new Intl.NumberFormat('id-ID', {
+      style: 'decimal',
+      maximumFractionDigits: decimal
+  }).format(money);
+}
+
+// export function formatPercent(money: number) {
+//   return new Intl.NumberFormat('id-ID', {
+//       style: 'decimal',
+//       minimumFractionDigits: 0
+//   }).format(money);
+// }

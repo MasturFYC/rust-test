@@ -255,15 +255,17 @@ pub mod db {
                     1_i8 => sqlx::query_as!(
                         Products,r#"
                         SELECT
-                            p.*,
-                            c.name AS category_name,
-                            r.name AS supplier_name
+                           p.*,
+                           c.name AS category_name,
+                           r.name AS supplier_name
                         FROM 
-                            products AS p
-                            INNER JOIN categories AS c ON c.id = p.category_id
-                            INNER JOIN relations AS r ON r.id = p.supplier_id
+                           products AS p
+                           INNER JOIN categories AS c ON c.id = p.category_id
+                           INNER JOIN relations AS r ON r.id = p.supplier_id
                         WHERE 
-                            POSITION($1 IN LOWER(r.name||' '||c.name||' '||p.name||' '||p.barcode||' '||COALESCE(p.variant_name,'')||' '||COALESCE(p.descriptions, ''))) > 0
+                           POSITION($1 IN LOWER(r.name||' '||c.name||' '||p.name||' '||p.barcode||' '||COALESCE(p.variant_name,'')||' '||COALESCE(p.descriptions, ''))) > 0
+								ORDER BY
+									p.name
                         LIMIT $2
                         OFFSET $3"#,
                         search_text,
@@ -275,15 +277,17 @@ pub mod db {
                     2_i8 => sqlx::query_as!(
                         Products,r#"
                         SELECT
-                            p.*,
-                            c.name AS category_name,
-                            r.name AS supplier_name
+                           p.*,
+                           c.name AS category_name,
+                           r.name AS supplier_name
                         FROM 
-                            products AS p
-                            INNER JOIN categories AS c ON c.id = p.category_id
-                            INNER JOIN relations AS r ON r.id = p.supplier_id
+                           products AS p
+                           INNER JOIN categories AS c ON c.id = p.category_id
+                           INNER JOIN relations AS r ON r.id = p.supplier_id
                         WHERE 
-                            supplier_id = $1
+                           supplier_id = $1
+								ORDER BY
+									p.name
                         LIMIT $2
                         OFFSET $3"#,
                         relid.unwrap(),
@@ -306,6 +310,8 @@ pub mod db {
 								INNER JOIN relations AS r ON r.id = p.supplier_id
 							WHERE 
 								category_id = $1
+							ORDER BY
+								p.name
 							LIMIT $2
 							OFFSET $3"#,
 							cat_id,

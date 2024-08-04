@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { cardNumber, cardPercent } from "$lib/components/NumberFormat";
+	import { formatRupiah } from "$lib/components/NumberFormat";
 	import type { iProduct, iPropertyID, iRelationProp } from "$lib/interfaces";
 	import {
 		Button,
@@ -9,10 +9,9 @@
 		ToolbarContent,
 		ToolbarSearch
 	} from "carbon-components-svelte";
-	import type { DataTableRow } from "carbon-components-svelte/types/DataTable/DataTable.svelte";
 	import { Edit, NewTab } from "carbon-icons-svelte";
 	import { createEventDispatcher } from "svelte";
-	import DeleteRelation from "../relation/DeleteRelation.svelte";
+	import ExapandedList from "./ExapandedList.svelte";
 
 	export let data: iProduct[] = [];
 	export let innerWidth = 720;
@@ -27,13 +26,13 @@
 		{ key: "hpp", value: "HPP", width: "80px" },
 		{ key: "margin", value: "Margin", width: "80px" },
 		{ key: "price", value: "Harga", width: "90px" },
-		{ key: "cmd", value: "", width: "118px" },
+		{ key: "cmd", value: "", width: "60px" },
 	];
 	const headers2 = [
 		{ key: "name", value: "Nama Barang", width: "auto" },
 		{ key: "unitInStock", value: "Stock", width: "90px" },
 		{ key: "price", value: "Harga", width: "90px" },
-		{ key: "cmd", value: "", width: "118px" },
+		{ key: "cmd", value: "", width: "60px" },
 	];
 
 	function get_headers() {
@@ -45,25 +44,6 @@
 
 	function edit_product(id: string | undefined) {
 		dispatch("edit", id);
-	}
-
-	function product_info(r: DataTableRow): string {
-		let info: string[] = [];
-		let pad = 12;
-
-		if (innerWidth < 720) {
-			info.push("HPP:".padEnd(pad, " ") + cardNumber(r["hpp"]));
-			info.push("Margin:".padEnd(pad, " ") + cardPercent(r["margin"]) + "%");
-			info.push("\n");
-		}
-		info.push("barcode:".padEnd(pad, " ") + r["barcode"]);
-		info.push("Variant:".padEnd(pad, " ") + r["variantName"]);
-		info.push("Kategori:".padEnd(pad, " ") + r["categoryName"]);
-		info.push("Supplier:".padEnd(pad, " ") + r["supplierName"]);
-		info.push("Aktif:".padEnd(pad, " ") + (r["isActive"] ? "Ya" : "Tidak"));
-		info.push("Deskripsi:".padEnd(pad, " ") + r["descriptions"]);
-
-		return info.join("\n");
 	}
 
 	let txt = "";
@@ -87,7 +67,6 @@
 
 
 <DataTable
-
 	expandable
 	size="compact"
 	title="Data Barang"
@@ -108,24 +87,18 @@
 			<Button
 				tooltipPosition="left"
 				tooltipAlignment="end"
-				size="small"
+				size="field"
 				kind="ghost"
 				iconDescription="Edit"
 				icon={Edit}
 				on:click={() => edit_product(row.id)}
 			/>
-			<DeleteRelation idData={row.id} on:deleteData />
 		{:else if cell.key === "relationType"}
 			<div style="cell-right">{cell.value.join(", ")}</div>
-		{:else if cell.key === "margin"}
-			<div
-				style="text-align:
-				right;"
-			>
-				{cardPercent(cell.value).replace(/\,0*$|(\,\d*[1-9])0+$/, "$1")}%
-			</div>
-		{:else if cell.key === "hpp" || cell.key === "price"}
-			<div class="cell-right">{cardNumber(cell.value)}</div>
+			{:else if cell.key === "hpp" || cell.key === "price"}
+			<div class="cell-right">{formatRupiah(cell.value)}</div>
+			{:else if cell.key === "margin"}
+			<div class="cell-right">{formatRupiah(cell.value, 2)}%</div>
 		{:else if cell.key === "unitInStock"}
 			<div class="cell-right">{cell.value} {row["unit"]}</div>
 		{:else}
@@ -133,7 +106,7 @@
 		{/if}
 	</svelte:fragment>
 	<svelte:fragment slot="expanded-row" let:row>
-		<code><pre class="code-pre">{product_info(row)}</pre></code>
+		<ExapandedList row={row} bind:innerWidth on:deleteData />
 	</svelte:fragment>
 
 	<Toolbar size="sm">
@@ -192,9 +165,6 @@
 <style lang="scss">
 	.cell-right {
 		text-align: right;
-	}
-	.code-pre {
-		font-size: small;
 	}
 	/*
 		 :global(table.bx--data-table th, table.bx--data-table--zebra) {

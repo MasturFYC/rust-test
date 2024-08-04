@@ -47,7 +47,7 @@
 		<TextInput
 			id="rel-name"
 			bind:value={data.name}
-			labelText={data.id === 0 ? "Nama" : "ID: " + data.id}
+			labelText={"Nama"}
 			placeholder="Junaedi"
 			required
 		/>

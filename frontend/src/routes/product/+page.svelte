@@ -46,7 +46,7 @@
 	};
 
 	const initData: iProduct = {
-		id: undefined,
+		id: 0,
 		supplierId: 0,
 		name: "",
 		barcode: "",
@@ -314,7 +314,7 @@
 		if (id) {
 			const test = $query.data?.data.filter((f) => f.id === id)[0];
 			if (test) {
-				data = test;
+				data = {...test};
 				open = true;
 			}
 		} else {
@@ -330,8 +330,7 @@
 
 	function submit(e: CustomEvent<iProduct>) {
 		const id = e.detail.id;
-		if (id === undefined) {
-			delete e.detail.id;
+		if (id === 0) {
 			$createData.mutate(e.detail);
 		} else {
 			$updateData.mutate(e.detail);
@@ -405,6 +404,7 @@
 		{errorMessage}
 		{isUpdating}
 		on:submit={submit}
+		bind:innerWidth
 	/>
 {/if}
 

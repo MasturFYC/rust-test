@@ -4,7 +4,7 @@ export type iCategory = {
 }
 
 export type iProduct = {
-	id: number | undefined;
+	id: number;
 	supplierId: number;
 	categoryId: number;
 	name: string;
