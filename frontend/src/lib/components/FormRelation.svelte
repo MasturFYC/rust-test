@@ -76,7 +76,7 @@ $: isMember = data.relationType.filter(f => f === 'Customer').length > 0;
 			size="sm"
 		/>
 		<div class="divider" />
-		<div style="margin-bottom: 6px;">Tipe relasi:</div>
+		<div style="margin-bottom: 3px;">Tipe relasi:</div>
 		<Grid>
 			<Row noGutter>
 				{#each relationTypes as t}
@@ -138,7 +138,7 @@ $: isMember = data.relationType.filter(f => f === 'Customer').length > 0;
 
 <style lang="scss">
 	.divider {
-		margin-top: 16px;
+		margin-top: 6px;
 		// border-top: 1px solid;
 		// border-color: #999;
 	}

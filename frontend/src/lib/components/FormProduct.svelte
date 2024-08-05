@@ -8,10 +8,9 @@
 		Grid,
 		InlineLoading,
 		Modal,
-		NumberInput,
 		Row,
 		TextArea,
-		TextInput,
+		TextInput
 	} from "carbon-components-svelte";
 	import { Save } from "carbon-icons-svelte";
 	import { createEventDispatcher, onMount } from "svelte";
