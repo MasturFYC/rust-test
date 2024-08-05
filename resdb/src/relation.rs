@@ -88,7 +88,7 @@ pub mod db {
 					FROM
 						relations
 					WHERE 
-						POSITION($1 IN LOWER(name||' '||city||' '||COALESCE(phone,' ')||' '||COALESCE(street,' '))) > 0
+						POSITION($1 IN LOWER(name||' '||city||' '||COALESCE(region, ' ')||' '||COALESCE(phone,' ')||' '||COALESCE(street,' '))) > 0
 					"#,
 						search_text
 					)
@@ -223,6 +223,7 @@ pub mod db {
                     id, 
                     name,
                     city,
+					region,
                     street,
                     phone,
                     is_special,
@@ -264,7 +265,8 @@ pub mod db {
 				data.is_active.to_owned(),
 				data.is_special.to_owned(),
 				&test as _,
-				data.photo
+				data.photo,
+				data.region
 			)
 			.fetch_optional(&self.pool)
 			.await?;
@@ -297,7 +299,8 @@ pub mod db {
 				data.is_special.to_owned(),
 				&test as _,
 				data.photo,
-				chrono::offset::Utc::now()
+				chrono::offset::Utc::now(),
+				data.region
 			)
 			.fetch_optional(&self.pool)
 			.await?;

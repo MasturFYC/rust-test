@@ -4,15 +4,16 @@ use serde_json::json;
 use crate::{dtos::RequestQueryDto, extractors::auth::RequireAuth, AppState};
 
 use resdb::{
-	model::{RequestQueryOrderDtos, UserRole},
-	order::db::OrderExt,
+	model::UserRole,
+	stock::db::StockExt,
+	stock::model::RequestQueryStock
 };
 
-pub fn order_scope(conf: &mut web::ServiceConfig) {
-	let scope = web::scope("/api/orders")
+pub fn stock_scope(conf: &mut web::ServiceConfig) {
+	let scope = web::scope("/api/stocks")
 		.wrap(RequireAuth::allowed_roles(vec![UserRole::Admin]))
-		.service(get_order)
-		.service(get_orders)
+		.service(get_stock)
+		.service(get_stocks)
 		// .service(get_relations_by_type)
 		.service(create)
 		.service(update)
@@ -22,38 +23,30 @@ pub fn order_scope(conf: &mut web::ServiceConfig) {
 }
 
 #[get("/{id}")]
-async fn get_order(
+async fn get_stock(
 	path: web::Path<i32>,
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
-	let order_id = path.into_inner();
-	let query_result = app_state.db_client.get_order(order_id).await;
+	let stock_id = path.into_inner();
+	let query_result = app_state.db_client.get_stock(stock_id).await;
 
 	match query_result {
-		Ok(order) => {
-			match order {
+		Ok(stock) => {
+			match stock {
 				None => {
 					let message =
-						format!("Order with ID: {} not found", order_id);
+						format!("Stock with ID: {} not found", stock_id);
 					return HttpResponse::NotFound().json(json!({
 						"status": "fail",
 						"message": message
 					}));
 				}
 				Some(x) => {
-					let order_response = json!({"status": "success","data": x});
-					return HttpResponse::Ok().json(order_response);
+					let stock_response = json!({"status": "success","data": x});
+					return HttpResponse::Ok().json(stock_response);
 				}
 			};
 
-			// if order.is_none() {
-			//     let message = format!("Order with ID: {} not found", order_id);
-			//         return HttpResponse::NotFound()
-			//             .json(serde_json::json!({"status": "fail","message": message}));
-			// }
-
-			// let order_response = serde_json::json!({"status": "success","data": order});
-			// return HttpResponse::Ok().json(order_response);
 		}
 		Err(e) => {
 			let message = format!("Error {:?}", e);
@@ -65,7 +58,7 @@ async fn get_order(
 }
 
 #[get("")]
-async fn get_orders(
+async fn get_stocks(
 	opts: web::Query<RequestQueryDto>,
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
@@ -82,30 +75,30 @@ async fn get_orders(
 	let limit = query_params.limit.unwrap_or(10);
 	let page = query_params.page.unwrap_or(1);
 
-	let query_result = app_state.db_client.get_orders(page, limit).await;
+	let query_result = app_state.db_client.get_stocks(page, limit).await;
 
 	if query_result.is_err() {
-		let message = "Something bad happened while fetching all order items";
+		let message = "Something bad happened while fetching all stock items";
 		return HttpResponse::InternalServerError().json(json!({
 			"status": "error",
 			"message": message
 		}));
 	}
 
-	// let (orders, length) = query_result.unwrap();
+	// let (stocks, length) = query_result.unwrap();
 	let v = query_result.unwrap();
-	// selected orders by page and limit
-	let orders = v.0;
-	// count all orders in database
+	// selected stocks by page and limit
+	let stocks = v.0;
+	// count all stocks in database
 	let length = v.1;
 	let lim = limit as i64;
 
 	let json_response = json!({
 		"status": "success",
 		"totalPages": (length / lim) + (if length % lim == 0 {0} else {1}),
-		"count": orders.len(), // count of selected orders
-		"data": orders, // selected orders
-		"totalItems": length, // all item orders in database
+		"count": stocks.len(), // count of selected stocks
+		"data": stocks, // selected stocks
+		"totalItems": length, // all item stocks in database
 	});
 
 	HttpResponse::Ok().json(json_response)
@@ -113,24 +106,23 @@ async fn get_orders(
 
 #[post("")]
 async fn create(
-	body: web::Json<RequestQueryOrderDtos>,
+	body: web::Json<RequestQueryStock>,
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
 	let data = body.into_inner();
-	// let param = OrderDtos::set_default(&data);
 	let query_result = app_state
 		.db_client
-		.order_create(data.order, data.details)
+		.stock_create(data.stock, data.details)
 		.await;
 
 	match query_result {
 		Ok(o) => {
-			let order = o.0;
+			let stock = o.0;
 			let details = o.1;
 			let detail_response = json!({
 				"status": "success",
 				"data": json!({
-					"order" : order,
+					"stock" : stock,
 					"details" : details
 				})
 			});
@@ -160,12 +152,12 @@ async fn create(
 #[put("/{id}")]
 async fn update(
 	path: web::Path<i32>,
-	body: web::Json<RequestQueryOrderDtos>,
+	body: web::Json<RequestQueryStock>,
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
-	let order_id = path.into_inner();
+	let stock_id = path.into_inner();
 
-	let query_result = app_state.db_client.get_order(order_id).await;
+	let query_result = app_state.db_client.get_stock(stock_id).await;
 
 	if query_result.is_err() {
 		return HttpResponse::BadRequest()
@@ -174,7 +166,7 @@ async fn update(
 	// let old = ; //_or(None);
 
 	if query_result.unwrap().is_none() {
-		let message = format!("Order with ID: {} not found", order_id);
+		let message = format!("Stock with ID: {} not found", stock_id);
 		return HttpResponse::NotFound()
 			.json(json!({"status": "fail","message": message}));
 	}
@@ -182,19 +174,19 @@ async fn update(
 	let data = body.into_inner();
 	let query_result = app_state
 		.db_client
-		.order_update(order_id, data.order, data.details)
+		.stock_update(stock_id, data.stock, data.details)
 		.await;
 
 	match query_result {
-		Ok(order) => {
-			let order_response = json!({
+		Ok(stock) => {
+			let stock_response = json!({
 			"status": "success",
 			"data": json!({
-				"order": order.0,
-				"details": order.1
+				"stock": stock.0,
+				"details": stock.1
 			})});
 
-			return HttpResponse::Ok().json(order_response);
+			return HttpResponse::Ok().json(stock_response);
 		}
 		Err(err) => {
 			let message = format!("Error: {:?}", err);
@@ -209,14 +201,14 @@ async fn delete(
 	path: web::Path<i32>,
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
-	let order_id = path.into_inner();
+	let stock_id = path.into_inner();
 
-	let query_result = app_state.db_client.order_delete(order_id).await;
+	let query_result = app_state.db_client.stock_delete(stock_id).await;
 
 	match query_result {
 		Ok(rows_affected) => {
 			if rows_affected == 0 {
-				let message = format!("Order with ID: {} not found", order_id);
+				let message = format!("Stock with ID: {} not found", stock_id);
 
 				return HttpResponse::NotFound().json(json!({
 					"status": "fail",

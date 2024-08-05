@@ -6,6 +6,9 @@ export default defineConfig({
 	test: {
 		include: ['src/**/*.{test,spec}.{js,ts}']
 	},
+  server: {
+		watch: {usePolling: true},
+  },
 	optimizeDeps: {
 		exclude: [
 		  "carbon-components-svelte",

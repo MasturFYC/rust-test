@@ -14,7 +14,7 @@
 		TextInput,
 	} from "carbon-components-svelte";
 	import { Save } from "carbon-icons-svelte";
-	import { createEventDispatcher } from "svelte";
+	import { createEventDispatcher, onMount } from "svelte";
 
 	import type { ComboBoxItem } from "carbon-components-svelte/types/ComboBox/ComboBox.svelte";
 	import { formatRupiah, getNumber, getPercent } from "./NumberFormat";
@@ -92,26 +92,36 @@
 	let str_price = formatRupiah(data.price);
 	let str_hpp = formatRupiah(data.hpp);
 	let str_percent = formatRupiah(data.margin, 4);
+	let str_heavy = formatRupiah(data.heavy, 2);
 	//	let str_stock = cardNumber(data.unitInStock.toString());
 
 	// $:	console.log(str_price, str_hpp, str_percent)
 
 	//$: data.categoryId = +cat_id;
 
+	onMount(() => {
+		isError = false;
+	})
+
 	$: category_invalid = data.categoryId === 0;
 	$: supplier_invalid = data.supplierId === 0;
 	$: name_invalid = data.name.trim().length === 0;
 	$: barcode_invalid = data.barcode.trim().length < 8;
 	$: unit_invalid = data.unit.trim().length === 0;
+	$: is_barcode_invalid = data.barcode.trim().length === 0;
+
 	$: data.price = getNumber(str_price);
 	$: data.margin = getPercent(str_percent);
 	$: data.hpp = getNumber(str_hpp);
+	$: data.heavy = getPercent(str_heavy);
 	//	$: data.unitInStock = getNumber(str_stock);
 	// $: console.log(getNumber(str_price));
 
 	$: price_invalid = data.price <= data.hpp;
+
 	$: noGutter = innerWidth > 640;
 	$: md = innerWidth < 640;
+	$: isDataValid = (category_invalid || supplier_invalid  || is_barcode_invalid || name_invalid || unit_invalid || price_invalid);
 </script>
 
 <Modal
@@ -126,7 +136,7 @@
 	on:click:button--secondary={() => (open = false)}
 	on:click:button--primary={submit}
 	size="sm"
-	primaryButtonDisabled={isUpdating}
+	primaryButtonDisabled={isUpdating || isDataValid}
 >
 	<Form>
 		<Grid bind:noGutter>
@@ -168,7 +178,6 @@
 						inline
 						bind:value={str_hpp}
 						labelText="Harga beli"
-						placeholder="e.g pcs"
 						size="sm"
 						on:change={on_hpp_change}
 					/>
@@ -176,7 +185,6 @@
 						inline
 						bind:value={str_percent}
 						labelText="Margin: (%)"
-						placeholder="e.g 10%"
 						size="sm"
 						on:change={on_percent_change}
 					/>
@@ -184,7 +192,6 @@
 						inline
 						bind:value={str_price}
 						labelText="Harga jual"
-						placeholder="e.g pcs"
 						size="sm"
 						on:change={on_price_change}
 						warn={price_invalid}
@@ -219,13 +226,10 @@
 							{get_supplier_info(item.id)}
 						</div>
 					</ComboBox>
-					<NumberInput						
-						step={0.25}
-						bind:value={data.heavy}
-						label="Berat (kg)"
-						placeholder="e.g 1.5 kg"
+					<NumberPercent
+						bind:value={str_heavy}
+						labelText="Berat: (kg)"
 						size="sm"
-						min={0}
 					/>
 					<TextInput
 						bind:value={data.variantName}

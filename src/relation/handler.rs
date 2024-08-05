@@ -32,11 +32,11 @@ pub fn relation_scope(conf: &mut web::ServiceConfig) {
 
 #[get("/list/types")]
 async fn get_relation_types() -> impl Responder {
-	let values: [RelationTypeWIthID; 5] = [
+	let values: [RelationTypeWIthID; 4] = [
 		RelationTypeWIthID {id: RelationType::Customer, text: String::from("Pelanggan")},
 		RelationTypeWIthID {id: RelationType::Supplier, text: String::from("Supplier")},
 		RelationTypeWIthID {id: RelationType::Sales, text: String::from("Sales")},
-		RelationTypeWIthID {id: RelationType::Member, text: String::from("Member")},
+		// RelationTypeWIthID {id: RelationType::Member, text: String::from("Member")},
 		RelationTypeWIthID {id: RelationType::Employee, text: String::from("Karyawan")},
 	];
 	return HttpResponse::Ok().json(json!(values));

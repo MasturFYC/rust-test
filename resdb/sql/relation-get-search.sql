@@ -1,6 +1,7 @@
 SELECT  id,
         name,
         city,
+        region,
         street,
         phone,
         is_active,

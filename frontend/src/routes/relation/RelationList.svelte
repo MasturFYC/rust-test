@@ -23,11 +23,12 @@
 		// { key: "id", value: "#ID", width: "10%" },
 		{ key: "name", value: "Nama", width: "25%" },
 		{ key: "street", value: "Alamat", width: "auto" },
+		{ key: "region", value: "Rayon", width: "80px" },
 		{ key: "relationType", value: "Tipe", width: "100px" },
 		{ key: "cmd", value: "", width: "120px" },
 	];
 
-	function edit_relation(id: string) {
+	function edit_relation(id: number) {
 		dispatch("edit", id);
 	}
 
@@ -60,6 +61,8 @@
 			<Address street={row["street"]} city={row["city"]} phone={row["phone"]} />
 		{:else if cell.key === "relationType"}
 			{cell.value.join(", ")}
+		{:else if cell.key === "region"}
+			{cell.value ?? ""}
 		{:else}
 			{cell.value}
 		{/if}
@@ -89,7 +92,7 @@
 				on:select={(e) => dispatch("changeType", e.detail.selectedId)}
 				on:clear={() => dispatch("changeType", null)}
 		/>
-					<Button on:click={() => edit_relation("")} icon={NewTab}>Buat baru</Button
+					<Button on:click={() => edit_relation(0)} icon={NewTab}>Buat baru</Button
 			>
 		</ToolbarContent>
 	</Toolbar>

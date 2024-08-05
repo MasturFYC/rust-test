@@ -396,7 +396,6 @@ pub struct OrderPayment {
 pub enum RelationType {
 	Customer,
 	Employee,
-	Member,
 	Supplier,
 	Sales,
 }
@@ -406,7 +405,6 @@ impl RelationType {
 		match self {
 			RelationType::Customer => "customer",
 			RelationType::Employee => "employee",
-			RelationType::Member => "member",
 			RelationType::Supplier => "supplier",
 			RelationType::Sales => "sales",
 		}
@@ -429,6 +427,8 @@ pub struct RelationProperty {
 	#[serde(rename = "text")]
 	pub name: String,
 	pub city: String,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub region: Option<String>,
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub street: Option<String>,
 	#[serde(skip_serializing_if = "Option::is_none")]
@@ -459,7 +459,11 @@ pub struct Relation {
 	pub id: i16,
 	pub name: String,
 	pub city: String,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub region: Option<String>,
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub street: Option<String>,
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub phone: Option<String>,
 	#[serde(rename = "isActive")]
 	pub is_active: bool,
@@ -481,7 +485,11 @@ pub struct CreateRelationSchema {
 	pub name: String,
 	#[validate(length(min = 2, message = "City is required"))]
 	pub city: String,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub region: Option<String>,
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub street: Option<String>,
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub phone: Option<String>,
 	#[serde(rename = "isActive")]
 	pub is_active: bool,
@@ -632,17 +640,6 @@ impl Direction for i16 {
 	}
 }
 
-// /// 106 - persediaan barang
-// const ACC_INVENTORY: i16 = 0x6A;
-// /// 521 - biaya beli barang
-// const ACC_GOODS_COST: i16 = 0x209;
-// /// 421 - penjualan barang
-// // const ACC_REVENUE: i16 = 0x1A5;
-// /// 111 - piutang penjualan
-// const ACC_PIUTANG: i16 = 0x6F;
-// /// 111 - kas
-// const ACC_KAS: i16 = 0x65;
-
 #[derive(Copy, Clone)]
 pub enum Coa {
 	/// 106 - persediaan barang
@@ -657,8 +654,11 @@ pub enum Coa {
 	/// 111 - piutang penjualan
 	Loan = 0x6F,
 
-	/// 111 - kas
+	/// 101 - kas
 	Cash = 0x65,
+
+	/// 204 - Utang dagang
+	AccountPayable = 0xCC,
 }
 
 impl From<Coa> for i16 {

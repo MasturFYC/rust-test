@@ -13,6 +13,7 @@ mod product;
 mod relation;
 mod scopes;
 mod utils;
+mod stock;
 
 use actix_cors::Cors;
 use actix_web::{get, http::header, middleware::Logger, web, App, HttpResponse, HttpServer, Responder};
@@ -150,6 +151,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 			.configure(account::handler::account_scope)
 			.configure(relation::handler::relation_scope)
 			.configure(order::handler::order_scope)
+			.configure(stock::stock_scope)
 			.configure(ledger::handler::ledger_scope)
 			.configure(payment::handler::payment_scope)
 			.service(Redoc::with_url("/redoc", openapi.clone()))

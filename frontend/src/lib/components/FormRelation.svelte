@@ -22,11 +22,18 @@
 
 	const dispatch = createEventDispatcher();
 
+$: isMember = data.relationType.filter(f => f === 'Customer').length > 0;
+
 	function submit() {
-        dispatch("submit", data);
+
+		dispatch("submit", {...data,
+			region: isMember ? data.region : undefined,
+			isSpecial: isMember ? data.isSpecial : false
+		});
 	}
 
-// $: console.log(relationTypes)
+	$: isDataValid = (data.name.trim().length > 0 && data.city.trim().length > 0 && data.relationType.length > 0 && (isMember ? data.region?.trim().length !== 0 : true) );
+	// $: console.log(relationTypes)
 </script>
 
 <Modal
@@ -41,7 +48,7 @@
 	on:click:button--secondary={() => (open = false)}
 	on:click:button--primary={submit}
 	size="sm"
-	primaryButtonDisabled={isUpdating}
+	primaryButtonDisabled={isUpdating || !(isDataValid)}
 >
 	<FluidForm>
 		<TextInput
@@ -67,12 +74,13 @@
 			labelText="Telepon/mobile"
 			placeholder="08999998347"
 			size="sm"
-        />
+		/>
 		<div class="divider" />
-		<Grid noGutter>
-			<Row>
+		<div style="margin-bottom: 6px;">Tipe relasi:</div>
+		<Grid>
+			<Row noGutter>
 				{#each relationTypes as t}
-					<Column>
+					<Column md>
 						<Checkbox
 							labelText={t.text}
 							checked={data.relationType.filter((f) => f === t.id).length > 0}
@@ -93,10 +101,18 @@
 			</Row>
 		</Grid>
 		<div class="divider" />
-		<Grid noGutterLeft>
-			<Row>
+		<TextInput
+			disabled={!isMember}
+			bind:value={data.region}
+			labelText="Rayon (Khusus pelanggan)"
+			placeholder="e.g. Bangkir"
+			size="sm"
+		/>
+		<div class="divider" />
+		<Grid>
+			<Row noGutter>
 				<Column>
-					<Checkbox labelText="? Khusus" bind:checked={data.isSpecial} />
+					<Checkbox labelText="? Khusus" bind:checked={data.isSpecial} disabled={!isMember} />
 				</Column>
 				<Column>
 					<Checkbox labelText="? Aktif" bind:checked={data.isActive} />
@@ -122,7 +138,7 @@
 
 <style lang="scss">
 	.divider {
-		margin-top: 6px;
+		margin-top: 16px;
 		// border-top: 1px solid;
 		// border-color: #999;
 	}

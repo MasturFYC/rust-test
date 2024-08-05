@@ -216,7 +216,8 @@
 		},
 		// If the mutation fails, use the context returned from onMutate to roll back
 		onError: (err: any, variables, context: any) => {
-			console.log(err);
+			// console.log(err);
+			isUpdating = false;
 			if (context?.previousData) {
 				client.setQueryData<iResult>(q_key, context.previousData);
 			}
@@ -257,6 +258,7 @@
 		},
 		// If the mutation fails, use the context returned from onMutate to roll back
 		onError: (err: any, variables: any, context: any) => {
+			isUpdating = false;
 			if (context?.previousData) {
 				client.setQueryData<iResult>(q_key, context.previousData);
 			}
@@ -402,7 +404,7 @@
 		bind:open
 		{isError}
 		{errorMessage}
-		{isUpdating}
+		bind:isUpdating
 		on:submit={submit}
 		bind:innerWidth
 	/>

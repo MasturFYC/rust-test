@@ -1,5 +1,7 @@
 export * from './product';
 export * from './relation';
+export * from './order';
+export * from './stock';
 export * from './user';
 
 

@@ -285,7 +285,7 @@
 		} else {
 			let test = $query.data?.data.filter((f) => f.id === e.detail)[0];
 			if (test) {
-				data = test;
+				data = {...test};
 				isEdit = true;
 			}
 		}

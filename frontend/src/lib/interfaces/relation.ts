@@ -1,6 +1,7 @@
 export type iRelationBase = {
    id: number;
    city: string;
+	 region?: string;
    street?: string;
    phone?: string;
    isSpecial: boolean;

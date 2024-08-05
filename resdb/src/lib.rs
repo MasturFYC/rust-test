@@ -7,6 +7,7 @@ pub mod db;
 pub mod ledger;
 pub mod model;
 pub mod order;
+pub mod stock;
 pub mod order_payment;
 pub mod product;
 pub mod relation;

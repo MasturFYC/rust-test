@@ -294,6 +294,94 @@ impl LedgerUtil {
 
 		(details, i as usize)
 	}
+
+	/// ## Ledger untuk transaksi pembayaran piutang
+	///
+	/// `(+) 101 - Kas` -> **amount**
+	///
+	/// `(-) 106 - Persediaan barang` -> **amount**
+	///
+	/// **`ref_id`** payment id
+	///
+	/// **`ledger_id`** ledger id biasanya sama dengan payment id
+	///	
+	pub fn from_stock(
+		total: &BigDecimal,
+		dp: &BigDecimal,
+		ref_id: i32,
+		ledger_id: i32,
+	) -> (Vec<LedgerDetail>, usize) {
+		let mut details: Vec<LedgerDetail> = Vec::new();
+		let mut i: i16 = 1;
+		let remain = total - dp;
+		let pass = bigdecimal::BigDecimal::from(0);
+
+		let mut direction: i16 = 1;
+		let detail = LedgerDetailBuilder::default()
+			.with_ref_id(ref_id)
+			.with_ledger_id(ledger_id)
+			.with_detail_id(i)
+			.with_account_id(Coa::Inventory)
+			.with_direction(direction)
+			.with_amount(total.to_owned())
+			.with_descriptions("Pembelian barang")
+			.build();
+
+		details.push(detail);
+
+		if remain.le(&pass) {
+			i += 1;
+			direction = -1;
+
+			let detail = LedgerDetailBuilder::default()
+				.with_ref_id(ref_id)
+				.with_ledger_id(ledger_id)
+				.with_detail_id(i)
+				.with_account_id(Coa::Cash)
+				.with_direction(direction)
+				.with_amount(total.to_owned())
+				.with_descriptions("Cash payment")
+				.build();
+
+			details.push(detail);
+		} else {
+			// sisa pembayaran
+			i += 1;
+			direction = 1;
+
+			let detail = LedgerDetailBuilder::default()
+				.with_ref_id(ref_id)
+				.with_ledger_id(ledger_id)
+				.with_detail_id(i)
+				.with_account_id(Coa::AccountPayable)
+				.with_direction(direction)
+				.with_amount(remain)
+				.with_descriptions("Utang pembelian barang")
+				.build();
+
+			details.push(detail);
+
+			// jika ada pembayaran
+			if dp.gt(&pass) {
+				i += -1;
+				direction = 1;
+				let detail = LedgerDetailBuilder::default()
+					.with_ref_id(ref_id)
+					.with_ledger_id(ledger_id)
+					.with_detail_id(i)
+					.with_account_id(Coa::Cash)
+					.with_direction(direction)
+					.with_amount(dp.to_owned())
+					.with_descriptions("Cash DP")
+					.build();
+
+				details.push(detail);
+			}
+		}
+
+		(details, i as usize)
+	}
+
 }
 
 // #[cfg(test)]
