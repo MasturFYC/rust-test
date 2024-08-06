@@ -9,10 +9,25 @@ export type iStock = {
 	payment: number;
 	remain: number;
 	invoiceId: string;
-	dueRange: number;
 	dueAt: string;
 	createdAt: string;
 	updatedAt: string;
 	supplierName?: string;
 	warehouseName?: string;
+}
+
+
+export type iStockDetail = {
+	orderId: number;
+	id: number;
+	productId: number;
+	barcode: string;
+	name: string;
+	qty: number;
+	direction: number;
+	unit: string;
+	hpp: number;
+	price: number;
+	discount: number;
+	subtotal: number;
 }

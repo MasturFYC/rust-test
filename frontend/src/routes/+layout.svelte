@@ -37,6 +37,7 @@
 		Autoscaling as Next,
 		Product,
 		GroupAccount as Relation,
+		SendToBack,
 	} from "carbon-icons-svelte";
 	import { expoIn } from "svelte/easing";
 
@@ -100,6 +101,12 @@
 			href: "/product",
 			title: "Data barang",
 			icon: Product,
+		},
+		{
+			id: 5,
+			href: "/stock",
+			title: "Stock",
+			icon: SendToBack
 		},
 	];
 </script>

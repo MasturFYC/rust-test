@@ -12,6 +12,7 @@
 	export let warnText = "";
 	export let hideLabel = false;
 	export let disabled = false;
+	export let style = "";
 
 	let ref_input: HTMLInputElement;
 
@@ -40,6 +41,7 @@
 <TextInput
 	class={"input-number"}
 	{warn}
+	{style}
 	{inline}
 	{labelText}
 	{placeholder}
