@@ -1,0 +1,45 @@
+<script lang="ts">
+  import { browser } from "$app/environment";
+  import { useQuery, useQueryClient } from "@sveltestack/svelte-query";
+  import { baseURL, credential_include, type iProduct } from "$lib/interfaces";
+  import { Loading, Row, Grid, Column } from "carbon-components-svelte";
+  import { formatRupiah } from "$lib/components/NumberFormat";
+  import ProductInfo from "./ProductInfo.svelte";
+
+  type iResult = {
+    status: string;
+    data: iProduct;
+  };
+  export let productId = 0;
+
+  async function fetchProduct() {
+    const url = `${baseURL}/products/${productId}`;
+    const options = {
+      headers: {
+        "content-type": "application/json",
+      },
+      method: "GET",
+      credentials: credential_include,
+    };
+    const request = new Request(url, options);
+    let result = await fetch(url, request);
+    return await result.json();
+  }
+
+  let query = useQuery<iResult, Error>(["product", productId], fetchProduct, {
+    enabled: false,
+  });
+  let client = useQueryClient();
+
+  $: {
+    query.setEnabled(browser);
+  }
+</script>
+
+{#if $query.isLoading}
+  <Loading withOverlay={false} />
+{:else if $query.isError}
+  <code><pre>{$query.error.message}</pre></code>
+{:else if $query.isSuccess && $query.data.data}
+  <ProductInfo product={$query.data.data} />
+{/if}

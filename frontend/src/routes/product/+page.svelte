@@ -1,442 +1,444 @@
 <script lang="ts">
-	import { browser } from "$app/environment";
-	import FormProduct from "$lib/components/FormProduct.svelte";
-	import { baseURL, credential_include, type iProduct } from "$lib/interfaces";
+  import { browser } from "$app/environment";
+  import FormProduct from "$lib/components/FormProduct.svelte";
+  import { baseURL, credential_include, type iProduct } from "$lib/interfaces";
 
-	import {
-		getCategoryProp,
-		getSupplierProp,
-		type iPropertyWithID,
-	} from "$lib/fetchers";
-	import {
-		useMutation,
-		useQuery,
-		useQueryClient,
-	} from "@sveltestack/svelte-query";
-	import { Loading, Pagination } from "carbon-components-svelte";
-	import dayjs from "dayjs";
-	import ProductList from "./ProductList.svelte";
+  import {
+    getCategoryProp,
+    getSupplierProp,
+    type iPropertyWithID,
+  } from "$lib/fetchers";
+  import {
+    useMutation,
+    useQuery,
+    useQueryClient,
+  } from "@sveltestack/svelte-query";
+  import { Loading, Pagination } from "carbon-components-svelte";
+  import dayjs from "dayjs";
+  import ProductList from "./ProductList.svelte";
 
-	type ResultBase = {
-		status: string;
-		count: number;
-		totalPages: number;
-		totalItems: number;
-	};
+  type ResultBase = {
+    status: string;
+    count: number;
+    totalPages: number;
+    totalItems: number;
+  };
 
-	type iResult = ResultBase & {
-		data: iProduct[];
-	};
+  type iResult = ResultBase & {
+    data: iProduct[];
+  };
 
-	type iResponse = {
-		status: string;
-		data: iProduct;
-	};
+  type iResponse = {
+    status: string;
+    data: iProduct;
+  };
 
-	const client = useQueryClient();
-	const url = `${baseURL}/products`;
-	const qKey = "products";
+  const client = useQueryClient();
+  const url = `${baseURL}/products`;
+  const qKey = "products";
 
-	const initResult: iResult = {
-		status: "page loading",
-		count: 0,
-		totalPages: 0,
-		totalItems: 0,
-		data: [],
-	};
+  const initResult: iResult = {
+    status: "page loading",
+    count: 0,
+    totalPages: 0,
+    totalItems: 0,
+    data: [],
+  };
 
-	const initData: iProduct = {
-		id: 0,
-		supplierId: 0,
-		name: "",
-		barcode: "",
-		unit: "",
-		unitInStock: 0.0,
-		content: 0.0,
-		hpp: 0.0,
-		margin: 11,
-		price: 0.0,
-		ppn: 0.0,
-		heavy: 0.0,
-		isActive: true,
-		variantName: "",
-		descriptions: "",
-		categoryId: 0,
-		createdAt: dayjs().toISOString(),
-		updatedAt: dayjs().toISOString(),
-	};
+  const initData: iProduct = {
+    id: 0,
+    supplierId: 0,
+    name: "",
+    barcode: "",
+    unit: "",
+    unitInStock: 0.0,
+    content: 0.0,
+    hpp: 0.0,
+    margin: 11,
+    price: 0.0,
+    ppn: 0.0,
+    heavy: 0.0,
+    isActive: true,
+    variantName: "",
+    descriptions: "",
+    categoryId: 0,
+    createdAt: dayjs().toISOString(),
+    updatedAt: dayjs().toISOString(),
+  };
 
-	let pageSize = 5;
-	let page = 1;
-	let pages = [3, 5, 10, 25, 50];
-	let isUpdating = false;
-	let open = false;
-	let isError = false;
-	let errorMessage = "";
-	let innerWidth = 720;
-	let txt: string | undefined = undefined;
-	let rel_id: string | undefined = undefined;
-	let opt = 0;
-	let cat_id = 0;
+  let pageSize = 5;
+  let page = 1;
+  let pages = [3, 5, 10, 25, 50];
+  let isUpdating = false;
+  let isLoading = true;
+  let open = false;
+  let isError = false;
+  let errorMessage = "";
+  let innerWidth = 720;
+  let txt: string | undefined = undefined;
+  let rel_id: string | undefined = undefined;
+  let opt = 0;
+  let cat_id = 0;
 
-	const search = (e: CustomEvent<string | undefined>) => {
-		if (e.detail === null) {
-			opt = 0;
-			txt = undefined;
-		} else {
-			opt = 1;
-			txt = e.detail;
-		}
-	};
+  const search = (e: CustomEvent<string | undefined>) => {
+    if (e.detail === null) {
+      opt = 0;
+      txt = undefined;
+    } else {
+      opt = 1;
+      txt = e.detail;
+    }
+  };
 
-	async function fetchData(p: number): Promise<iResult> {
-		//console.log(q_key);
+  async function fetchData(p: number): Promise<iResult> {
+    //console.log(q_key);
 
-		if (browser) {
-			const options = {
-				headers: {
-					"content-type": "application/json",
-				},
-				method: "GET",
-				credentials: credential_include,
-			};
+    if (browser) {
+      const options = {
+        headers: {
+          "content-type": "application/json",
+        },
+        method: "GET",
+        credentials: credential_include,
+      };
 
-			const request = new Request(
-				`${url}?opt=${opt}&page=${p}&limit=${pageSize}${opt === 1 ? `&txt=${txt}` : ""}${opt === 2 ? `&relid=${rel_id}` : ""}${opt === 3 ? `&catid=${cat_id}` : ""}`,
-				options,
-			);
+      const request = new Request(
+        `${url}?opt=${opt}&page=${p}&limit=${pageSize}${opt === 1 ? `&txt=${txt}` : ""}${opt === 2 ? `&relid=${rel_id}` : ""}${opt === 3 ? `&catid=${cat_id}` : ""}`,
+        options,
+      );
 
-			let result = await fetch(request);
-			return (await result.json()) as iResult;
-		}
+      let result = await fetch(request);
+      return (await result.json()) as iResult;
+    }
 
-		return Promise.resolve(initResult);
-	}
+    return Promise.resolve(initResult);
+  }
 
-	const prefetchNextPage = (data: iResult) => {
-		if (page < data.totalPages) {
-			client.prefetchQuery([qKey, page + 1, pageSize], () =>
-				fetchData(page + 1),
-			);
-		}
-	};
+  const prefetchNextPage = (data: iResult) => {
+    if (page < data.totalPages) {
+      client.prefetchQuery([qKey, page + 1, pageSize], () =>
+        fetchData(page + 1),
+      );
+    }
+  };
 
-	let data: iProduct = { ...initData };
+  let data: iProduct = { ...initData };
 
-	const query = useQuery<iResult, Error>({
-		queryKey: [qKey, page, pageSize],
-		queryFn: async () => await fetchData(page),
-		onSuccess: prefetchNextPage,
-		keepPreviousData: true,
-		enabled: browser,
-	});
+  const query = useQuery<iResult, Error>({
+    queryKey: [qKey, page, pageSize],
+    queryFn: async () => await fetchData(page),
+    onSuccess: prefetchNextPage,
+    keepPreviousData: true,
+    enabled: browser,
+  });
 
-	function setQueryOption(
-		p: number,
-		l: number,
-		o: number,
-		t: string | undefined,
-		r: string | undefined,
-		c: number,
-	) {
-		query.setOptions({
-			queryKey: [qKey, p, l, o, t, r, c],
-			keepPreviousData: true,
-			queryFn: async () => await fetchData(page),
-			onSuccess: prefetchNextPage,
-		});
+  function setQueryOption(
+    p: number,
+    l: number,
+    o: number,
+    t: string | undefined,
+    r: string | undefined,
+    c: number,
+  ) {
+    query.setOptions({
+      queryKey: [qKey, p, l, o, t, r, c],
+      keepPreviousData: true,
+      queryFn: async () => await fetchData(page),
+      onSuccess: prefetchNextPage,
+    });
 
-		// console.log([qKey, p, l, o, t, r]);
-		// console.log(q_key);
-	}
+    // console.log([qKey, p, l, o, t, r]);
+    // console.log(q_key);
+  }
 
-	const fetchCreateData = async (e: iProduct): Promise<iResponse> => {
-		const request = new Request(url, {
-			headers: {
-				"content-type": "application/json",
-			},
-			body: JSON.stringify(e),
-			method: "POST",
-			credentials: credential_include,
-		});
+  const fetchCreateData = async (e: iProduct): Promise<iResponse> => {
+    const request = new Request(url, {
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(e),
+      method: "POST",
+      credentials: credential_include,
+    });
 
-		return await (await fetch(request)).json();
-	};
+    return await (await fetch(request)).json();
+  };
 
-	const fetchUpdateData = async (e: iProduct): Promise<iResponse> => {
-		const request = new Request(`${url}/${e.id}`, {
-			headers: {
-				"content-type": "application/json",
-			},
-			body: JSON.stringify(e),
-			method: "PUT",
-			credentials: credential_include,
-		});
+  const fetchUpdateData = async (e: iProduct): Promise<iResponse> => {
+    const request = new Request(`${url}/${e.id}`, {
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(e),
+      method: "PUT",
+      credentials: credential_include,
+    });
 
-		const result = await fetch(request);
-		return await result.json();
-	};
+    const result = await fetch(request);
+    return await result.json();
+  };
 
-	const fetchDeleteData = async (e: string) => {
-		const request = new Request(`${url}/${e}`, {
-			method: "DELETE",
-			credentials: credential_include,
-		});
+  const fetchDeleteData = async (e: string) => {
+    const request = new Request(`${url}/${e}`, {
+      method: "DELETE",
+      credentials: credential_include,
+    });
 
-		return await (await fetch(request)).json();
-	};
+    return await (await fetch(request)).json();
+  };
 
-	const createData = useMutation(fetchCreateData, {
-		onMutate: async (e: iProduct) => {
-			// Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-			await client.cancelQueries();
+  const createData = useMutation(fetchCreateData, {
+    onMutate: async (e: iProduct) => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await client.cancelQueries();
 
-			// Snapshot the previous value
-			const previousData = client.getQueryData<iResult>(q_key);
+      // Snapshot the previous value
+      const previousData = client.getQueryData<iResult>(q_key);
 
-			// Optimistically update to the new value
-			if (previousData) {
-				client.setQueryData<iResult>(q_key, previousData);
-			}
+      // Optimistically update to the new value
+      if (previousData) {
+        client.setQueryData<iResult>(q_key, previousData);
+      }
 
-			return previousData;
-		},
-		onSuccess: async (data: any, variable: iProduct, context) => {
-			if (context) {
-				// setTimeout(() => {
-				isUpdating = false;
-				if (data.status !== "fail") {
-					open = false;
-				} else {
-					isError = true;
-					errorMessage = data.message;
-				}
-				//}, 250);
-			}
-		},
-		// If the mutation fails, use the context returned from onMutate to roll back
-		onError: (err: any, variables, context: any) => {
-			// console.log(err);
-			isUpdating = false;
-			if (context?.previousData) {
-				client.setQueryData<iResult>(q_key, context.previousData);
-			}
-		},
-		// Always refetch after error or success:
-		onSettled: async () => {
-			await client.invalidateQueries(q_key);
-		},
-	});
+      return previousData;
+    },
+    onSuccess: async (data: any, variable: iProduct, context) => {
+      if (context) {
+        // setTimeout(() => {
+        isUpdating = false;
+        if (data.status !== "fail") {
+          open = false;
+        } else {
+          isError = true;
+          errorMessage = data.message;
+        }
+        //}, 250);
+      }
+    },
+    // If the mutation fails, use the context returned from onMutate to roll back
+    onError: (err: any, variables, context: any) => {
+      // console.log(err);
+      isUpdating = false;
+      if (context?.previousData) {
+        client.setQueryData<iResult>(q_key, context.previousData);
+      }
+    },
+    // Always refetch after error or success:
+    onSettled: async () => {
+      await client.invalidateQueries(q_key);
+    },
+  });
 
-	const updateData = useMutation(fetchUpdateData, {
-		onMutate: async (e: iProduct) => {
-			// Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-			await client.cancelQueries();
+  const updateData = useMutation(fetchUpdateData, {
+    onMutate: async (e: iProduct) => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await client.cancelQueries();
 
-			// Snapshot the previous value
-			const previousData = client.getQueryData<iResult>(q_key);
+      // Snapshot the previous value
+      const previousData = client.getQueryData<iResult>(q_key);
 
-			// Optimistically update to the new value
-			if (previousData) {
-				client.setQueryData<iResult>(q_key, previousData);
-			}
+      // Optimistically update to the new value
+      if (previousData) {
+        client.setQueryData<iResult>(q_key, previousData);
+      }
 
-			return previousData;
-		},
-		onSuccess: async (data: any, variable: iProduct, context) => {
-			if (context) {
-				//		setTimeout(() => {
-				isUpdating = false;
-				if (data.status !== "fail") {
-					open = false;
-				} else {
-					isError = true;
-					errorMessage = data.message;
-				}
-				//}, 1500);
-			}
-		},
-		// If the mutation fails, use the context returned from onMutate to roll back
-		onError: (err: any, variables: any, context: any) => {
-			isUpdating = false;
-			if (context?.previousData) {
-				client.setQueryData<iResult>(q_key, context.previousData);
-			}
-		},
-		onSettled: async () => {
-			await client.invalidateQueries(q_key);
-		},
-	});
+      return previousData;
+    },
+    onSuccess: async (data: any, variable: iProduct, context) => {
+      if (context) {
+        //		setTimeout(() => {
+        isUpdating = false;
+        if (data.status !== "fail") {
+          open = false;
+        } else {
+          isError = true;
+          errorMessage = data.message;
+        }
+        //}, 1500);
+      }
+    },
+    // If the mutation fails, use the context returned from onMutate to roll back
+    onError: (err: any, variables: any, context: any) => {
+      isUpdating = false;
+      if (context?.previousData) {
+        client.setQueryData<iResult>(q_key, context.previousData);
+      }
+    },
+    onSettled: async () => {
+      await client.invalidateQueries(q_key);
+    },
+  });
 
-	const deleteData = useMutation(fetchDeleteData, {
-		onMutate: async (e: string) => {
-			// Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-			await client.cancelQueries();
+  const deleteData = useMutation(fetchDeleteData, {
+    onMutate: async (e: string) => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await client.cancelQueries();
 
-			// Snapshot the previous value
-			const previousData = client.getQueryData<iResult>(q_key);
+      // Snapshot the previous value
+      const previousData = client.getQueryData<iResult>(q_key);
 
-			// Optimistically update to the new value
-			if (previousData) {
-				client.setQueryData<iResult>(q_key, previousData);
-			}
+      // Optimistically update to the new value
+      if (previousData) {
+        client.setQueryData<iResult>(q_key, previousData);
+      }
 
-			return previousData;
-		},
-		onSuccess: async () => {
-			//setTimeout(() => {
-			isUpdating = false;
-			//}, 1500);
-		},
-		// If the mutation fails, use the context returned from onMutate to roll back
-		onError: (err: any, variables: any, context: any) => {
-			if (context?.previousData) {
-				client.setQueryData<iResult>(q_key, context.previousData);
-			}
-		},
-		onSettled: async (
-			raw: any,
-			//			error: any,
-			//			variables: string,
-			//			context: iResult | undefined,
-		) => {
-			if (raw.status === "fail") {
-				isError = true;
-				errorMessage = raw.message;
-				// timeout = 3_000;
-			}
-			await client.invalidateQueries(q_key);
-			isUpdating = false;
-		},
-	});
+      return previousData;
+    },
+    onSuccess: async () => {
+      //setTimeout(() => {
+      isUpdating = false;
+      //}, 1500);
+    },
+    // If the mutation fails, use the context returned from onMutate to roll back
+    onError: (err: any, variables: any, context: any) => {
+      if (context?.previousData) {
+        client.setQueryData<iResult>(q_key, context.previousData);
+      }
+    },
+    onSettled: async (
+      raw: any,
+      //			error: any,
+      //			variables: string,
+      //			context: iResult | undefined,
+    ) => {
+      if (raw.status === "fail") {
+        isError = true;
+        errorMessage = raw.message;
+        // timeout = 3_000;
+      }
+      await client.invalidateQueries(q_key);
+      isUpdating = false;
+    },
+  });
 
-	function edit_product(e: CustomEvent<number | undefined>): void {
-		const id = e.detail;
+  function edit_product(e: CustomEvent<number | undefined>): void {
+    const id = e.detail;
 
-		if (id) {
-			const test = $query.data?.data.filter((f) => f.id === id)[0];
-			if (test) {
-				data = {...test};
-				open = true;
-			}
-		} else {
-			data = { ...initData };
-			open = true;
-		}
-	}
+    if (id) {
+      const test = $query.data?.data.filter((f) => f.id === id)[0];
+      if (test) {
+        data = { ...test };
+        open = true;
+      }
+    } else {
+      data = { ...initData };
+      open = true;
+    }
+  }
 
-	function delete_data(e: CustomEvent<string>): void {
-		const id = e.detail;
-		$deleteData.mutate(id);
-	}
+  function delete_data(e: CustomEvent<string>): void {
+    const id = e.detail;
+    $deleteData.mutate(id);
+  }
 
-	function submit(e: CustomEvent<iProduct>) {
-		const id = e.detail.id;
-		if (id === 0) {
-			$createData.mutate(e.detail);
-		} else {
-			$updateData.mutate(e.detail);
-		}
-		//open = false;
-	}
+  function submit(e: CustomEvent<iProduct>) {
+    const id = e.detail.id;
+    if (id === 0) {
+      $createData.mutate(e.detail);
+    } else {
+      $updateData.mutate(e.detail);
+    }
+    //open = false;
+  }
 
-	function supplier_change(e: CustomEvent<string | undefined>): void {
-		rel_id = e.detail;
-		if (e.detail === null) {
-			opt = 0;
-		} else {
-			opt = 2;
-		}
-	}
+  function supplier_change(e: CustomEvent<string | undefined>): void {
+    rel_id = e.detail;
+    if (e.detail === null) {
+      opt = 0;
+    } else {
+      opt = 2;
+    }
+  }
 
-	// onMount(async () => {
-	// 	query.setEnabled(true);
-	// });
+  // onMount(async () => {
+  // 	query.setEnabled(true);
+  // });
 
-	function category_change(e: CustomEvent<number>): void {
-		cat_id = e.detail;
-		opt = cat_id === 0 ? 0 : 3;
-	}
+  function category_change(e: CustomEvent<number>): void {
+    cat_id = e.detail;
+    opt = cat_id === 0 ? 0 : 3;
+  }
 
-	$: q_key = [qKey, page, pageSize, opt, txt, rel_id, cat_id];
+  $: q_key = [qKey, page, pageSize, opt, txt, rel_id, cat_id];
 
-	const categoryQuery = useQuery<iPropertyWithID, Error>(
-		"catProp",
-		getCategoryProp,
-		{
-			enabled: browser,
-		},
-	);
+  const categoryQuery = useQuery<iPropertyWithID, Error>(
+    "catProp",
+    getCategoryProp,
+    {
+      enabled: browser,
+    },
+  );
 
-	const supplierQuery = useQuery(
-		"supProp",
-		async () => await getSupplierProp(["Supplier"]),
-		{
-			enabled: browser,
-		},
-	);
+  const supplierQuery = useQuery(
+    "supProp",
+    async () => await getSupplierProp(["Supplier"]),
+    {
+      enabled: browser,
+    },
+  );
 
-	$: {
-		categoryQuery.setEnabled(browser);
-		supplierQuery.setEnabled(browser);
-		query.setEnabled(browser);
-	}
+  $: {
+    categoryQuery.setEnabled(browser);
+    supplierQuery.setEnabled(browser);
+    query.setEnabled(browser);
+    isLoading = false;
+  }
 
-	$: setQueryOption(page, pageSize, opt, txt, rel_id, cat_id);
+  $: setQueryOption(page, pageSize, opt, txt, rel_id, cat_id);
 </script>
 
 <svelte:head>
-	<title>Datang Barang</title>
-	<meta name="description" content="Product this app" />
+  <title>Datang Barang</title>
+  <meta name="description" content="Product this app" />
 </svelte:head>
 
 <svelte:window bind:innerWidth />
 
-{#if $categoryQuery.isLoading || $supplierQuery.isLoading || $query.isLoading}
-	<Loading />
+{#if $categoryQuery.isLoading || $supplierQuery.isLoading || $query.isLoading || isLoading}
+  <Loading withOverlay={false} />
 {/if}
 
 {#if open}
-	<FormProduct
-		suppliers={$supplierQuery.data?.data}
-		categories={$categoryQuery.data?.data}
-		{data}
-		bind:open
-		{isError}
-		{errorMessage}
-		bind:isUpdating
-		on:submit={submit}
-		bind:innerWidth
-	/>
+  <FormProduct
+    suppliers={$supplierQuery.data?.data}
+    categories={$categoryQuery.data?.data}
+    {data}
+    bind:open
+    {isError}
+    {errorMessage}
+    bind:isUpdating
+    on:submit={submit}
+    bind:innerWidth
+  />
 {/if}
 
 {#if $query.isLoading}
-	<span>Loading...</span>
+  <span>Loading...</span>
 {:else if $query.isError}
-	<span>Error: {$query.error.message}</span>
+  <span>Error: {$query.error.message}</span>
 {:else if $query.isSuccess}
-	<ProductList
-		data={$query.data.data}
-		suppliers={$supplierQuery.data?.data}
-		categories={$categoryQuery.data?.data}
-		on:edit={edit_product}
-		on:deleteData={delete_data}
-		bind:innerWidth
-		on:search={search}
-		on:categoryChange={category_change}
-		on:supplierChange={supplier_change}
-	/>
+  <ProductList
+    data={$query.data.data}
+    suppliers={$supplierQuery.data?.data}
+    categories={$categoryQuery.data?.data}
+    on:edit={edit_product}
+    on:deleteData={delete_data}
+    bind:innerWidth
+    on:search={search}
+    on:categoryChange={category_change}
+    on:supplierChange={supplier_change}
+  />
 
-	<Pagination
-		totalItems={$query.data.totalItems}
-		pageSizes={pages}
-		{pageSize}
-		{page}
-		on:update={(e) => {
-			pageSize = e.detail.pageSize;
-			page = e.detail.page;
-		}}
-		on:click:button--next={(e) => (page = e.detail.page)}
-		on:click:button--previous={(e) => (page = e.detail.page)}
-	/>
+  <Pagination
+    totalItems={$query.data.totalItems}
+    pageSizes={pages}
+    {pageSize}
+    {page}
+    on:update={(e) => {
+      pageSize = e.detail.pageSize;
+      page = e.detail.page;
+    }}
+    on:click:button--next={(e) => (page = e.detail.page)}
+    on:click:button--previous={(e) => (page = e.detail.page)}
+  />
 {/if}
