@@ -13,6 +13,9 @@
 	export let hideLabel = false;
 	export let disabled = false;
 	export let style = "";
+	export let tabindex = 0;
+	export let classes = "input-number";
+	export let id = "";
 
 	let ref_input: HTMLInputElement;
 
@@ -24,8 +27,14 @@
 	}
 
 	onDestroy(() => {
-		ref_input.removeEventListener("input", updateValue);
-		ref_input.removeEventListener("paste", updateValue);
+		try {
+			if(ref_input) {
+				ref_input.removeEventListener("input", updateValue);
+				ref_input.removeEventListener("paste", updateValue);
+			}
+		} catch (ex: any) {
+			console.log(ex.message);
+		}
 	});
 
 
@@ -39,7 +48,10 @@
 </script>
 
 <TextInput
-	class={"input-number"}
+	autocomplete="off"
+	{id}
+	{tabindex}
+	class={classes}
 	{warn}
 	{style}
 	{inline}
@@ -51,6 +63,7 @@
 	{disabled}
 	on:change
 	on:input
+	on:keydown
 	bind:ref={ref_input}
 	bind:value
 />

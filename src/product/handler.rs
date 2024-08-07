@@ -36,6 +36,12 @@ pub fn product_scope() -> Scope {
 				])),
 		)
 		.route(
+			"/barcode/{code}",
+			web::get()
+			.to(find_barcode)
+			.wrap(RequireAuth::allowed_roles(vec![UserRole::Admin]))
+		)
+		.route(
 			"/{id}",
 			web::delete()
 				.to(delete_product)
@@ -78,6 +84,51 @@ pub async fn get_product(
 	let prod_id = path.into_inner();
 
 	let result = app_state.db_client.get_product(prod_id).await;
+	// .map_err(|e| HttpError::server_error(e.to_string()));
+
+	//let product = result.ok_or(HttpError::bad_request(ErrorMessage::UserNoLongerExist));
+
+	match result {
+		Ok(product) => {
+			if product.is_none() {
+				Err(HttpError::new(ErrorMessage::DataNotFound, 404))
+			} else {
+				Ok(HttpResponse::Ok().json(ProductResponseDto {
+					status: "success".to_string(),
+					data: product.unwrap(),
+				}))
+			}
+		}
+		// Err(sqlx::Error::Database(db_err)) => {
+		//     if db_err.is_unique_violation() {
+		//         Err(HttpError::unique_constraint_voilation(
+		//             ErrorMessage::UserNoLongerExist,
+		//         ))
+		//     } else {
+		//         Err(HttpError::server_error(db_err.to_string()))
+		//     }
+		// }
+		Err(e) => Err(HttpError::server_error(e.to_string())),
+	}
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/products/barcode/{code}",
+    tag = "Get product by ID endpoint",
+    responses(
+        (status=200, description="Get product by ID", body=ProductFull),
+        (status=404, description= "Product not found", body=Response),
+        (status=500, description= "Internal Server Error", body=Response ),
+    )
+)]
+pub async fn find_barcode(
+	code: web::Path<String>,
+	app_state: web::Data<AppState>,
+) -> Result<HttpResponse, HttpError> {
+	let barcode = code.into_inner();
+
+	let result = app_state.db_client.get_product_by_barcode(barcode).await;
 	// .map_err(|e| HttpError::server_error(e.to_string()));
 
 	//let product = result.ok_or(HttpError::bad_request(ErrorMessage::UserNoLongerExist));

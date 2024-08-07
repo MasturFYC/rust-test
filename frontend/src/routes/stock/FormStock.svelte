@@ -15,7 +15,6 @@
 	import InputNumber from "$lib/components/NumberInput.svelte";
 	import { formatRupiah, getNumber } from "$lib/components/NumberFormat";
 
-
 	export let data: iStock;
 	export let suppliers: iRelationProp[] = [];
 	export let employees: iRelationProp[] = [];
@@ -101,7 +100,9 @@
 		data.supplierName = undefined;
 	}
 
-	type DatePict = string | {
+	type DatePict =
+		| string
+		| {
 				selectedDates: [dateFrom: Date, dateTo?: Date];
 				dateStr:
 					| string
@@ -113,25 +114,25 @@
 
 	function onDateChange(e: CustomEvent<DatePict>) {
 		e.preventDefault();
-		if(typeof e.detail === 'string') {}
-		else  {
+		if (typeof e.detail === "string") {
+		} else {
 			let d = e.detail.selectedDates[0];
 			let date = dayjs();
-			date = date.set('date', d.getDate());
-			date = date.set('month', d.getMonth());
-			date = date.set('year', d.getFullYear());
+			date = date.set("date", d.getDate());
+			date = date.set("month", d.getMonth());
+			date = date.set("year", d.getFullYear());
 			data.createdAt = date.format();
 		}
 	}
 	function onDueDateChange(e: CustomEvent<DatePict>) {
 		e.preventDefault();
-		if(typeof e.detail === 'string') {}
-		else  {
+		if (typeof e.detail === "string") {
+		} else {
 			let d = e.detail.selectedDates[0];
 			let date = dayjs();
-			date = date.set('date', d.getDate());
-			date = date.set('month', d.getMonth());
-			date = date.set('year', d.getFullYear());
+			date = date.set("date", d.getDate());
+			date = date.set("month", d.getMonth());
+			date = date.set("year", d.getFullYear());
 			data.dueAt = date.add(7, "day").format();
 		}
 	}
@@ -139,7 +140,6 @@
 	function onDpChange(e: CustomEvent<string | number | null>): void {
 		data.remain = data.total - (data.payment + data.dp);
 	}
-
 
 	let strDate = dayjs(data.createdAt).format("DD-MM-YYYY");
 	let strDueAt = dayjs(data.dueAt).format("DD-MM-YYYY");
@@ -157,7 +157,7 @@
 </script>
 
 <Form on:submit>
-	<Grid noGutter={innerWidth>720}>
+	<Grid noGutter={innerWidth > 720}>
 		<Row>
 			<Column sm noGutterRight>
 				<DatePicker
@@ -167,7 +167,8 @@
 					on:change={onDateChange}
 				>
 					<DatePickerInput
-						style={`width: ${innerWidth<720?"163px":"none"}`}
+					tabindex={1}
+						style={`width: ${innerWidth < 720 ? "163px" : "none"}`}
 						labelText="Tanggal pembelian"
 						placeholder="mm/dd/yyyy"
 					/>
@@ -175,8 +176,9 @@
 			</Column>
 			<Column sm noGutter>
 				<TextInput
-				style={`width: ${innerWidth<720?"none":"auto"}`}
-				id="invoice-id"
+					tabindex={2}
+					style={`width: ${innerWidth < 720 ? "none" : "auto"}`}
+					id="invoice-id"
 					bind:ref={ref_invoice}
 					labelText="No. faktur pembelian"
 					bind:value={data.invoiceId}
@@ -184,7 +186,8 @@
 			</Column>
 			<Column sm noGutter>
 				<ComboBox
-					style={`width: ${innerWidth<720?"163px":"none"}`}
+					tabindex={3}
+					style={`width: ${innerWidth < 720 ? "163px" : "none"}`}
 					id="supplier-id"
 					titleText="Supplier"
 					selectedId={data.supplierId}
@@ -203,6 +206,7 @@
 			</Column>
 			<Column sm noGutterLeft>
 				<ComboBox
+					tabindex={4}
 					id="warehouse-id"
 					titleText="Penjaga gudang"
 					selectedId={data.warehouseId}
@@ -229,29 +233,29 @@
 					on:change={onDueDateChange}
 				>
 					<DatePickerInput
+					tabindex={5}
 						size="sm"
-						style={`width: ${innerWidth<720?"163px":"none"}`}
+						style={`width: ${innerWidth < 720 ? "163px" : "none"}`}
 						labelText="Jatuh tempo"
 						placeholder="mm/dd/yyyy"
 					/>
 				</DatePicker>
 			</Column>
 			<Column sm noGutter>
-				<InputNumber
-					labelText="Total"
-					bind:value={strTotal}
-				/>
+				<InputNumber tabindex={6} labelText="Total" bind:value={strTotal} />
 			</Column>
 			<Column sm noGutter>
 				<InputNumber
-				style={`width: ${innerWidth<720?"163px":"none"}`}
-				labelText="Cash / DP"
+					tabindex={7}
+					style={`width: ${innerWidth < 720 ? "163px" : "none"}`}
+					labelText="Cash / DP"
 					bind:value={strDp}
 					on:change={onDpChange}
 				/>
 			</Column>
 			<Column sm noGutterLeft>
 				<InputNumber
+					tabindex={8}
 					labelText="Sisa pembayaran"
 					bind:value={strRemain}
 				/>

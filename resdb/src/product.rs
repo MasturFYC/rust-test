@@ -140,6 +140,7 @@ pub mod db {
 			id: i16,
 		) -> Result<Option<ProductOriginal>, sqlx::Error>;
 		async fn get_product(&self, id: i16) -> Result<Option<Products>, sqlx::Error>;
+		async fn get_product_by_barcode(&self, barcode: String) -> Result<Option<Products>, sqlx::Error>;
 		async fn get_products(
 			&self,
 			page: u32,
@@ -187,6 +188,16 @@ pub mod db {
 
 		async fn get_product(&self, id: i16) -> Result<Option<Products>, sqlx::Error> {
 			let product = sqlx::query_file_as!(Products, "sql/product-get-by-id.sql", id)
+				.fetch_optional(&self.pool)
+				.await?;
+
+			Ok(product)
+		}
+		async fn get_product_by_barcode(&self, barcode: String) -> Result<Option<Products>, sqlx::Error> {
+			let product = sqlx::query_file_as!(
+				Products,
+				"sql/product-get-by-barcode.sql",
+				barcode.to_uppercase())
 				.fetch_optional(&self.pool)
 				.await?;
 
@@ -404,7 +415,7 @@ pub mod db {
 				ProductOriginal,
 				"sql/product-insert.sql",
 				data.name,
-				data.barcode,
+				data.barcode.to_ascii_uppercase(),
 				data.unit,
 				data.content,
 				data.hpp,
@@ -435,7 +446,7 @@ pub mod db {
 				"sql/product-update.sql",
 				id,
 				data.name,
-				data.barcode,
+				data.barcode.to_uppercase(),
 				data.unit,
 				data.content,
 				data.hpp,

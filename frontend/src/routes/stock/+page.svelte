@@ -5,7 +5,7 @@
   import dayjs from "dayjs";
   import { getSupplierProp } from "$lib/fetchers";
   import { browser } from "$app/environment";
-  import { LocalStorage } from "carbon-components-svelte";
+  import { Loading, LocalStorage } from "carbon-components-svelte";
   import { onMount } from "svelte";
   import StockDetail from "./StockDetail.svelte";
 
@@ -39,7 +39,7 @@
     updatedAt: tgl.format(),
   };
 
-  const details: iStockDetail[] = [
+  let details: iStockDetail[] = [
     {
       orderId: 0,
       id: 1,
@@ -67,10 +67,11 @@
       price: 36000,
       discount: 0,
       subtotal: 36000,
-    },
+    }
   ];
 
   let data = { ...initData };
+	let orderId = 0;
 
   const supplierQuery = useQuery(
     "supProp",
@@ -87,7 +88,7 @@
     },
   );
 
-  let innerWidth = 0;
+	let innerWidth = 0;
 
   onMount(() => {
     data.updatedBy = profile.name;
@@ -97,6 +98,8 @@
     supplierQuery.setEnabled(browser);
     employeeQuery.setEnabled(browser);
   }
+
+
 </script>
 
 <svelte:window bind:innerWidth />
@@ -109,6 +112,10 @@
 <LocalStorage key="__user_info" bind:value={profile} />
 
 <h1>Stock</h1>
+
+{#if $supplierQuery.isLoading || $employeeQuery.isLoading}
+	<Loading />
+{:else}
 <FormStock
   {data}
   suppliers={$supplierQuery.data?.data}
@@ -116,6 +123,4 @@
   bind:innerWidth
 />
 <StockDetail data={details} />
-<div>
-  <!-- <code><pre>{JSON.stringify(profile, null, 4)}</pre></code> -->
-</div>
+{/if}
