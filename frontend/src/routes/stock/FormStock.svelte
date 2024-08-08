@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { iRelationProp, iStock } from "$lib/interfaces";
   import {
-		Button,
+    Button,
     Column,
     ComboBox,
     DatePicker,
@@ -15,11 +15,11 @@
   import dayjs from "dayjs";
   import InputNumber from "$lib/components/NumberInput.svelte";
   import { formatNumber, getNumber } from "$lib/components/NumberFormat";
-	// import Icon from "$lib/components/Icon.svelte";
-	import { Save } from "carbon-icons-svelte";
-	// import { createEventDispatcher } from "svelte";
+  // import Icon from "$lib/components/Icon.svelte";
+  import { Save } from "carbon-icons-svelte";
+  // import { createEventDispatcher } from "svelte";
 
-	// const dispatch = createEventDispatcher();
+  // const dispatch = createEventDispatcher();
   export let data: iStock;
   export let suppliers: iRelationProp[] = [];
   export let employees: iRelationProp[] = [];
@@ -138,13 +138,14 @@
       date = date.set("date", d.getDate());
       date = date.set("month", d.getMonth());
       date = date.set("year", d.getFullYear());
-      data.dueAt = date.add(7, "day").format();
+      // data.dueAt = date.add(7, "day").format();
+      data.dueAt = date.format();
     }
   }
 
   // function onDpChange(e: CustomEvent<string | number | null>): void {
   //   data.remain = data.total - (data.payment + data.dp);
-	// 	dispatch("change", data.dp)
+  // 	dispatch("change", data.dp)
   // }
 
   let strDate = dayjs(data.createdAt).format("DD-MM-YYYY");
@@ -156,16 +157,23 @@
   }
 
   $: data.dp = getNumber(strDp);
+  $: data.remain = data.total - data.dp + data.payment;
   $: strRemain = formatNumber(data.remain);
-	$: strTotal = formatNumber(data.total);
+  $: strTotal = formatNumber(data.total);
 
   // $: data.createdAt = strDate;
   // $: console.log(strDate);
+  $: isDataValid =
+    data.supplierId > 0 &&
+    data.warehouseId > 0 &&
+    data.total > 0 &&
+    data.invoiceId.trim().length > 0;
 </script>
-<Form on:submit>
-  <Grid noGutter={innerWidth > 720}>
+
+<Form on:submit style="margin: 24px 0 0 0;">
+  <Grid noGutter={innerWidth > 720} fullWidth>
     <Row>
-      <Column sm noGutterRight>
+      <Column noGutterRight sm={2} md lg>
         <DatePicker
           datePickerType="single"
           bind:value={strDate}
@@ -173,24 +181,36 @@
           on:change={onDateChange}
         >
           <DatePickerInput
-            style={`width: ${innerWidth < 720 ? "163px" : "none"}`}
+            style="width: 100%;"
             labelText="Tanggal pembelian"
             placeholder="mm/dd/yyyy"
           />
         </DatePicker>
       </Column>
-      <Column sm noGutter>
+      <Column noGutter lg sm={2}>
         <TextInput
-          style={`width: ${innerWidth < 720 ? "none" : "auto"}`}
-          id="invoice-id"
           bind:ref={ref_invoice}
-          labelText="No. faktur pembelian"
+          id="invoice-id"
+          labelText="No. faktur"
           bind:value={data.invoiceId}
         />
       </Column>
-      <Column sm noGutter>
+      <!-- <DatePicker
+          datePickerType="single"
+          bind:value={strDueAt}
+          dateFormat="d-m-Y"
+          on:change={onDueDateChange}
+        >
+          <DatePickerInput
+            size="sm"
+            style="width: 100%;"
+            labelText="Jatuh tempo"
+            placeholder="mm/dd/yyyy"
+          />
+        </DatePicker> -->
+      <!-- <InputNumber labelText="Total" bind:value={strTotal} readonly /> -->
+      <Column noGutter md={2} sm={2}>
         <ComboBox
-          style={`width: ${innerWidth < 720 ? "163px" : "none"}`}
           id="supplier-id"
           titleText="Supplier"
           selectedId={data.supplierId}
@@ -207,7 +227,7 @@
           </div>
         </ComboBox>
       </Column>
-      <Column sm noGutterLeft>
+      <Column noGutter md={2} sm={2}>
         <ComboBox
           id="warehouse-id"
           titleText="Penjaga gudang"
@@ -225,40 +245,27 @@
           </div>
         </ComboBox>
       </Column>
-    </Row>
-    <Row>
-      <Column sm noGutterRight>
-        <DatePicker
-          datePickerType="single"
-          bind:value={strDueAt}
-          dateFormat="d-m-Y"
-          on:change={onDueDateChange}
-        >
-          <DatePickerInput
-            size="sm"
-            style={`width: ${innerWidth < 720 ? "163px" : "auto"}`}
-            labelText="Jatuh tempo"
-            placeholder="mm/dd/yyyy"
-          />
-        </DatePicker>
-      </Column>
-      <Column sm noGutter>
-        <InputNumber labelText="Total" bind:value={strTotal} readonly />
-      </Column>
-      <Column sm noGutter>
-        <InputNumber
-          style={`width: ${innerWidth < 720 ? "163px" : "none"}`}
+      <!-- <Column noGutter> -->
+      <!-- <InputNumber
+          size="sm"
           labelText="Cash / DP"
           bind:value={strDp}
           on:change
-        />
+        /> -->
+      <!-- <InputNumber
+          labelText="Sisa pembayaran"
+          bind:value={strRemain}
+          readonly
+        /> -->
+      <!-- </Column> -->
+      <Column noGutterLeft style="align-content: end;" sm={2} md={1}>
+        <Button
+          size="field"
+          disabled={!isDataValid}
+          icon={Save}
+          style="width: 100%;">Save</Button
+        >
       </Column>
-      <Column sm noGutter>
-        <InputNumber labelText="Sisa pembayaran" bind:value={strRemain} readonly />
-      </Column>
-			<Column sm noGutterLeft style="align-content: flex-end;">
-				<Button icon={Save} size="small" style="width: 100%">Save</Button>
-			</Column>
     </Row>
   </Grid>
 </Form>

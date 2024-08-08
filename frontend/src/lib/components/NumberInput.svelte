@@ -1,72 +1,70 @@
 <script lang="ts">
-	import { cardNumber } from "$lib/components/NumberFormat";
-	import { TextInput } from "carbon-components-svelte";
-	import { onDestroy } from "svelte";
+  import { cardNumber } from "$lib/components/NumberFormat";
+  import { TextInput } from "carbon-components-svelte";
+  import { onDestroy } from "svelte";
 
-	export let value = "0.0";
-	export let inline = false;
-	export let labelText = "";
-	export let size: "sm" | "xl" = "sm";
-	export let placeholder = "";
-	export let warn = false;
-	export let warnText = "";
-	export let hideLabel = false;
-	export let disabled = false;
-	export let style = "";
-	export let tabindex = 0;
-	export let classes = "input-number";
-	export let id = "";
-	export let readonly = false;
+  export let value = "0.0";
+  export let inline = false;
+  export let labelText = "";
+  export let size: "sm" | "xl" | undefined = undefined;
+  export let placeholder = "";
+  export let warn = false;
+  export let warnText = "";
+  export let hideLabel = false;
+  export let disabled = false;
+  export let style = "";
+  export let tabindex = 0;
+  export let classes = "input-number";
+  export let id = "";
+  export let readonly = false;
 
-	let ref_input: HTMLInputElement;
+  let ref_input: HTMLInputElement;
 
-	function updateValue(e: Event) {
-		 //e.preventDefault();
-		if (ref_input) {
-			ref_input.value = cardNumber(ref_input.value);
-		}
-	}
+  function updateValue(e: Event) {
+    //e.preventDefault();
+    if (ref_input) {
+      ref_input.value = cardNumber(ref_input.value);
+    }
+  }
 
-	onDestroy(() => {
-		try {
-			if(ref_input) {
-				ref_input.removeEventListener("input", updateValue);
-				ref_input.removeEventListener("paste", updateValue);
-			}
-		} catch (ex: any) {
-			console.log(ex.message);
-		}
-	});
+  onDestroy(() => {
+    try {
+      if (ref_input) {
+        ref_input.removeEventListener("input", updateValue);
+        ref_input.removeEventListener("paste", updateValue);
+      }
+    } catch (ex: any) {
+      console.log(ex.message);
+    }
+  });
 
+  $: if (ref_input) {
+    ref_input.addEventListener("input", updateValue);
+    ref_input.addEventListener("paste", updateValue);
+  }
 
-	$: if (ref_input) {
-		ref_input.addEventListener("input", updateValue);
-		ref_input.addEventListener("paste", updateValue);
-	}
-
-	// $: value = getNumber(str_value);
-	// $: console.log(value);
+  // $: value = getNumber(str_value);
+  // $: console.log(value);
 </script>
 
 <TextInput
-	autocomplete="off"
-	{readonly}
-	{id}
-	{tabindex}
-	class={classes}
-	{warn}
-	{style}
-	{inline}
-	{labelText}
-	{placeholder}
-	{size}
-	{warnText}
-	{hideLabel}
-	{disabled}
-	on:change
-	on:input
-	on:keydown
-	bind:ref={ref_input}
-	bind:value
+  autocomplete="off"
+  {readonly}
+  {id}
+  {tabindex}
+  class={classes}
+  {warn}
+  {style}
+  {inline}
+  {labelText}
+  {placeholder}
+  {size}
+  {warnText}
+  {hideLabel}
+  {disabled}
+  on:change
+  on:input
+  on:keydown
+  bind:ref={ref_input}
+  bind:value
 />
-

@@ -2,7 +2,7 @@
   import { browser } from "$app/environment";
   import { useQuery, useQueryClient } from "@sveltestack/svelte-query";
   import { baseURL, credential_include, type iProduct } from "$lib/interfaces";
-  import { Loading, Row, Grid, Column } from "carbon-components-svelte";
+  import { InlineLoading } from "carbon-components-svelte";
   import { formatNumber } from "$lib/components/NumberFormat";
   import ProductInfo from "./ProductInfo.svelte";
 
@@ -37,7 +37,7 @@
 </script>
 
 {#if $query.isLoading}
-  <Loading withOverlay={false} />
+  <InlineLoading withOverlay={false} />
 {:else if $query.isError}
   <code><pre>{$query.error.message}</pre></code>
 {:else if $query.isSuccess && $query.data.data}
