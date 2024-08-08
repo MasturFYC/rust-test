@@ -3,7 +3,7 @@ use serde_json::json;
 use validator::Validate;
 use resdb::{
 	model::UserRole,
-	product::{db::ProductExt, model::{Product, DeleteResponseDto, ProductResponseDto}},
+	product::{db::ProductExt, model::{DeleteResponseDto, FindName, Product, ProductResponseDto}},
 };
 
 use crate::{
@@ -17,6 +17,8 @@ pub fn product_scope() -> Scope {
 	web::scope("/api/products")
 		.route("/{id}", web::get().to(get_product))
 		.route("", web::get().to(get_products))
+		.route("/barcodes/list", web::get().to(get_barcodes))
+		.route("/names/list", web::get().to(get_products_by_name))
 		.route(
 			"",
 			web::post()
@@ -112,6 +114,38 @@ pub async fn get_product(
 	}
 }
 
+
+#[utoipa::path(
+    get,
+    path = "/api/products/names/list",
+    tag = "Get product by ID endpoint",
+    responses(
+        (status=200, description="Get product by ID", body=ProductFull),
+        (status=404, description= "Product not found", body=Response),
+        (status=500, description= "Internal Server Error", body=Response ),
+    )
+)]
+pub async fn get_products_by_name(
+	query: web::Query<FindName>,
+	app_state: web::Data<AppState>,
+) -> Result<HttpResponse, HttpError> {
+
+	let params = query.into_inner();
+	let name = params.txt;
+	let lim = params.limit.unwrap_or(5);
+
+	let result = app_state.db_client
+	.get_products_by_name(lim as i64, name).await
+	.map_err(|e| HttpError::server_error(e.to_string()))?;
+
+	let response = json!({
+		"status": "success",
+		"data": result,
+	});
+
+	Ok(HttpResponse::Ok().json(response))
+}
+
 #[utoipa::path(
     get,
     path = "/api/products/barcode/{code}",
@@ -122,6 +156,7 @@ pub async fn get_product(
         (status=500, description= "Internal Server Error", body=Response ),
     )
 )]
+
 pub async fn find_barcode(
 	code: web::Path<String>,
 	app_state: web::Data<AppState>,
@@ -203,7 +238,34 @@ pub async fn get_products(
 
 	Ok(HttpResponse::Ok().json(response))
 }
+#[utoipa::path(
+    get,
+    path = "/api/products/barcodes/list",
+    tag = "Get all products endpoint",
+    params (RequestQueryDto),
+    responses(
+        (status=200, description="Get all product by page and limit", body=[ProductListResponseDto]),
+        (status=500, description= "Internal Server Error", body=Response ),
+    )
+)]
+pub async fn get_barcodes(
+	app_state: web::Data<AppState>,
+) -> Result<HttpResponse, HttpError> {
 
+
+	let barcodes = app_state
+		.db_client
+		.get_barcodes()
+		.await
+		.map_err(|e| HttpError::server_error(e.to_string()))?;
+
+	let response = json!({
+		"status": "success",
+		"data": barcodes,
+	});
+
+	Ok(HttpResponse::Ok().json(response))
+}
 #[utoipa::path(
     get,
     path = "/api/products/category/{id}",

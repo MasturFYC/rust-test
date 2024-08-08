@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { formatRupiah } from "$lib/components/NumberFormat";
+  import { formatNumber } from "$lib/components/NumberFormat";
   import type { iProduct } from "$lib/interfaces";
   import { Grid, Row, Column } from "carbon-components-svelte";
   export let product: iProduct;
@@ -16,19 +16,19 @@
     <Column>Barcode:</Column>
     <Column>{product.barcode}</Column>
     <Column>HPP:</Column>
-    <Column>{formatRupiah(product.hpp)}</Column>
+    <Column>{formatNumber(product.hpp)}</Column>
   </Row>
   <Row noGutter>
     <Column>Nama barang:</Column>
     <Column>{product.name}</Column>
     <Column>Margin:</Column>
-    <Column>{formatRupiah(product.margin, 4)}%</Column>
+    <Column>{formatNumber(product.margin, 4)}%</Column>
   </Row>
   <Row noGutter>
     <Column>Variant:</Column>
     <Column>{product.variantName ?? ""}</Column>
     <Column>Harga:</Column>
-    <Column>{formatRupiah(product.price)}</Column>
+    <Column>{formatNumber(product.price)}</Column>
   </Row>
   <Row noGutter>
     <Column>Kategori:</Column>

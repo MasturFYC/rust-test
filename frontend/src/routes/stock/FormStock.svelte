@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { iRelationProp, iStock } from "$lib/interfaces";
   import {
+		Button,
     Column,
     ComboBox,
     DatePicker,
@@ -13,8 +14,12 @@
   import type { ComboBoxItem } from "carbon-components-svelte/types/ComboBox/ComboBox.svelte";
   import dayjs from "dayjs";
   import InputNumber from "$lib/components/NumberInput.svelte";
-  import { formatRupiah, getNumber } from "$lib/components/NumberFormat";
+  import { formatNumber, getNumber } from "$lib/components/NumberFormat";
+	// import Icon from "$lib/components/Icon.svelte";
+	import { Save } from "carbon-icons-svelte";
+	// import { createEventDispatcher } from "svelte";
 
+	// const dispatch = createEventDispatcher();
   export let data: iStock;
   export let suppliers: iRelationProp[] = [];
   export let employees: iRelationProp[] = [];
@@ -137,25 +142,26 @@
     }
   }
 
-  function onDpChange(e: CustomEvent<string | number | null>): void {
-    data.remain = data.total - (data.payment + data.dp);
-  }
+  // function onDpChange(e: CustomEvent<string | number | null>): void {
+  //   data.remain = data.total - (data.payment + data.dp);
+	// 	dispatch("change", data.dp)
+  // }
 
   let strDate = dayjs(data.createdAt).format("DD-MM-YYYY");
   let strDueAt = dayjs(data.dueAt).format("DD-MM-YYYY");
-  let strTotal = formatRupiah(data.total);
-  let strDp = formatRupiah(data.dp);
+  let strDp = formatNumber(data.dp);
 
   $: if (ref_invoice) {
     ref_invoice.focus();
   }
 
   $: data.dp = getNumber(strDp);
-  $: strRemain = formatRupiah(data.remain);
+  $: strRemain = formatNumber(data.remain);
+	$: strTotal = formatNumber(data.total);
+
   // $: data.createdAt = strDate;
   // $: console.log(strDate);
 </script>
-
 <Form on:submit>
   <Grid noGutter={innerWidth > 720}>
     <Row>
@@ -230,26 +236,29 @@
         >
           <DatePickerInput
             size="sm"
-            style={`width: ${innerWidth < 720 ? "163px" : "none"}`}
+            style={`width: ${innerWidth < 720 ? "163px" : "auto"}`}
             labelText="Jatuh tempo"
             placeholder="mm/dd/yyyy"
           />
         </DatePicker>
       </Column>
       <Column sm noGutter>
-        <InputNumber labelText="Total" bind:value={strTotal} />
+        <InputNumber labelText="Total" bind:value={strTotal} readonly />
       </Column>
       <Column sm noGutter>
         <InputNumber
           style={`width: ${innerWidth < 720 ? "163px" : "none"}`}
           labelText="Cash / DP"
           bind:value={strDp}
-          on:change={onDpChange}
+          on:change
         />
       </Column>
-      <Column sm noGutterLeft>
-        <InputNumber labelText="Sisa pembayaran" bind:value={strRemain} />
+      <Column sm noGutter>
+        <InputNumber labelText="Sisa pembayaran" bind:value={strRemain} readonly />
       </Column>
+			<Column sm noGutterLeft style="align-content: flex-end;">
+				<Button icon={Save} size="small" style="width: 100%">Save</Button>
+			</Column>
     </Row>
   </Grid>
 </Form>

@@ -16,7 +16,7 @@
   import { createEventDispatcher, onMount } from "svelte";
 
   import type { ComboBoxItem } from "carbon-components-svelte/types/ComboBox/ComboBox.svelte";
-  import { formatRupiah, getNumber, getPercent } from "./NumberFormat";
+  import { formatNumber, getNumber, getPercent } from "./NumberFormat";
   import InputNumber from "./NumberInput.svelte";
   import NumberPercent from "./NumberPercent.svelte";
 
@@ -44,17 +44,17 @@
 
   function on_hpp_change(e: CustomEvent<string | number | null>): void {
     data.price = data.hpp + (data.margin * data.hpp) / 100;
-    str_price = formatRupiah(data.price);
+    str_price = formatNumber(data.price);
   }
 
   function on_price_change(e: CustomEvent<string | number | null>): void {
     data.margin = ((data.price - data.hpp) / data.hpp) * 100;
-    str_percent = formatRupiah(data.margin, 4);
+    str_percent = formatNumber(data.margin, 4);
   }
 
   function on_percent_change(e: CustomEvent<string | number | null>): void {
     data.price = data.hpp + (data.margin * data.hpp) / 100;
-    str_price = formatRupiah(data.price);
+    str_price = formatNumber(data.price);
     // console.log(cardNumber(data.price.toString()), data.price.toString());
   }
 
@@ -88,10 +88,10 @@
     return suppliers.map((m) => ({ id: m.id, text: m.text }));
   }
 
-  let str_price = formatRupiah(data.price);
-  let str_hpp = formatRupiah(data.hpp);
-  let str_percent = formatRupiah(data.margin, 4);
-  let str_heavy = formatRupiah(data.heavy, 2);
+  let str_price = formatNumber(data.price);
+  let str_hpp = formatNumber(data.hpp);
+  let str_percent = formatNumber(data.margin, 4);
+  let str_heavy = formatNumber(data.heavy, 2);
   //	let str_stock = cardNumber(data.unitInStock.toString());
 
   // $:	console.log(str_price, str_hpp, str_percent)

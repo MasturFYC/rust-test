@@ -3,7 +3,7 @@
   import { useQuery, useQueryClient } from "@sveltestack/svelte-query";
   import { baseURL, credential_include, type iProduct } from "$lib/interfaces";
   import { Loading, Row, Grid, Column } from "carbon-components-svelte";
-  import { formatRupiah } from "$lib/components/NumberFormat";
+  import { formatNumber } from "$lib/components/NumberFormat";
   import ProductInfo from "./ProductInfo.svelte";
 
   type iResult = {

@@ -77,3 +77,19 @@ export async function getSupplierProp(p: string[]): Promise<iRelationResult> {
 
 		return (await result.json()) as iRelationResult;
 }
+
+export async function getBarcodes(): Promise<{status: string, data: {barcode: string}[]}> {
+	const url = `${baseURL}/products/barcodes/list`;
+	const options = {
+		headers: {
+			"content-type": "application/json",
+			accept: "application/json",
+		},
+		method: "GET",
+		credentials: credential_include,
+	};
+	const request = new Request(url, options);
+	const result = await fetch(request);
+
+	return (await result.json());
+}

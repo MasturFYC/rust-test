@@ -16,6 +16,7 @@
 	export let tabindex = 0;
 	export let classes = "input-number";
 	export let id = "";
+	export let readonly = false;
 
 	let ref_input: HTMLInputElement;
 
@@ -49,6 +50,7 @@
 
 <TextInput
 	autocomplete="off"
+	{readonly}
 	{id}
 	{tabindex}
 	class={classes}

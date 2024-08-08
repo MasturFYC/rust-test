@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { formatRupiah } from "$lib/components/NumberFormat";
+	import { formatNumber } from "$lib/components/NumberFormat";
 	import type { iProduct, iPropertyID, iRelationProp } from "$lib/interfaces";
 	import {
 		Button,
@@ -96,9 +96,9 @@
 		{:else if cell.key === "relationType"}
 			<div style="cell-right">{cell.value.join(", ")}</div>
 			{:else if cell.key === "hpp" || cell.key === "price"}
-			<div class="cell-right">{formatRupiah(cell.value)}</div>
+			<div class="cell-right">{formatNumber(cell.value)}</div>
 			{:else if cell.key === "margin"}
-			<div class="cell-right">{formatRupiah(cell.value, 2)}%</div>
+			<div class="cell-right">{formatNumber(cell.value, 2)}%</div>
 		{:else if cell.key === "unitInStock"}
 			<div class="cell-right">{cell.value} {row["unit"]}</div>
 		{:else}

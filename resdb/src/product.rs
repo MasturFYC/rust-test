@@ -5,6 +5,11 @@ pub mod model {
 	use validator::Validate;
 
 	#[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
+	pub struct BarcodeList {
+		pub barcode: String,
+	}
+
+	#[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
 	pub struct Products {
 		pub id: i16,
 		#[serde(rename = "supplierId")]
@@ -123,6 +128,11 @@ pub mod model {
 		pub data: Vec<Products>,
 		pub count: usize,
 	}
+	#[derive(Deserialize)]
+	pub struct FindName {
+		pub txt: String,
+		pub limit: Option<usize>
+	}
 }
 
 pub mod db {
@@ -131,7 +141,7 @@ pub mod db {
 	use async_trait::async_trait;
 	use sqlx::{self, Acquire};
 
-	use super::model::{Product, ProductOriginal, Products};
+	use super::model::{BarcodeList, Product, ProductOriginal, Products};
 
 	#[async_trait]
 	pub trait ProductExt {
@@ -140,6 +150,7 @@ pub mod db {
 			id: i16,
 		) -> Result<Option<ProductOriginal>, sqlx::Error>;
 		async fn get_product(&self, id: i16) -> Result<Option<Products>, sqlx::Error>;
+		async fn get_barcodes(&self) -> Result<Vec<BarcodeList>, sqlx::Error>;
 		async fn get_product_by_barcode(&self, barcode: String) -> Result<Option<Products>, sqlx::Error>;
 		async fn get_products(
 			&self,
@@ -150,6 +161,11 @@ pub mod db {
 			relid: Option<i16>,
 			catid: Option<i16>,
 		) -> Result<(Vec<Products>, i64), sqlx::Error>;
+		async fn get_products_by_name(
+			&self,
+			limit: i64,
+			txt: String
+		) -> Result<Vec<Products>, sqlx::Error>;
 		async fn get_products_by_category(
 			&self,
 			category_id: i16,
@@ -202,6 +218,45 @@ pub mod db {
 				.await?;
 
 			Ok(product)
+		}
+
+		async fn get_barcodes(&self) -> Result<Vec<BarcodeList>, sqlx::Error> {
+			
+			let barcodes = sqlx::query_file_as!(BarcodeList, "sql/product-get-barcodes.sql")
+			.fetch_all(&self.pool)
+			.await?;
+			Ok(barcodes)
+		}
+		async fn get_products_by_name(
+			&self,
+			limit: i64,
+			txt: String
+		) -> Result<Vec<Products>, sqlx::Error> {
+			let search_text = txt.trim().to_lowercase();
+
+			let products = sqlx::query_as!(Products,
+				r#"
+				SELECT 
+					p.*,
+					c.name AS category_name,
+					r.name AS supplier_name
+				FROM 
+					products AS p
+					INNER JOIN categories AS c ON c.id = p.category_id
+					INNER JOIN relations AS r ON r.id = p.supplier_id
+				WHERE 
+					POSITION($1 IN LOWER(p.name||' '||p.barcode)) > 0
+				ORDER BY
+					p.name
+				LIMIT $2
+				"#, 
+					search_text,
+					limit
+					)
+				.fetch_all(&self.pool)
+				.await?;
+
+			Ok(products)
 		}
 
 		async fn get_products(

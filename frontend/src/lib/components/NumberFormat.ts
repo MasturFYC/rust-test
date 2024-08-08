@@ -85,7 +85,7 @@ export const getNumber = (value: string): number => {
 }
 
 
-export function formatRupiah(money: number, decimal = 0) {
+export function formatNumber(money: number, decimal = 0) {
   return new Intl.NumberFormat('id-ID', {
       style: 'decimal',
       maximumFractionDigits: decimal
