@@ -85,7 +85,7 @@
     if (empl) {
       data.warehouseId = empl.id;
       data.warehouseName = empl.text;
-			data.isModified = true;
+      data.isModified = true;
     }
   }
   function on_supplier_changed(
@@ -95,7 +95,7 @@
     if (empl) {
       data.supplierId = empl.id;
       data.supplierName = empl.text;
-			data.isModified = true;
+      data.isModified = true;
     }
   }
   function on_employee_clear(e: any): void {
@@ -129,7 +129,7 @@
       date = date.set("month", d.getMonth());
       date = date.set("year", d.getFullYear());
       data.createdAt = date.format();
-			data.isModified = true;
+      data.isModified = true;
     }
   }
   // function onDueDateChange(e: CustomEvent<DatePict>) {
@@ -174,10 +174,10 @@
           bind:value={strDate}
           dateFormat="d-m-Y"
           on:change={onDateChange}
-					>
+        >
           <DatePickerInput
-						accesskey="t"
-						style="max-width: 100%;min-width:150px"
+            accesskey="t"
+            style="max-width: 100%;min-width:150px"
             labelText="Tanggal pembelian"
             placeholder="mm/dd/yyyy"
           />
@@ -185,11 +185,11 @@
       </Column>
       <Column noGutter sm={2} md lg>
         <TextInput
-				accesskey="n"
+          accesskey="n"
           bind:ref={ref_invoice}
           id="invoice-id"
           labelText="No. faktur"
-					on:change={() => data.isModified = true}
+          on:change={() => (data.isModified = true)}
           bind:value={data.invoiceId}
         />
       </Column>
@@ -209,7 +209,7 @@
       <!-- <InputNumber labelText="Total" bind:value={strTotal} readonly /> -->
       <Column noGutter md={2} sm={2}>
         <ComboBox
-					accesskey="s"
+          accesskey="s"
           id="supplier-id"
           titleText="Supplier"
           selectedId={data.supplierId}
@@ -228,7 +228,7 @@
       </Column>
       <Column noGutterLeft md={2} sm={2}>
         <ComboBox
-				accesskey="g"
+          accesskey="g"
           id="warehouse-id"
           titleText="Penjaga gudang"
           selectedId={data.warehouseId}

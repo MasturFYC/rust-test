@@ -1,12 +1,12 @@
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use serde_json::json;
+use validator::Validate;
 
-use crate::{dtos::RequestQueryDto, extractors::auth::RequireAuth, AppState};
+use crate::{dtos::RequestQueryDto, error::HttpError, extractors::auth::RequireAuth, AppState};
 
 use resdb::{
 	model::UserRole,
-	stock::db::StockExt,
-	stock::model::RequestQueryStock
+	stock::{db::StockExt, model::RequestQueryStock},
 };
 
 pub fn stock_scope(conf: &mut web::ServiceConfig) {
@@ -23,10 +23,7 @@ pub fn stock_scope(conf: &mut web::ServiceConfig) {
 }
 
 #[get("/{id}")]
-async fn get_stock(
-	path: web::Path<i32>,
-	app_state: web::Data<AppState>,
-) -> impl Responder {
+async fn get_stock(path: web::Path<i32>, app_state: web::Data<AppState>) -> impl Responder {
 	let stock_id = path.into_inner();
 	let query_result = app_state.db_client.get_stock(stock_id).await;
 
@@ -34,8 +31,7 @@ async fn get_stock(
 		Ok(stock) => {
 			match stock {
 				None => {
-					let message =
-						format!("Stock with ID: {} not found", stock_id);
+					let message = format!("Stock with ID: {} not found", stock_id);
 					return HttpResponse::NotFound().json(json!({
 						"status": "fail",
 						"message": message
@@ -46,13 +42,11 @@ async fn get_stock(
 					return HttpResponse::Ok().json(stock_response);
 				}
 			};
-
 		}
 		Err(e) => {
 			let message = format!("Error {:?}", e);
-			return HttpResponse::InternalServerError().json(
-				serde_json::json!({"status": "fail","message": message}),
-			);
+			return HttpResponse::InternalServerError()
+				.json(serde_json::json!({"status": "fail","message": message}));
 		}
 	}
 }
@@ -97,7 +91,8 @@ async fn get_stocks(
 		"status": "success",
 		"totalPages": (length / lim) + (if length % lim == 0 {0} else {1}),
 		"count": stocks.len(), // count of selected stocks
-		"data": stocks, // selected stocks
+		"stocks": stocks, // selected stocks
+		"currentPage": page,
 		"totalItems": length, // all item stocks in database
 	});
 
@@ -108,8 +103,20 @@ async fn get_stocks(
 async fn create(
 	body: web::Json<RequestQueryStock>,
 	app_state: web::Data<AppState>,
-) -> impl Responder {
+) -> Result<HttpResponse, HttpError> {
+	body.validate().map_err(|e| {
+		println!("{:?}", e.errors());
+		HttpError::bad_request(e.to_string())
+	})?;
+
+	// println!("WELCOME");
 	let data = body.into_inner();
+	// let response = json!({
+	// 			"status": "success",
+	// 			"stock" : data,
+	// 			"details" : 200
+	// });
+	// return Ok(HttpResponse::Created().json(response));
 	let query_result = app_state
 		.db_client
 		.stock_create(data.stock, data.details)
@@ -119,33 +126,33 @@ async fn create(
 		Ok(o) => {
 			let stock = o.0;
 			let details = o.1;
-			let detail_response = json!({
+			let response = json!({
 				"status": "success",
-				"data": json!({
-					"stock" : stock,
-					"details" : details
-				})
+				"stock" : stock,
+				"details" : details
 			});
 
 			// println!("{:?}", v);
 
-			return HttpResponse::Created().json(detail_response);
+			return Ok(HttpResponse::Created().json(response));
 		}
-		Err(e) => {
-			if e.to_string()
-				.contains("duplicate key value violates unique constraint")
-			{
-				return HttpResponse::BadRequest().json(json!({
-					"status": "fail",
-					"message": "Note with that name already exists"
-				}));
-			}
+		// Err(e) => {
+		Err(e) => Err(HttpError::server_error(e.to_string())),
+		// if e.to_string()
+		// 	.contains("duplicate key value violates unique constraint")
+		// {
+		// 	println!("{:?}", e);
+		// 	return Err(HttpResponse::BadRequest().json(json!({
+		// 		"status": "fail",
+		// 		"message": "Note with that name already exists"
+		// 	})));
+		// }
 
-			return HttpResponse::InternalServerError().json(json!({
-				"status": "error",
-				"message": format!("{:?}", e)
-			}));
-		}
+		// return Err(HttpResponse::InternalServerError().json(json!({
+		// 	"status": "error",
+		// 	"message": format!("{:?}", e)
+		// })));
+		// }
 	}
 }
 
@@ -160,15 +167,13 @@ async fn update(
 	let query_result = app_state.db_client.get_stock(stock_id).await;
 
 	if query_result.is_err() {
-		return HttpResponse::BadRequest()
-			.json(json!({"status": "fail","message": "Bad request"}));
+		return HttpResponse::BadRequest().json(json!({"status": "fail","message": "Bad request"}));
 	}
 	// let old = ; //_or(None);
 
 	if query_result.unwrap().is_none() {
 		let message = format!("Stock with ID: {} not found", stock_id);
-		return HttpResponse::NotFound()
-			.json(json!({"status": "fail","message": message}));
+		return HttpResponse::NotFound().json(json!({"status": "fail","message": message}));
 	}
 
 	let data = body.into_inner();
@@ -181,10 +186,9 @@ async fn update(
 		Ok(stock) => {
 			let stock_response = json!({
 			"status": "success",
-			"data": json!({
-				"stock": stock.0,
-				"details": stock.1
-			})});
+			"stock": stock.0,
+			"details": stock.1
+			});
 
 			return HttpResponse::Ok().json(stock_response);
 		}
@@ -197,10 +201,7 @@ async fn update(
 }
 
 #[delete("/{id}")]
-async fn delete(
-	path: web::Path<i32>,
-	app_state: web::Data<AppState>,
-) -> impl Responder {
+async fn delete(path: web::Path<i32>, app_state: web::Data<AppState>) -> impl Responder {
 	let stock_id = path.into_inner();
 
 	let query_result = app_state.db_client.stock_delete(stock_id).await;

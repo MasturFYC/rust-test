@@ -37,7 +37,7 @@
 </script>
 
 {#if $query.isLoading}
-  <InlineLoading withOverlay={false} />
+  <InlineLoading />
 {:else if $query.isError}
   <code><pre>{$query.error.message}</pre></code>
 {:else if $query.isSuccess && $query.data.data}

@@ -5,7 +5,7 @@
   export let product: iProduct;
 </script>
 
-<Grid noGutter class="font-small">
+<Grid class="font-small">
   <Row noGutter>
     <Column md={1}>id:</Column>
     <Column>{product.id}</Column>

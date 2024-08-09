@@ -6,14 +6,15 @@ pub mod model {
 
 	use crate::model::PaymentType;
 
-	#[derive(Debug, Deserialize, Serialize, Clone)]
+	#[derive(Validate, Debug, Deserialize, Serialize, Clone)]
 	pub struct RequestQueryStock {
 		pub stock: Stock,
 		pub details: Vec<StockDetail>,
 	}
-
-	#[derive(Validate, Debug, Deserialize, Serialize, Clone)]
+	#[derive(Validate, Debug, Default, Clone, Serialize, Deserialize)]
 	pub struct Stock {
+		#[serde(skip_serializing_if = "Option::is_none")]
+		pub id: Option<i32>,
 		#[serde(rename = "supplierId")]
 		pub customer_id: i16,
 		#[serde(rename = "warehouseId")]
@@ -82,11 +83,11 @@ pub mod model {
 		pub qty: BigDecimal,
 	}
 
-	#[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
+	#[derive(Validate, Default, Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
 	pub struct StockDetail {
 		#[serde(rename = "stockId")]
 		pub order_id: i32,
-		#[serde(rename = "detailId")]
+		#[serde(rename = "id")]
 		pub detail_id: i16,
 		#[serde(rename = "productId")]
 		pub product_id: i16,
@@ -205,6 +206,9 @@ pub mod db {
 			let details: Vec<StockDetail> = details.try_into().unwrap();
 			let dto: Stock = data.try_into().unwrap();
 
+			println!("Welcome to the jungle");
+			println!("{:?}", dto);
+
 			let o = OrderBuilder::new(
 				OrderType::Stock,
 				dto.updated_by,
@@ -254,7 +258,8 @@ pub mod db {
 				.ledger_type(LedgerType::Stock)
 				.is_valid(true)
 				.updated_by(o.updated_by.to_owned())
-				.descriptions(format!("Stock {} by {}", 
+				.descriptions(format!(
+					"Stock {} by {}",
 					dto.supplier_name.to_owned().unwrap_or("".to_string()),
 					dto.warehouse_name.to_owned().unwrap_or("".to_string())
 				))
@@ -276,14 +281,15 @@ pub mod db {
 						d.price,
 						d.discount,
 						d.hpp,
-						subtotal
+						subtotal,
+						(i + 1) as i16
 					)
 					.execute(&mut *tx)
 					.await?;
 
 					let _ = sqlx::query!(
 						r#"
-                    UPDATE 
+                    UPDATE
                         products
                     SET
                         unit_in_stock = (unit_in_stock + $2)
@@ -458,7 +464,7 @@ pub mod db {
 				if let Some(d) = old_details.get(i) {
 					let _ = sqlx::query!(
 						r#"
-                    UPDATE 
+                    UPDATE
                         products
                     SET
                         unit_in_stock = (unit_in_stock - $2)
@@ -510,8 +516,8 @@ pub mod db {
 						r#"
 					UPDATE
 						products
-					SET 
-						unit_in_stock = (unit_in_stock + $2) 
+					SET
+						unit_in_stock = (unit_in_stock + $2)
 					WHERE
 						id = $1
 					"#,
@@ -531,7 +537,8 @@ pub mod db {
 						d.price,
 						d.discount,
 						d.hpp,
-						subtotal
+						subtotal,
+						(i + 1) as i16
 					)
 					.execute(&mut *tx)
 					.await?;
@@ -549,7 +556,7 @@ pub mod db {
             UPDATE
                 ledgers
             SET
-                relation_id = $2, 
+                relation_id = $2,
                 descriptions = $3,
                 updated_by = $4,
                 updated_at = $5
@@ -558,9 +565,11 @@ pub mod db {
             "#,
 				pid,
 				o.customer_id,
-				format!("Stock {} by {}", 
-					dto.supplier_name.to_owned().unwrap_or("".to_string()), 
-					dto.warehouse_name.to_owned().unwrap_or("".to_string())),
+				format!(
+					"Stock {} by {}",
+					dto.supplier_name.to_owned().unwrap_or("".to_string()),
+					dto.warehouse_name.to_owned().unwrap_or("".to_string())
+				),
 				o.updated_by.to_owned(),
 				Utc::now()
 			)
@@ -627,29 +636,31 @@ pub mod db {
 
 			tx.commit().await?;
 
-			Ok((Some(Stocks {
-				id: pid,
-				customer_id: o.customer_id,
-				sales_id: o.sales_id,
-				payment_type: o.payment_type.unwrap_or(PaymentType::Cash),
-				updated_by: o.updated_by,
-				total: o.total,
-				dp: o.dp,
-				payment: o.payment,
-				remain: o.remain,
-				supplier_name: None,
-				warehouse_name: None,
-				invoice_id: o.invoice_id,
-				due_at: o.due_at,
-				created_at: o.created_at,
-				updated_at: Some(Utc::now()),
-			}), details))
+			Ok((
+				Some(Stocks {
+					id: pid,
+					customer_id: o.customer_id,
+					sales_id: o.sales_id,
+					payment_type: o.payment_type.unwrap_or(PaymentType::Cash),
+					updated_by: o.updated_by,
+					total: o.total,
+					dp: o.dp,
+					payment: o.payment,
+					remain: o.remain,
+					supplier_name: None,
+					warehouse_name: None,
+					invoice_id: o.invoice_id,
+					due_at: o.due_at,
+					created_at: o.created_at,
+					updated_at: Some(Utc::now()),
+				}),
+				details,
+			))
 		}
 
 		async fn stock_delete(&self, id: i32) -> Result<u64, sqlx::Error> {
 			let mut conn: sqlx::pool::PoolConnection<sqlx::Postgres> = self.pool.acquire().await?;
 			let mut tx: sqlx::Transaction<sqlx::Postgres> = conn.begin().await?;
-
 
 			let details = sqlx::query_as!(
 				ProductQuantity,
