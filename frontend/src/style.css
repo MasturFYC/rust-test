@@ -1,10 +1,23 @@
-table.bx--data-table th:nth-child(4),
-table.bx--data-table td:nth-child(4) {
-  padding-right: 3px;
+table.bx--data-table th:nth-child(3),
+table.bx--data-table td:nth-child(3)
+{
+	padding-left: 0;
+	padding-right: 0;
 }
+
 table.bx--data-table th:nth-child(5),
 table.bx--data-table td:nth-child(5) {
+  padding-right: 3px;
+}
+
+table.bx--data-table th:nth-child(6),
+table.bx--data-table td:nth-child(6) {
   padding-left: 3px;
+}
+
+table th:nth-child(2),
+table td:nth-child(2) {
+	padding: 0;
 }
 
 .text-number {

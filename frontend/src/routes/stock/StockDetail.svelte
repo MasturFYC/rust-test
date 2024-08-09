@@ -4,21 +4,23 @@
 	import {
 		baseURL,
 		credential_include,
-	type iStockDetail,
+		type iStockDetail,
 	} from "$lib/interfaces";
 	import {
+		Button,
 		DataTable,
 		TextInput,
 		ToastNotification,
+		Toolbar,
+		ToolbarContent,
 	} from "carbon-components-svelte";
-	import type {
-		DataTableRow,
-	} from "carbon-components-svelte/types/DataTable/DataTable.svelte";
+	import type { DataTableRow } from "carbon-components-svelte/types/DataTable/DataTable.svelte";
 	import { onDestroy, onMount, tick } from "svelte";
 	import { createEventDispatcher } from "svelte";
 	import ExpandedRow from "./ExpandedRow.svelte";
 	import "../../style.css";
 	import dayjs from "dayjs";
+	import { Add, Delete, InformationSquare, NewTab, Save } from "carbon-icons-svelte";
 
 	const dispatch = createEventDispatcher();
 
@@ -31,18 +33,22 @@
 	let notifySubtitle = "";
 
 	let headers = [
-		{ key: "barcode", value: "Barcode", width: "18%" },
+		{ key: "barcode", value: "Barcode", width: "15%" },
 		{ key: "name", value: "Nama barang", width: "auto" },
 		{ key: "qty", value: "Qty", width: "70px" },
 		{ key: "unit", value: "Unit", width: "40px" },
 		{ key: "price", value: "Harga", width: "100px" },
-		{ key: "discount", value: "Discount", width: "90px" },
-		{ key: "subtotal", value: "Subtotal", width: "120px" },
+		{ key: "discount", value: "Disc", width: "80px" },
+		{ key: "pot", value: "Hrg-Pot", width: "90px" },
+		{ key: "subtotal", value: "Subtotal", width: "100px" },
 	];
 
 	export let data: iStockDetail[] = [];
 	export let barcodes: { barcode: string }[] = [];
+	export let isStockValid = false;
+	let items = 0;
 	let currentId = 0;
+	let isAddNew = false;
 
 	// let currentDetail: iStockDetail;
 	let currentKey = "barcode";
@@ -55,7 +61,7 @@
 		barcode: "",
 		name: "",
 		qty: 1,
-		direction: 0,
+		direction: 1,
 		unit: "",
 		hpp: 0,
 		price: 0,
@@ -85,7 +91,8 @@
 				currentKey === "name" ||
 				currentKey === "unit" ||
 				currentKey === "price" ||
-				currentKey === "subtotal"
+				currentKey === "subtotal"||
+				currentKey === "pot"
 			) {
 				currentKey = "barcode";
 			}
@@ -109,6 +116,7 @@
 	function clickOutSize(event: any) {
 		const withinBoundaries = event.composedPath().includes(reform);
 
+		if (isAddNew) return true;
 		// isDirty = false;
 
 		if (withinBoundaries) {
@@ -157,6 +165,8 @@
 				const ctlId = "#" + currentKey + "-id";
 				setFocuse(ctlId);
 			}, 100);
+		} else if (e.key && e.shiftKey) {
+			currentKey = "qty";
 		}
 	}
 
@@ -173,16 +183,20 @@
 		}
 	}
 
-	function onTablePointerEnter(e: Event) {
+	async function onTablePointerEnter(e: Event) {
 		const i = data.findIndex((f) => f.id === 0);
 
 		if (i < 0) {
 			data = [...data, { ...initDetail }];
 		}
+
 		if (currentId === 0) {
 			if (data.length > 0) {
-				let currentDetail = data[0];
+				let currentDetail = data[data.length-1];
 				currentId = currentDetail.id;
+				currentKey = "barcode";
+				await tick();
+				setFocuse("#barcode-id")
 			}
 		}
 	}
@@ -230,32 +244,11 @@
 		if (x >= 0) {
 			let currentDetail = data[x];
 			currentId = currentDetail.id;
-			// setStringValue(currentDetail.qty, currentDetail.discount);
-
-			// if (currentKey === "name" || currentKey === "hpp") {
-			// currentKey = "barcode";
-			// }
-			// setTimeout(() => {
 			await tick();
 			setFocuse("#" + currentKey + "-id");
-			// }, 100);
 		}
 	}
 
-	// function onTableClick(
-	// 	e: CustomEvent<{
-	// 		header?: DataTableHeader | undefined;
-	// 		row?: DataTableRow | undefined;
-	// 		cell?: DataTableCell | undefined;
-	// 	}>,
-	// ) {
-	// 	if (e.detail.cell) {
-	// 		currentDetail = e.detail.row as iStockDetail;
-	// 		currentId = e.detail.row?.id;
-	// 		currentKey = e.detail?.cell?.key;
-	// 		console.log("TABLE", currentDetail);
-	// 	}
-	// }
 
 	function updateCurrentDetail(e: iStockDetail) {
 		const i = data.findIndex((f) => f.id === e.id);
@@ -264,6 +257,11 @@
 			data = [...data];
 			dispatch("stockChanged", data);
 		}
+	}
+
+	function createNewId(): number {
+		let test = data.reduce((prev, cur) => (prev.id > cur.id) ? prev:cur).id;
+		return test+1;
 	}
 
 	async function barcodeOnChange(
@@ -311,7 +309,7 @@
 						if (d.qty === 0) {
 							d.qty = 1;
 						}
-						d.id = data.length;
+						d.id = createNewId();
 						d.unit = p.unit;
 						d.productId = p.id;
 						d.direction = 1;
@@ -412,14 +410,19 @@
 			}
 		}
 	}
-	function discountOnInput(e: CustomEvent<string | number | null>, price: number, hpp: number): void {
-		if(typeof e.detail === 'string') {
+	function discountOnInput(
+		e: CustomEvent<string | number | null>,
+		price: number,
+		hpp: number,
+	): void {
+		if (typeof e.detail === "string") {
 			e.preventDefault();
 			const discount = getNumber(e.detail);
-			if((price - discount) <= hpp) {
+			if (price - discount <= hpp) {
 				timeout = 3_000;
 				notifyTitle = "Maaf";
-				notifySubtitle = "Discount " + formatNumber(discount) + " terlalu besar!";
+				notifySubtitle =
+					"Discount " + formatNumber(discount) + " terlalu besar!";
 				showNotification = true;
 			}
 		}
@@ -444,10 +447,34 @@
 		document.addEventListener("click", clickOutSize);
 	});
 
-	// $: console.log(currentKey);
+	async function totalItemClick(e: MouseEvent) {
+		e.preventDefault();
+		isAddNew = true;
+
+		 setTimeout(() => {
+			if (reform) {
+				currentId = 0;
+				reform.focus();
+			}
+
+			isAddNew = false;
+		}, 100);
+	}
+
+	let selectedRowIds: number[] = [];
 	$: showNotification = timeout !== undefined;
+	$: {
+		items = data.filter((f) => f.id > 0).length;
+	}
 
 
+	async function deleteItems(e: MouseEvent) {
+		const test =  data.filter(f => !selectedRowIds.includes(f.id));
+		data = test;
+		dispatch("stockChanged", data);
+		await tick();
+		selectedRowIds = [];
+	}
 </script>
 
 {#if showNotification}
@@ -475,32 +502,41 @@
 	on:focus={onTablePointerEnter}
 >
 	<DataTable
+		selectable
+		batchSelection
+		batchExpansion
 		rows={data}
 		{headers}
 		nonExpandableRowIds={[0]}
+		nonSelectableRowIds={[0]}
 		expandable
+		bind:selectedRowIds
 		size="short"
 		on:click:row={onRowClick}
 	>
+
+	<Toolbar size="sm">
+		<ToolbarContent>
+			<Button kind="danger" size="small" disabled={selectedRowIds.length==0} icon={Delete} on:click={deleteItems}>Hapus item</Button>
+			<Button icon={InformationSquare} on:click={() =>dispatch("showInfo", null)} disabled={items===0}>Informasi stock</Button>
+			<Button icon={NewTab} on:click={() => {
+				dispatch("createNewStock", null);
+				selectedRowIds = [];
+			}} disabled={items===0}>Buat stock baru</Button>
+			<Button icon={Save} disabled={!isStockValid}>Simpan</Button>
+		</ToolbarContent>
+	</Toolbar>
+
 		<svelte:fragment slot="cell-header" let:header>
-			{#if header.key === "price" || header.key === "qty" || header.key === "discount" || header.key === "subtotal"}
+			{#if header.key === "price" || header.key === "qty" || header.key === "discount" || header.key === "subtotal"|| header.key === "pot" }
 				<div class="cell-right">{header.value}</div>
 			{:else}
 				{header.value}
 			{/if}
 		</svelte:fragment>
 		<svelte:fragment slot="cell" let:row let:cell>
+			<!-- edit mode -->
 			{#if currentId === row["id"]}
-				<!-- <form
-					on:submit={(e) => {
-						e.preventDefault();
-						const i = data.findIndex((f) => f.id === currentId);
-						if (i >= 0) {
-							data.splice(i, 1, currentDetail);
-							data = [...data];
-						}
-					}}
-				> -->
 				{#if cell.key === "barcode"}
 					<TextInput
 						autocomplete="off"
@@ -543,8 +579,22 @@
 						aria-labelledby="btn-101"
 						on:click={() => (currentKey = cell.key)}
 						class="cell-right"
+						class:qty={cell.key === "subtotal"}
+						class:qty-alert={row["qty"] === 0}
 					>
 						{formatNumber(cell.value)}
+					</div>
+				{:else if cell.key === "pot"}
+					<div
+						role="button"
+						tabindex={-1}
+						on:keyup
+						aria-labelledby="btn-105"
+						on:click={() => (currentKey = cell.key)}
+						class:qty-alert={row["qty"] === 0}
+						class="cell-right"
+					>
+						{formatNumber(row["price"] - row["discount"])}
 					</div>
 				{:else}
 					<div
@@ -553,11 +603,20 @@
 						on:keyup
 						aria-labelledby="btn-102"
 						on:click={() => (currentKey = cell.key)}
+						class:qty-alert={row["qty"] === 0}
 					>
 						{cell.value}
 					</div>
 				{/if}
-				<!-- </form> -->
+				<!-- normal mode -->
+				<!-- {:else if row.id === 0}
+				{#if cell.key === "barcode"}
+					Total item: {data.length}
+					{:else if cell.key === "subtotal"}
+					<div class="cell-right">{formatNumber(data.reduce((o,t) => o + t.subtotal, 0))}</div>
+				{:else}
+				<span></span>
+				{/if} -->
 			{:else if cell.key === "price" || cell.key === "hpp" || cell.key === "qty" || cell.key === "discount" || cell.key === "subtotal"}
 				<div
 					role="button"
@@ -566,8 +625,23 @@
 					aria-labelledby="btn-103"
 					on:click={() => (currentKey = cell.key)}
 					class="cell-right"
+					class:qty={cell.key === "qty"}
+					class:subtotal={cell.key === "subtotal"}
+					class:qty-alert={row["qty"] === 0}
 				>
 					{formatNumber(cell.value)}
+				</div>
+			{:else if cell.key === "pot"}
+				<div
+					role="button"
+					tabindex={-1}
+					on:keyup
+					aria-labelledby="btn-105"
+					on:click={() => (currentKey = cell.key)}
+					class:qty-alert={row["qty"] === 0}
+					class="cell-right"
+				>
+					{formatNumber(row["price"] - row["discount"])}
 				</div>
 			{:else}
 				<div
@@ -576,6 +650,7 @@
 					on:keyup
 					aria-labelledby="btn-104"
 					on:click={() => (currentKey = cell.key)}
+					class:qty-alert={row["qty"] === 0}
 				>
 					{cell.value}
 				</div>
@@ -586,12 +661,24 @@
 		</svelte:fragment>
 	</DataTable>
 </div>
+<hr />
+
+<div>
+	<Button
+		size="small"
+		icon={Add}
+		kind="tertiary"
+		on:click={totalItemClick}>Total: {items} item{items > 1 ? "s" : ""}</Button
+	>
+</div>
 
 <datalist id="barcode-list">
 	{#each barcodes as c, i}
 		<option id="list-{i}" value={c.barcode} />
 	{/each}
 </datalist>
+
+<!-- <div>{JSON.stringify(selectedRowIds, null,  4)}</div> -->
 
 <style lang="scss">
 	.cell-right {
@@ -603,13 +690,16 @@
 		// background-color: var(--cds-link-01);
 		// color: var(--cds-ui-01);
 	}
+	:global(.bx--table-column-checkbox) {
+	width: auto;
+	}
 	:global(.bx--table-expand__button) {
 		width: auto;
 		min-height: 16px;
 	}
 	:global(.bx--text-input--sm.cell-edit) {
 		margin: 0;
-		padding: 0 3px;
+		padding: 0 2px;
 		height: auto;
 	}
 	:global(.bx--text-input.input-number) {
@@ -618,5 +708,22 @@
 	:global(.bx--table-header-label) {
 		margin: 0;
 		padding: 0 !important;
+	}
+	.qty {
+		font-weight: 700;
+		color: var(--cds-focus);
+	}
+	.qty-alert {
+		color: var(--cds-text-error);
+		font-weight: 700;
+	}
+
+	.subtotal {
+		font-weight: 700;
+	}
+	hr {
+		height: 1px;
+		border-width: 1px 0 0 0;
+		margin-top: 3px;
 	}
 </style>

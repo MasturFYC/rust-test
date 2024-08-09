@@ -14,6 +14,9 @@ export type iStock = {
 	updatedAt: string;
 	supplierName?: string;
 	warehouseName?: string;
+	isModified?: boolean;
+	isDetailChanged?: boolean;
+	isPayed?: boolean;
 }
 
 

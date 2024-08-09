@@ -85,6 +85,7 @@
     if (empl) {
       data.warehouseId = empl.id;
       data.warehouseName = empl.text;
+			data.isModified = true;
     }
   }
   function on_supplier_changed(
@@ -94,6 +95,7 @@
     if (empl) {
       data.supplierId = empl.id;
       data.supplierName = empl.text;
+			data.isModified = true;
     }
   }
   function on_employee_clear(e: any): void {
@@ -127,21 +129,22 @@
       date = date.set("month", d.getMonth());
       date = date.set("year", d.getFullYear());
       data.createdAt = date.format();
+			data.isModified = true;
     }
   }
-  function onDueDateChange(e: CustomEvent<DatePict>) {
-    e.preventDefault();
-    if (typeof e.detail === "string") {
-    } else {
-      let d = e.detail.selectedDates[0];
-      let date = dayjs();
-      date = date.set("date", d.getDate());
-      date = date.set("month", d.getMonth());
-      date = date.set("year", d.getFullYear());
-      // data.dueAt = date.add(7, "day").format();
-      data.dueAt = date.format();
-    }
-  }
+  // function onDueDateChange(e: CustomEvent<DatePict>) {
+  //   e.preventDefault();
+  //   if (typeof e.detail === "string") {
+  //   } else {
+  //     let d = e.detail.selectedDates[0];
+  //     let date = dayjs();
+  //     date = date.set("date", d.getDate());
+  //     date = date.set("month", d.getMonth());
+  //     date = date.set("year", d.getFullYear());
+  //     // data.dueAt = date.add(7, "day").format();
+  //     data.dueAt = date.format();
+  //   }
+  // }
 
   // function onDpChange(e: CustomEvent<string | number | null>): void {
   //   data.remain = data.total - (data.payment + data.dp);
@@ -149,7 +152,6 @@
   // }
 
   let strDate = dayjs(data.createdAt).format("DD-MM-YYYY");
-  let strDueAt = dayjs(data.dueAt).format("DD-MM-YYYY");
   let strDp = formatNumber(data.dp);
 
   $: if (ref_invoice) {
@@ -158,40 +160,36 @@
 
   $: data.dp = getNumber(strDp);
   $: data.remain = data.total - data.dp + data.payment;
-  $: strRemain = formatNumber(data.remain);
-  $: strTotal = formatNumber(data.total);
 
   // $: data.createdAt = strDate;
   // $: console.log(strDate);
-  $: isDataValid =
-    data.supplierId > 0 &&
-    data.warehouseId > 0 &&
-    data.total > 0 &&
-    data.invoiceId.trim().length > 0;
 </script>
 
 <Form on:submit style="margin: 24px 0 0 0;">
   <Grid noGutter={innerWidth > 720} fullWidth>
     <Row>
-      <Column noGutterRight sm={2} md lg>
+      <Column noGutterRight sm={2} md>
         <DatePicker
           datePickerType="single"
           bind:value={strDate}
           dateFormat="d-m-Y"
           on:change={onDateChange}
-        >
+					>
           <DatePickerInput
-            style="width: 100%;"
+						accesskey="t"
+						style="max-width: 100%;min-width:150px"
             labelText="Tanggal pembelian"
             placeholder="mm/dd/yyyy"
           />
         </DatePicker>
       </Column>
-      <Column noGutter lg sm={2}>
+      <Column noGutter sm={2} md lg>
         <TextInput
+				accesskey="n"
           bind:ref={ref_invoice}
           id="invoice-id"
           labelText="No. faktur"
+					on:change={() => data.isModified = true}
           bind:value={data.invoiceId}
         />
       </Column>
@@ -211,6 +209,7 @@
       <!-- <InputNumber labelText="Total" bind:value={strTotal} readonly /> -->
       <Column noGutter md={2} sm={2}>
         <ComboBox
+					accesskey="s"
           id="supplier-id"
           titleText="Supplier"
           selectedId={data.supplierId}
@@ -227,8 +226,9 @@
           </div>
         </ComboBox>
       </Column>
-      <Column noGutter md={2} sm={2}>
+      <Column noGutterLeft md={2} sm={2}>
         <ComboBox
+				accesskey="g"
           id="warehouse-id"
           titleText="Penjaga gudang"
           selectedId={data.warehouseId}
@@ -258,14 +258,6 @@
           readonly
         /> -->
       <!-- </Column> -->
-      <Column noGutterLeft style="align-content: end;" sm={2} md={1}>
-        <Button
-          size="field"
-          disabled={!isDataValid}
-          icon={Save}
-          style="width: 100%;">Save</Button
-        >
-      </Column>
     </Row>
   </Grid>
 </Form>

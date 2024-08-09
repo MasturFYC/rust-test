@@ -7,45 +7,45 @@
 
 <Grid noGutter class="font-small">
   <Row noGutter>
-    <Column>id:</Column>
+    <Column md={1}>id:</Column>
     <Column>{product.id}</Column>
-    <Column>Stock:</Column>
+    <Column md={1}>Stock:</Column>
     <Column><strong>{product.unitInStock} {product.unit}</strong></Column>
   </Row>
   <Row noGutter>
-    <Column>Barcode:</Column>
+    <Column md={1}>Barcode:</Column>
     <Column>{product.barcode}</Column>
-    <Column>HPP:</Column>
+    <Column md={1}>HPP:</Column>
     <Column>{formatNumber(product.hpp)}</Column>
   </Row>
   <Row noGutter>
-    <Column>Nama barang:</Column>
+    <Column md={1}>Nama barang:</Column>
     <Column>{product.name}</Column>
-    <Column>Margin:</Column>
+    <Column md={1}>Margin:</Column>
     <Column>{formatNumber(product.margin, 4)}%</Column>
   </Row>
   <Row noGutter>
-    <Column>Variant:</Column>
+    <Column md={1}>Variant:</Column>
     <Column>{product.variantName ?? ""}</Column>
-    <Column>Harga:</Column>
+    <Column md={1}>Harga:</Column>
     <Column>{formatNumber(product.price)}</Column>
   </Row>
   <Row noGutter>
-    <Column>Kategori:</Column>
+    <Column md={1}>Kategori:</Column>
     <Column>{product.categoryName}</Column>
-    <Column>Berat:</Column>
+    <Column md={1}>Berat:</Column>
     <Column>{product.heavy} kg</Column>
   </Row>
   <Row noGutter>
-    <Column>Supplier:</Column>
+    <Column md={1}>Supplier:</Column>
     <Column>{product.supplierName}</Column>
-    <Column>Deskripsi:</Column>
+    <Column md={1}>Deskripsi:</Column>
     <Column>{product.descriptions ?? "-"}</Column>
   </Row>
 </Grid>
 
 <style lang="scss">
-  :global(.font-small .bx--col) {
+  :global(.font-small .bx--col, .font-small .bx--col-md-1) {
     font-size: 12px;
   }
 </style>
