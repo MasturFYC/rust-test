@@ -13,6 +13,7 @@ pub fn stock_scope(conf: &mut web::ServiceConfig) {
 	let scope = web::scope("/api/stocks")
 		.wrap(RequireAuth::allowed_roles(vec![UserRole::Admin]))
 		.service(get_stock)
+		.service(get_stock_with_details)
 		.service(get_stocks)
 		// .service(get_relations_by_type)
 		.service(create)
@@ -49,6 +50,29 @@ async fn get_stock(path: web::Path<i32>, app_state: web::Data<AppState>) -> impl
 				.json(serde_json::json!({"status": "fail","message": message}));
 		}
 	}
+}
+
+#[get("/details/{id}")]
+async fn get_stock_with_details(
+	path: web::Path<i32>,
+	app_state: web::Data<AppState>,
+) -> Result<HttpResponse, HttpError> {
+	let stock_id = path.into_inner();
+	let result = app_state
+		.db_client
+		.get_stock_with_details(stock_id)
+		.await
+		.map_err(|e| HttpError::server_error(e.to_string()))?;
+
+	let (stock, details) = result;
+
+	let response = json!(
+		{"status": "success",
+		"stock": stock,
+		"details": details
+	});
+
+	return Ok(HttpResponse::Ok().json(response));
 }
 
 #[get("")]
@@ -167,13 +191,13 @@ async fn update(
 	let query_result = app_state.db_client.get_stock(stock_id).await;
 
 	if query_result.is_err() {
-		return HttpResponse::BadRequest().json(json!({"status": "fail","message": "Bad request"}));
+		return HttpResponse::BadRequest().json(json!({"status": "fail-1","message": "Bad request"}));
 	}
 	// let old = ; //_or(None);
 
 	if query_result.unwrap().is_none() {
 		let message = format!("Stock with ID: {} not found", stock_id);
-		return HttpResponse::NotFound().json(json!({"status": "fail","message": message}));
+		return HttpResponse::NotFound().json(json!({"status": "fail-2","message": message}));
 	}
 
 	let data = body.into_inner();
@@ -195,21 +219,24 @@ async fn update(
 		Err(err) => {
 			let message = format!("Error: {:?}", err);
 			return HttpResponse::InternalServerError()
-				.json(json!({"status": "error","message": message}));
+				.json(json!({"status": "error1","message": message}));
 		}
 	}
 }
 
-#[delete("/{id}")]
-async fn delete(path: web::Path<i32>, app_state: web::Data<AppState>) -> impl Responder {
-	let stock_id = path.into_inner();
+#[delete("")]
+async fn delete(
+	body: web::Json<Vec<i32>>,
+	// path: web::Path<Vec<i32>>, 
+	app_state: web::Data<AppState>) -> impl Responder {
+	let ids = body.into_inner();
 
-	let query_result = app_state.db_client.stock_delete(stock_id).await;
+	let query_result = app_state.db_client.stock_delete(ids).await;
 
 	match query_result {
 		Ok(rows_affected) => {
 			if rows_affected == 0 {
-				let message = format!("Stock with ID: {} not found", stock_id);
+				let message = "Stock with ID: those ids  not found".to_string();
 
 				return HttpResponse::NotFound().json(json!({
 					"status": "fail",

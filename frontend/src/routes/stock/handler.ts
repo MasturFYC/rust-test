@@ -7,15 +7,22 @@ import {
 
 export async function getStockById(
   id: number,
-): Promise<{ status: string; data: iStock }> {
-  const url = `${baseURL}/stocks/${id}`;
+	defaultValue?: {stock: iStock, details: iStockDetail[]}
+): Promise<{ status: string; stock: iStock, details: iStockDetail[] }> {
+
+	if(id === 0) {
+		return await Promise.resolve({...defaultValue!,status: 'success'});
+	}
+
+  const url = `${baseURL}/stocks/details/${id}`;
   const options = {
     method: "GET",
     credentials: credential_include,
   };
   const request = new Request(url, options);
   const result = await fetch(request);
-  return await result.json();
+	let json = await result.json();
+  return json;
 }
 
 export async function getStocks(
@@ -65,4 +72,58 @@ export async function postCreateStock(
   const response = await fetch(request);
   const result = await response.json();
   return result;
+}
+
+export async function postUpdateStock(
+	id: number,
+  stock: iStock,
+  details: iStockDetail[],
+): Promise<{ status: string; stock: iStock; details: iStockDetail }> {
+	// console.log(id, stock,details);
+  const url = `${baseURL}/stocks/${id}`;
+  const json = JSON.stringify({
+    stock: stock,
+    details: details,
+  });
+
+  const options = {
+    headers: {
+      "content-type": "application/json",
+    },
+    body: json,
+    method: "PUT",
+    credentials: credential_include,
+  };
+  const request = new Request(url, options);
+  const response = await fetch(request);
+  const result = await response.json();
+  return result;
+}
+
+
+export async function postDeleteStock(ids: number[]): Promise<{ status: string; data: number }> {
+	// console.log(id, stock,details);
+  const url = `${baseURL}/stocks`;
+  const json = JSON.stringify(ids);
+
+  const options = {
+    headers: {
+      "content-type": "application/json",
+    },
+    body: json,
+    method: "DELETE",
+    credentials: credential_include,
+  };
+  const request = new Request(url, options);
+  const response = await fetch(request);
+  const result = await response.json();
+  return result;
+}
+
+export function toNumber(v: string | number | undefined): number {
+	if(v == undefined || v === null) return 0;
+	if(typeof v === "string") {
+		return +v;
+	}
+	return v;
 }

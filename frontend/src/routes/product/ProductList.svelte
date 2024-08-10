@@ -67,14 +67,14 @@
 
 <DataTable
   expandable
-  size="compact"
+  size="medium"
   title="Data Barang"
   description="Tabel data barang / produk"
   headers={get_headers()}
   rows={data}
 >
   <svelte:fragment slot="cell-header" let:header>
-    {#if header.key === "price" || header.key === "hpp" || header.key === "unitInStock"}
+    {#if header.key === "price" || header.key === "hpp" || header.key === "unitInStock"|| header.key === "margin"}
       <div class="cell-right">{header.value}</div>
     {:else}
       {header.value}
@@ -86,12 +86,13 @@
       <Button
         tooltipPosition="left"
         tooltipAlignment="end"
-        size="field"
+        size="small"
         kind="ghost"
         iconDescription="Edit"
         icon={Edit}
         on:click={() => edit_product(row.id)}
       />
+			<!-- <div></div> -->
     {:else if cell.key === "relationType"}
       <div style="cell-right">{cell.value.join(", ")}</div>
     {:else if cell.key === "hpp" || cell.key === "price"}
@@ -119,6 +120,7 @@
         type="inline"
         light={cat_light}
         size="sm"
+				style="border-bottom: none"
         class={"supplier"}
         placeholder="filter by category"
         items={categories}
@@ -134,6 +136,7 @@
       <ComboBox
         type="inline"
         light={sup_light}
+				style="border-bottom: none"
         class={"supplier"}
         size="sm"
         placeholder="filter by supplier"
@@ -170,14 +173,4 @@
 		background-color: #000;
 		 }
 		 */
-
-  :global(.bx--list-box__field .bx--text-input.supplier) {
-    border-bottom: none;
-    // background-color: var(--cds-link-01);
-    // color: var(--cds-ui-01);
-  }
-  :global(.bx--table-expand__button) {
-    width: auto;
-    min-height: 16px;
-  }
 </style>

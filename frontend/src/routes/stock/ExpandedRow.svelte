@@ -11,6 +11,8 @@
     data: iProduct;
   };
   export let productId = 0;
+	export let oldQty: number = 0;
+	export let newQty: number = 0;
 
   async function fetchProduct() {
     const url = `${baseURL}/products/${productId}`;
@@ -34,6 +36,7 @@
   $: {
     query.setEnabled(browser);
   }
+
 </script>
 
 {#if $query.isLoading}
@@ -41,5 +44,5 @@
 {:else if $query.isError}
   <code><pre>{$query.error.message}</pre></code>
 {:else if $query.isSuccess && $query.data.data}
-  <ProductInfo product={$query.data.data} />
+  <ProductInfo product={$query.data.data} {oldQty} {newQty} />
 {/if}

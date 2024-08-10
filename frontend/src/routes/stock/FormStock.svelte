@@ -13,10 +13,10 @@
   } from "carbon-components-svelte";
   import type { ComboBoxItem } from "carbon-components-svelte/types/ComboBox/ComboBox.svelte";
   import dayjs from "dayjs";
-  import InputNumber from "$lib/components/NumberInput.svelte";
   import { formatNumber, getNumber } from "$lib/components/NumberFormat";
   // import Icon from "$lib/components/Icon.svelte";
   import { Save } from "carbon-icons-svelte";
+	import { toNumber } from "./handler";
   // import { createEventDispatcher } from "svelte";
 
   // const dispatch = createEventDispatcher();
@@ -152,14 +152,14 @@
   // }
 
   let strDate = dayjs(data.createdAt).format("DD-MM-YYYY");
-  let strDp = formatNumber(data.dp);
+  let strDp = formatNumber(toNumber(data.dp));
 
   $: if (ref_invoice) {
     ref_invoice.focus();
   }
 
   $: data.dp = getNumber(strDp);
-  $: data.remain = data.total - data.dp + data.payment;
+  $: data.remain = toNumber(data.total) - toNumber(data.dp) + toNumber(data.payment);
 
   // $: data.createdAt = strDate;
   // $: console.log(strDate);

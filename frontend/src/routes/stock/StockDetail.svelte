@@ -26,11 +26,9 @@
     InformationSquare,
     NewTab,
     Save,
-    CloseFilled,
-    SkipBack,
-    SendToBack,
     Logout,
   } from "carbon-icons-svelte";
+	import { toNumber } from "./handler";
 
   const dispatch = createEventDispatcher();
 
@@ -78,6 +76,7 @@
     price: 0,
     discount: 0,
     subtotal: 0,
+		oldStock:0
   };
 
   function onRowClick(e: CustomEvent<DataTableRow>) {
@@ -311,7 +310,7 @@
 
         if (i >= 0) {
           let d = data[i];
-          d.price = p.price;
+          d.price = toNumber(p.price);
 
           if (found) {
             d.qty += 1;
@@ -325,9 +324,11 @@
             d.direction = 1;
             d.name = p.name;
             d.barcode = p.barcode;
-            d.hpp = p.hpp;
+            d.hpp = toNumber(p.hpp);
+						d.oldStock = p.oldStock ? 0 : toNumber(p.oldStock);
+						// console.log(p.oldStock);
           }
-          d.subtotal = (p.price - d.discount) * d.qty;
+          d.subtotal = (toNumber(p.price) - toNumber(d.discount)) * toNumber(d.qty);
 
           updateCurrentDetail(d);
 
@@ -387,7 +388,7 @@
         const c = {
           ...d,
           qty: qty,
-          subtotal: (d.price - d.discount) * qty,
+          subtotal: (toNumber(d.price) - toNumber(d.discount)) * qty,
         };
         updateCurrentDetail(c);
         isDirty = true;
@@ -404,7 +405,7 @@
       if (i >= 0) {
         const discount = getNumber(e.detail);
         const d = data[i];
-        if (d.price - discount <= d.hpp) {
+        if (toNumber(d.price) - discount <= toNumber(d.hpp)) {
           // showNotification = true;
           // timeout = 3_000;
           // notifySubtitle = "Discount " + e.detail + " terlalu besar!";
@@ -413,7 +414,7 @@
         const c = {
           ...d,
           discount: discount,
-          subtotal: (d.price - discount) * d.qty,
+          subtotal: (toNumber(d.price) - discount) * toNumber(d.qty),
         };
         updateCurrentDetail(c);
         isDirty = true;
@@ -528,7 +529,7 @@
     nonSelectableRowIds={[0]}
     expandable
     bind:selectedRowIds
-    size="short"
+    size="medium"
     on:click:row={onRowClick}
   >
     <Toolbar size="sm">
@@ -548,7 +549,7 @@
         <Button
           icon={NewTab}
           on:click={() => {
-            dispatch("createNewStock", null);
+            dispatch("createNewStock", 0);
             selectedRowIds = [];
           }}
           disabled={items === 0}>Buat stock baru</Button
@@ -604,7 +605,7 @@
             size="sm"
             classes="cell-edit input-number"
             id="discount-id"
-            on:input={(e) => discountOnInput(e, row["price"], row["hpp"])}
+            on:input={(e) => discountOnInput(e, toNumber(row["price"]), toNumber(row["hpp"]))}
             on:change={(e) => discountOnChange(e, row.id)}
             on:focus={() => (currentKey = cell.key)}
             on:keydown={(e) => discountOnKeyDown(e, row.id)}
@@ -618,7 +619,7 @@
             on:click={() => (currentKey = cell.key)}
             class="cell-right"
             class:qty={cell.key === "subtotal"}
-            class:qty-alert={row["qty"] === 0}
+            class:qty-alert={toNumber(row["qty"]) === 0}
           >
             {formatNumber(cell.value)}
           </div>
@@ -629,10 +630,10 @@
             on:keyup
             aria-labelledby="btn-105"
             on:click={() => (currentKey = cell.key)}
-            class:qty-alert={row["qty"] === 0}
+            class:qty-alert={toNumber(row["qty"]) === 0}
             class="cell-right"
           >
-            {formatNumber(row["price"] - row["discount"])}
+            {formatNumber(toNumber(row["price"]) - toNumber(row["discount"]))}
           </div>
         {:else}
           <div
@@ -641,7 +642,7 @@
             on:keyup
             aria-labelledby="btn-102"
             on:click={() => (currentKey = cell.key)}
-            class:qty-alert={row["qty"] === 0}
+            class:qty-alert={toNumber(row["qty"]) === 0}
           >
             {cell.value}
           </div>
@@ -665,7 +666,7 @@
           class="cell-right"
           class:qty={cell.key === "qty"}
           class:subtotal={cell.key === "subtotal"}
-          class:qty-alert={row["qty"] === 0}
+          class:qty-alert={toNumber(row["qty"]) === 0}
         >
           {formatNumber(cell.value)}
         </div>
@@ -676,10 +677,10 @@
           on:keyup
           aria-labelledby="btn-105"
           on:click={() => (currentKey = cell.key)}
-          class:qty-alert={row["qty"] === 0}
+          class:qty-alert={toNumber(row["qty"]) === 0}
           class="cell-right"
         >
-          {formatNumber(row["price"] - row["discount"])}
+          {formatNumber(toNumber(row["price"]) - toNumber(row["discount"]))}
         </div>
       {:else}
         <div
@@ -688,14 +689,14 @@
           on:keyup
           aria-labelledby="btn-104"
           on:click={() => (currentKey = cell.key)}
-          class:qty-alert={row["qty"] === 0}
+          class:qty-alert={toNumber(row["qty"]) === 0}
         >
           {cell.value}
         </div>
       {/if}
     </svelte:fragment>
     <svelte:fragment slot="expanded-row" let:row>
-      <ExpandedRow productId={row["productId"]} />
+      <ExpandedRow productId={row["productId"]} newQty={toNumber(row["qty"])} oldQty={toNumber(row["oldStock"])} />
     </svelte:fragment>
   </DataTable>
 </div>
