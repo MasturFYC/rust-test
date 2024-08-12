@@ -13,21 +13,23 @@
   import dayjs from "dayjs";
   import { createEventDispatcher, tick } from "svelte";
   import StockInfo from "./StockInfo.svelte";
-	import {isStockUpdating, isStockLoading} from './store';
+  import { isStockUpdating, isStockLoading } from "./store";
 
   export let data: iStock[] = [];
   // export let innerWidth = 720;
   export let suppliers: iRelationProp[] = [];
   export let employees: iRelationProp[] = [];
 
-  let txt = "";
+  export let txt = "";
   let sup_light = false;
   let ware_light = false;
   let selectedRowIds: number[] = [];
+  export let seletedSupplierId = 0;
+  export let selectedWarehouseId = 0;
 
   const dispatch = createEventDispatcher();
   const headers = [
-    { key: "id", value: "ID#", width: "80px" },
+    { key: "id", value: "ID#", width: "12%" },
     { key: "createdAt", value: "Tanggal", width: "120px" },
     { key: "invoiceId", value: "No. Faktur", width: "auto" },
     { key: "supplierName", value: "Supplier", width: "auto" },
@@ -37,8 +39,8 @@
   ];
 
   async function editStock(id: number) {
-		isStockLoading.set(true);
-		await tick();
+    isStockLoading.set(true);
+    await tick();
 
     dispatch("edit", id);
   }
@@ -52,8 +54,8 @@
   }
 
   async function deleteItems(e: MouseEvent) {
-		isStockUpdating.set(true);
-		// await tick();
+    isStockUpdating.set(true);
+    // await tick();
     dispatch("deleteStocks", selectedRowIds);
     await tick();
     selectedRowIds = [];
@@ -91,8 +93,8 @@
         size="small"
         kind="ghost"
         iconDescription="Edit"
-				disabled={$isStockUpdating || $isStockLoading}
-				skeleton={$isStockLoading}
+        disabled={$isStockUpdating || $isStockLoading}
+        skeleton={$isStockLoading}
         icon={Edit}
         on:click={() => editStock(row.id)}
       />
@@ -118,6 +120,7 @@
         style="width: 165px; border-bottom: none;"
         class={"supplier"}
         placeholder="supplier"
+        selectedId={seletedSupplierId}
         items={suppliers.map((m) => ({ id: m.id, text: m.text }))}
         on:select={(e) => {
           dispatch("supplierChange", e.detail.selectedId);
@@ -133,6 +136,7 @@
         light={ware_light}
         class={"supplier"}
         size="sm"
+        selectedId={selectedWarehouseId}
         style="width: 165px; border-bottom: none;"
         placeholder="penjaga gudang"
         items={employees.map((m) => ({ id: m.id, text: m.text }))}
@@ -149,11 +153,16 @@
         kind="danger"
         size="small"
         disabled={selectedRowIds.length == 0 || $isStockLoading}
-				skeleton={$isStockUpdating}
+        skeleton={$isStockUpdating}
         icon={Delete}
         on:click={deleteItems}>Hapus stock</Button
       >
-      <Button size="small" disabled={$isStockUpdating || $isStockLoading} on:click={() => editStock(0)} icon={NewTab}>Buat baru</Button>
+      <Button
+        size="small"
+        disabled={$isStockUpdating || $isStockLoading}
+        on:click={() => editStock(0)}
+        icon={NewTab}>Buat baru</Button
+      >
     </ToolbarContent>
   </Toolbar>
 </DataTable>

@@ -8,7 +8,7 @@ use resdb::{
 	model::UserRole,
 	stock::{
 		db::StockExt,
-		model::{RequestQueryStock, RequestStock},
+		model::{RequestQueryStock, RequestStock, Stock},
 	},
 };
 
@@ -20,6 +20,7 @@ pub fn stock_scope(conf: &mut web::ServiceConfig) {
 		.service(get_stocks)
 		// .service(get_relations_by_type)
 		.service(create)
+		.service(update_only_stock)
 		.service(update)
 		.service(delete);
 
@@ -112,7 +113,7 @@ async fn get_stocks(
 	let stocks = v.0;
 	// count all stocks in database
 	let length = v.1;
-	let lim =  limit as i64;
+	let lim = limit as i64;
 
 	let json_response = json!({
 		"status": "success",
@@ -216,6 +217,46 @@ async fn update(
 			"status": "success",
 			"id": result.0,
 			"length": result.1
+			});
+
+			return HttpResponse::Ok().json(stock_response);
+		}
+		Err(err) => {
+			let message = format!("Error: {:?}", err);
+			return HttpResponse::InternalServerError()
+				.json(json!({"status": "error1","message": message}));
+		}
+	}
+}
+#[put("/update-only-stock/{id}")]
+async fn update_only_stock(
+	path: web::Path<i32>,
+	body: web::Json<Stock>,
+	app_state: web::Data<AppState>,
+) -> impl Responder {
+	let stock_id = path.into_inner();
+
+	let query_result = app_state.db_client.get_stock(stock_id).await;
+
+	if query_result.is_err() {
+		return HttpResponse::BadRequest()
+			.json(json!({"status": "fail-1","message": "Bad request"}));
+	}
+	// let old = ; //_or(None);
+
+	if query_result.unwrap().is_none() {
+		let message = format!("Stock with ID: {} not found", stock_id);
+		return HttpResponse::NotFound().json(json!({"status": "fail-2","message": message}));
+	}
+
+	let data = body.into_inner();
+	let query_result = app_state.db_client.stock_update_only(stock_id, data).await;
+
+	match query_result {
+		Ok(result) => {
+			let stock_response = json!({
+			"status": "success",
+			"id": result,
 			});
 
 			return HttpResponse::Ok().json(stock_response);

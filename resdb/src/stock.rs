@@ -190,6 +190,10 @@ pub mod db {
 			S: Into<i32> + Send,
 			O: Into<Stock> + Send,
 			T: Into<Vec<StockDetail>> + Send;
+		async fn stock_update_only<S, O>(&self, id: S, data: O) -> Result<i32, sqlx::Error>
+		where
+			S: Into<i32> + Send,
+			O: Into<Stock> + Send;
 		async fn stock_delete(&self, ids: Vec<i32>) -> Result<u64, sqlx::Error>;
 	}
 
@@ -568,7 +572,7 @@ pub mod db {
 			let o = OrderBuilder::new(
 				OrderType::Stock,
 				dto.updated_by,
-				dto.total,
+				total.to_owned(),
 				payment.to_owned(),
 				true,
 				dto.created_at,
@@ -768,6 +772,151 @@ pub mod db {
 			tx.commit().await?;
 
 			Ok((pid, detail_len))
+		}
+
+		async fn stock_update_only<S, O>(&self, id: S, data: O) -> Result<i32, sqlx::Error>
+		where
+			S: Into<i32> + Send,
+			O: Into<Stock> + Send,
+		{
+			let pid: i32 = id.try_into().unwrap();
+			let dto: Stock = data.try_into().unwrap();
+
+			let total = dto.total.to_owned();
+
+			let mut conn: sqlx::pool::PoolConnection<sqlx::Postgres> = self.pool.acquire().await?;
+			let mut tx: sqlx::Transaction<sqlx::Postgres> = conn.begin().await?;
+
+			let test = sqlx::query_scalar(
+				r#"
+                SELECT
+                    COALESCE(SUM(amount), 0)
+                FROM
+                    order_payments
+                WHERE
+                   order_id = $1
+            "#,
+			)
+			.bind(pid)
+			.fetch_optional(&mut *tx)
+			.await?;
+
+			let payment = test.unwrap_or(BigDecimal::from(0));
+
+			let o = OrderBuilder::new(
+				OrderType::Stock,
+				dto.updated_by,
+				total.to_owned(),
+				payment.to_owned(),
+				true,
+				dto.created_at,
+				Some(dto.invoice_id),
+				dto.customer_id,
+				dto.sales_id,
+			)
+			.with_dp(dto.dp)
+			.with_due_range(dto.due_range.unwrap_or(0))
+			.build();
+
+			let _ = sqlx::query_file!(
+				"sql/stock-update.sql",
+				pid,
+				o.customer_id,
+				o.sales_id,
+				o.payment_type.unwrap() as PaymentType,
+				o.updated_by,
+				o.total,
+				o.dp,
+				o.payment,
+				o.remain,
+				o.invoice_id,
+				o.due_at,
+				o.created_at
+			)
+			.execute(&mut *tx)
+			.await?;
+
+			let _ = sqlx::query!(
+				r#"
+            UPDATE
+                ledgers
+            SET
+                relation_id = $2,
+                descriptions = $3,
+                updated_by = $4,
+                updated_at = $5
+            WHERE
+                id = $1
+            "#,
+				pid,
+				o.customer_id,
+				format!(
+					"Stock {} by {}",
+					dto.supplier_name.to_owned().unwrap_or("".to_string()),
+					dto.warehouse_name.to_owned().unwrap_or("".to_string())
+				),
+				o.updated_by.to_owned(),
+				Utc::now()
+			)
+			.execute(&mut *tx)
+			.await?;
+
+			let _ = sqlx::query!(
+				r#"
+            DELETE
+            FROM
+                ledger_details
+            WHERE
+                ledger_id = $1
+            "#,
+				pid
+			)
+			.execute(&mut *tx)
+			.await?;
+
+			let (ledger_details, len) = LedgerUtil::from_stock(&total, &o.dp, pid, pid);
+
+			let mut i = 0;
+
+			loop {
+				let d = ledger_details.get(i).unwrap();
+
+				let _ = sqlx::query!(
+					r#"
+                INSERT INTO
+                    ledger_details (
+                        ledger_id,
+                        detail_id,
+                        account_id,
+                        descriptions,
+                        amount,
+                        direction,
+                        ref_id
+                     )
+                VALUES
+                    ($1, $2, $3, $4, $5, $6, $7)
+                "#,
+					d.ledger_id,
+					d.detail_id,
+					d.account_id,
+					d.descriptions,
+					d.amount,
+					d.direction,
+					d.ref_id,
+				)
+				.execute(&mut *tx)
+				.await?;
+
+				i = i.checked_add(1).unwrap();
+
+				if i == len {
+					break;
+				}
+			}
+
+			tx.commit().await?;
+
+			Ok(pid)
 		}
 
 		async fn stock_delete(&self, ids: Vec<i32>) -> Result<u64, sqlx::Error> {

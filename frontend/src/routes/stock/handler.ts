@@ -98,6 +98,28 @@ export async function postUpdateStock(
   return result;
 }
 
+export async function postUpdateOnlyStock(
+  id: number,
+  stock: iStock,
+): Promise<{ status: string; id: number; length: number }> {
+  // console.log(id, stock,details);
+  const url = `${baseURL}/stocks/update-only-stock/${id}`;
+  const json = JSON.stringify(stock);
+
+  const options = {
+    headers: {
+      "content-type": "application/json",
+    },
+    body: json,
+    method: "PUT",
+    credentials: credential_include,
+  };
+  const request = new Request(url, options);
+  const response = await fetch(request);
+  const result = await response.json();
+  return result;
+}
+
 export async function postDeleteStock(
   ids: number[],
 ): Promise<{ status: string; data: number }> {
