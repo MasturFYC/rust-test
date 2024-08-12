@@ -148,12 +148,12 @@ async fn create(
 
 	match query_result {
 		Ok(o) => {
-			let stock = o.0;
-			let details = o.1;
+			// let id = o.0;
+			// let length = o.1;
 			let response = json!({
 				"status": "success",
-				"stock" : stock,
-				"details" : details
+				"id" : o.0,
+				"length" : o.1
 			});
 
 			// println!("{:?}", v);
@@ -191,7 +191,8 @@ async fn update(
 	let query_result = app_state.db_client.get_stock(stock_id).await;
 
 	if query_result.is_err() {
-		return HttpResponse::BadRequest().json(json!({"status": "fail-1","message": "Bad request"}));
+		return HttpResponse::BadRequest()
+			.json(json!({"status": "fail-1","message": "Bad request"}));
 	}
 	// let old = ; //_or(None);
 
@@ -207,11 +208,11 @@ async fn update(
 		.await;
 
 	match query_result {
-		Ok(stock) => {
+		Ok(result) => {
 			let stock_response = json!({
 			"status": "success",
-			"stock": stock.0,
-			"details": stock.1
+			"id": result.0,
+			"length": result.1
 			});
 
 			return HttpResponse::Ok().json(stock_response);
@@ -227,8 +228,9 @@ async fn update(
 #[delete("")]
 async fn delete(
 	body: web::Json<Vec<i32>>,
-	// path: web::Path<Vec<i32>>, 
-	app_state: web::Data<AppState>) -> impl Responder {
+	// path: web::Path<Vec<i32>>,
+	app_state: web::Data<AppState>,
+) -> impl Responder {
 	let ids = body.into_inner();
 
 	let query_result = app_state.db_client.stock_delete(ids).await;

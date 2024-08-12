@@ -12,7 +12,8 @@ SELECT o.id,
    o.created_at,
    o.updated_at,
    c.name AS supplier_name,
-   s.name AS warehouse_name
+   s.name AS warehouse_name,
+   o.is_protected
 FROM orders AS o
    INNER JOIN relations AS c ON c.id = o.customer_id
    INNER JOIN relations AS s ON s.id = o.sales_id

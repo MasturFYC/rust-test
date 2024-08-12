@@ -318,14 +318,14 @@ impl LedgerUtil {
 				.with_account_id(Coa::Cash)
 				.with_direction(direction)
 				.with_amount(total.to_owned())
-				.with_descriptions("Cash payment")
+				.with_descriptions("Cash / DP")
 				.build();
 
 			details.push(detail);
 		} else {
 			// sisa pembayaran
 			i += 1;
-			direction = 1;
+			direction = -1;
 
 			let detail = LedgerDetailBuilder::default()
 				.with_ref_id(ref_id)
@@ -341,8 +341,9 @@ impl LedgerUtil {
 
 			// jika ada pembayaran
 			if dp.gt(&pass) {
-				i += -1;
-				direction = 1;
+				println!("============DP============");
+				i += 1;
+				direction = -1;
 				let detail = LedgerDetailBuilder::default()
 					.with_ref_id(ref_id)
 					.with_ledger_id(ledger_id)
@@ -350,7 +351,7 @@ impl LedgerUtil {
 					.with_account_id(Coa::Cash)
 					.with_direction(direction)
 					.with_amount(dp.to_owned())
-					.with_descriptions("Cash DP")
+					.with_descriptions("Cash / DP")
 					.build();
 
 				details.push(detail);

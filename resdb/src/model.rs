@@ -642,23 +642,18 @@ impl Direction for i16 {
 
 #[derive(Copy, Clone)]
 pub enum Coa {
-	/// 106 - persediaan barang
-	Inventory = 0x6A,
-
-	/// 521 - biaya beli barang
-	GoodCost = 0x209,
-
-	/// 421 - penjualan barang
-	Revenue = 0x1A5,
-
-	/// 111 - piutang penjualan
-	Loan = 0x6F,
-
 	/// 101 - kas
 	Cash = 0x65,
-
+	/// 106 - persediaan barang
+	Inventory = 0x6A,
+	/// 111 - piutang penjualan
+	Loan = 0x6F,
 	/// 204 - Utang dagang
 	AccountPayable = 0xCC,
+	/// 421 - penjualan barang
+	Revenue = 0x1A5,
+	/// 521 - biaya beli barang
+	GoodCost = 0x209,
 }
 
 impl From<Coa> for i16 {

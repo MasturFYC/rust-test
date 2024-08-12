@@ -14,16 +14,26 @@
   import type { ComboBoxItem } from "carbon-components-svelte/types/ComboBox/ComboBox.svelte";
   import dayjs from "dayjs";
   import { formatNumber, getNumber } from "$lib/components/NumberFormat";
-  // import Icon from "$lib/components/Icon.svelte";
-  import { Save } from "carbon-icons-svelte";
-	import { toNumber } from "./handler";
-  // import { createEventDispatcher } from "svelte";
+  import { stock } from "./store";
+  import { toNumber } from "./handler";
 
   // const dispatch = createEventDispatcher();
-  export let data: iStock;
   export let suppliers: iRelationProp[] = [];
   export let employees: iRelationProp[] = [];
   export let innerWidth = 0;
+
+  type DatePict =
+    | string
+    | {
+        selectedDates: [dateFrom: Date, dateTo?: Date];
+        dateStr:
+          | string
+          | {
+              from: string;
+              to: string;
+            };
+      };
+
   let ref_invoice: HTMLInputElement;
 
   function get_suppliers() {
@@ -83,41 +93,35 @@
   ): void {
     const empl = employees.filter((f) => f.id === e.detail.selectedId)[0];
     if (empl) {
-      data.warehouseId = empl.id;
-      data.warehouseName = empl.text;
-      data.isModified = true;
+      stock.update((s) => ({
+        ...s,
+        warehouseId: empl.id,
+        warehouseName: empl.text,
+        isModified: true,
+      }));
     }
   }
+
   function on_supplier_changed(
     e: CustomEvent<{ selectedId: any; selectedItem: ComboBoxItem }>,
   ): void {
     const empl = suppliers.filter((f) => f.id === e.detail.selectedId)[0];
     if (empl) {
-      data.supplierId = empl.id;
-      data.supplierName = empl.text;
-      data.isModified = true;
+      stock.update((s) => ({
+        ...s,
+        supplierId: empl.id,
+        supplierName: empl.text,
+        isModified: true,
+      }));
     }
   }
   function on_employee_clear(e: any): void {
-    data.warehouseId = 0;
-    data.warehouseName = undefined;
-  }
-  function on_supplier_clear(e: any): void {
-    data.supplierId = 0;
-    data.supplierName = undefined;
+    stock.update((s) => ({ ...s, warehouseId: 0, warehouseName: undefined }));
   }
 
-  type DatePict =
-    | string
-    | {
-        selectedDates: [dateFrom: Date, dateTo?: Date];
-        dateStr:
-          | string
-          | {
-              from: string;
-              to: string;
-            };
-      };
+  function on_supplier_clear(e: any): void {
+    stock.update((s) => ({ ...s, supplierId: 0, supplierName: undefined }));
+  }
 
   function onDateChange(e: CustomEvent<DatePict>) {
     e.preventDefault();
@@ -128,41 +132,30 @@
       date = date.set("date", d.getDate());
       date = date.set("month", d.getMonth());
       date = date.set("year", d.getFullYear());
-      data.createdAt = date.format();
-      data.isModified = true;
+      stock.update((s) => ({
+        ...s,
+        createdAt: date.format(),
+        isModified: true,
+      }));
     }
   }
-  // function onDueDateChange(e: CustomEvent<DatePict>) {
-  //   e.preventDefault();
-  //   if (typeof e.detail === "string") {
-  //   } else {
-  //     let d = e.detail.selectedDates[0];
-  //     let date = dayjs();
-  //     date = date.set("date", d.getDate());
-  //     date = date.set("month", d.getMonth());
-  //     date = date.set("year", d.getFullYear());
-  //     // data.dueAt = date.add(7, "day").format();
-  //     data.dueAt = date.format();
-  //   }
-  // }
 
-  // function onDpChange(e: CustomEvent<string | number | null>): void {
-  //   data.remain = data.total - (data.payment + data.dp);
-  // 	dispatch("change", data.dp)
-  // }
-
-  let strDate = dayjs(data.createdAt).format("DD-MM-YYYY");
-  let strDp = formatNumber(toNumber(data.dp));
+  let strDate = dayjs($stock.createdAt).format("DD-MM-YYYY");
+  let strDp = formatNumber(toNumber($stock.dp));
 
   $: if (ref_invoice) {
     ref_invoice.focus();
   }
 
-  $: data.dp = getNumber(strDp);
-  $: data.remain = toNumber(data.total) - toNumber(data.dp) + toNumber(data.payment);
-
-  // $: data.createdAt = strDate;
-  // $: console.log(strDate);
+  function updateDp(str: string) {
+    const dp = getNumber(str);
+    stock.update((s) => ({
+      ...s,
+      dp: dp,
+      total: toNumber(s.total) - (toNumber(s.payment) + dp),
+    }));
+  }
+  $: updateDp(strDp);
 </script>
 
 <Form on:submit style="margin: 24px 0 0 0;">
@@ -189,30 +182,16 @@
           bind:ref={ref_invoice}
           id="invoice-id"
           labelText="No. faktur"
-          on:change={() => (data.isModified = true)}
-          bind:value={data.invoiceId}
+          on:change={() => stock.update((s) => ({ ...s, isModified: true }))}
+          bind:value={$stock.invoiceId}
         />
       </Column>
-      <!-- <DatePicker
-          datePickerType="single"
-          bind:value={strDueAt}
-          dateFormat="d-m-Y"
-          on:change={onDueDateChange}
-        >
-          <DatePickerInput
-            size="sm"
-            style="width: 100%;"
-            labelText="Jatuh tempo"
-            placeholder="mm/dd/yyyy"
-          />
-        </DatePicker> -->
-      <!-- <InputNumber labelText="Total" bind:value={strTotal} readonly /> -->
       <Column noGutter md={2} sm={2}>
         <ComboBox
           accesskey="s"
           id="supplier-id"
           titleText="Supplier"
-          selectedId={data.supplierId}
+          selectedId={$stock.supplierId}
           placeholder="Pilih supplier"
           items={get_suppliers()}
           {shouldFilterItem}
@@ -231,7 +210,7 @@
           accesskey="g"
           id="warehouse-id"
           titleText="Penjaga gudang"
-          selectedId={data.warehouseId}
+          selectedId={$stock.warehouseId}
           placeholder="Pilih penjaga gudang"
           items={get_employees()}
           {shouldFilterItem}
@@ -245,26 +224,9 @@
           </div>
         </ComboBox>
       </Column>
-      <!-- <Column noGutter> -->
-      <!-- <InputNumber
-          size="sm"
-          labelText="Cash / DP"
-          bind:value={strDp}
-          on:change
-        /> -->
-      <!-- <InputNumber
-          labelText="Sisa pembayaran"
-          bind:value={strRemain}
-          readonly
-        /> -->
-      <!-- </Column> -->
     </Row>
   </Grid>
 </Form>
-
-<div>
-  <!-- <code><pre>{JSON.stringify(data, null, 4)}</pre></code> -->
-</div>
 
 <style lang="css">
   :global(label.bx--label) {

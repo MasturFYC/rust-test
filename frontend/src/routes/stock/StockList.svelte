@@ -12,7 +12,7 @@
   import { Delete, Edit, NewTab } from "carbon-icons-svelte";
   import dayjs from "dayjs";
   import { createEventDispatcher, tick } from "svelte";
-	import StockInfo from "./StockInfo.svelte";
+  import StockInfo from "./StockInfo.svelte";
 
   export let data: iStock[] = [];
   // export let innerWidth = 720;
@@ -32,7 +32,7 @@
     { key: "supplierName", value: "Supplier", width: "auto" },
     { key: "warehouseName", value: "Penjaga gudang", width: "auto" },
     { key: "total", value: "Total", width: "110px" },
-		{ key:"cmd", value: "", width: "60px"}
+    { key: "cmd", value: "", width: "60px" },
   ];
 
   function editStock(id: number) {
@@ -49,8 +49,8 @@
 
   async function deleteItems(e: MouseEvent) {
     dispatch("deleteStocks", selectedRowIds);
-		await tick();
-		selectedRowIds  =[];
+    await tick();
+    selectedRowIds = [];
   }
 </script>
 
@@ -62,10 +62,8 @@
   rows={data}
   bind:selectedRowIds
 >
-<h1 slot="title">Stock</h1>
-<p slot="description" style="font-size: 1rem">
-	Tabel data pembelian barang
-</p>
+  <h1 slot="title">Stock</h1>
+  <p slot="description" style="font-size: 1rem">Tabel data pembelian barang</p>
 
   <svelte:fragment slot="cell-header" let:header>
     {#if header.key === "total"}
@@ -80,23 +78,23 @@
       <div class="cell-right">{formatNumber(cell.value)}</div>
     {:else if cell.key === "createdAt"}
       <div>{dayjs(cell.value).format("DD-MM-YYYY")}</div>
-		{:else if cell.key === "cmd"}
-		<Button
-		tooltipPosition="left"
-		tooltipAlignment="end"
-		size="small"
-		kind="ghost"
-		iconDescription="Edit"
-		icon={Edit}
-		on:click={() => editStock(row.id)}
-	/>
+    {:else if cell.key === "cmd"}
+      <Button
+        tooltipPosition="left"
+        tooltipAlignment="end"
+        size="small"
+        kind="ghost"
+        iconDescription="Edit"
+        icon={Edit}
+        on:click={() => editStock(row.id)}
+      />
     {:else}
       {cell.value}
     {/if}
   </svelte:fragment>
-	<svelte:fragment slot="expanded-row" let:row>
-		<StockInfo data={data.filter(f => f.id === row.id)[0]} />
-	</svelte:fragment>
+  <svelte:fragment slot="expanded-row" let:row>
+    <StockInfo data={data.filter((f) => f.id === row.id)[0]} />
+  </svelte:fragment>
 
   <Toolbar size="sm">
     <ToolbarContent>

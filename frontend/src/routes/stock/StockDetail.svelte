@@ -23,12 +23,13 @@
   import {
     Add,
     Delete,
-    InformationSquare,
     NewTab,
     Save,
     Logout,
+    Money,
   } from "carbon-icons-svelte";
-	import { toNumber } from "./handler";
+  import { toNumber } from "./handler";
+  import { stock, details } from "./store";
 
   const dispatch = createEventDispatcher();
 
@@ -51,9 +52,7 @@
     { key: "subtotal", value: "Subtotal", width: "100px" },
   ];
 
-  export let data: iStockDetail[] = [];
   export let barcodes: { barcode: string }[] = [];
-  export let isStockValid = false;
 
   let items = 0;
   let currentId = 0;
@@ -76,7 +75,7 @@
     price: 0,
     discount: 0,
     subtotal: 0,
-		oldStock:0
+    oldStock: 0,
   };
 
   function onRowClick(e: CustomEvent<DataTableRow>) {
@@ -86,10 +85,10 @@
     // currentDetail = d;
     let setFocus = false;
 
-    const i = data.findIndex((f) => f.id === 0);
+    const i = $details.findIndex((f) => f.id === 0);
 
     if (i < 0) {
-      data = [...data, { ...initDetail }];
+      details.update((o) => [...o, { ...initDetail }]);
     }
 
     // setStringValue(currentDetail.qty, currentDetail.discount);
@@ -134,10 +133,11 @@
     } else {
       // console.log("Click happened **OUTSIDE** element");
       currentId = 0;
-      const i = data.findIndex((f) => f.id === 0);
+      const i = $details.findIndex((f) => f.id === 0);
       if (i >= 0) {
-        data.splice(i, 1);
-        data = [...data];
+        const slices = [...$details];
+        slices.splice(i, 1);
+        details.update((o) => slices);
       }
     }
   }
@@ -154,19 +154,19 @@
     if ((e.key === "Tab" && !e.shiftKey) || e.key === "Enter") {
       e.preventDefault();
 
-      let i = data.findIndex((f) => f.id === id);
+      let i = $details.findIndex((f) => f.id === id);
 
       i++;
 
-      if (i === data.length) {
+      if (i === $details.length) {
         if (id > 0 && isDirty) {
-          data = [...data, { ...initDetail }];
+          details.update((o) => [...o, { ...initDetail }]);
         } else {
           i = 0;
         }
       }
 
-      let d = data[i];
+      let d = $details[i];
       currentId = d.id;
       isDirty = false;
       currentKey = "barcode";
@@ -194,15 +194,15 @@
   }
 
   async function onTablePointerEnter(e: Event) {
-    const i = data.findIndex((f) => f.id === 0);
+    const i = $details.findIndex((f) => f.id === 0);
 
     if (i < 0) {
-      data = [...data, { ...initDetail }];
+      details.update((o) => [...o, { ...initDetail }]);
     }
 
     if (currentId === 0) {
-      if (data.length > 0) {
-        let currentDetail = data[data.length - 1];
+      if ($details.length > 0) {
+        let currentDetail = $details[$details.length - 1];
         currentId = currentDetail.id;
         currentKey = "barcode";
         await tick();
@@ -226,33 +226,36 @@
     e.preventDefault();
 
     if (e.key === "Escape") {
-      const i = data.findIndex((f) => f.id === 0);
+      const i = $details.findIndex((f) => f.id === 0);
       if (i >= 0) {
-        data.splice(i, 1);
-        data = [...data];
+        const slices = [...$details];
+        slices.splice(i, 1);
+        details.update((o) => [...slices]);
       }
       return true;
     }
 
-    const i = data.findIndex((f) => f.id === currentId);
+    const i = $details.findIndex((f) => f.id === currentId);
 
     let x = 0;
     if (e.key === "ArrowDown") {
-      x = i === data.length - 1 ? 0 : i + 1;
+      x = i === $details.length - 1 ? 0 : i + 1;
     } else if (e.key === "ArrowUp") {
-      x = i === 0 ? data.length - 1 : i - 1;
+      x = i === 0 ? $details.length - 1 : i - 1;
     } else if (e.key === "+" && e.ctrlKey) {
-      const i = data.findIndex((f) => f.id === 0);
+      const i = $details.findIndex((f) => f.id === 0);
       currentKey = "barcode";
       currentId = 0;
       if (i < 0) {
-        data = [...data, { ...initDetail }];
+        const slices = [...$details];
+        slices.splice(i, 1);
+        details.update((o) => [...slices]);
       }
-      x = data.length - 1;
+      x = $details.length - 1;
     }
 
     if (x >= 0) {
-      let currentDetail = data[x];
+      let currentDetail = $details[x];
       currentId = currentDetail.id;
       await tick();
       setFocuse("#" + currentKey + "-id");
@@ -260,16 +263,19 @@
   }
 
   function updateCurrentDetail(e: iStockDetail) {
-    const i = data.findIndex((f) => f.id === e.id);
+    const i = $details.findIndex((f) => f.id === e.id);
     if (i >= 0) {
-      data.splice(i, 1, e);
-      data = [...data];
-      dispatch("stockChanged", data);
+      const slices = [...$details];
+      slices.splice(i, 1, e);
+      details.update((o) => [...slices]);
+      updateStock();
     }
   }
 
   function createNewId(): number {
-    let test = data.reduce((prev, cur) => (prev.id > cur.id ? prev : cur)).id;
+    let test = $details.reduce((prev, cur) =>
+      prev.id > cur.id ? prev : cur,
+    ).id;
     return test + 1;
   }
 
@@ -301,15 +307,15 @@
         let p = json.data;
         let found = true;
 
-        let i = data.findIndex((f) => f.productId === p.id);
+        let i = $details.findIndex((f) => f.productId === p.id);
 
         if (i < 0) {
-          i = data.findIndex((f) => f.id === id);
+          i = $details.findIndex((f) => f.id === id);
           found = false;
         }
 
         if (i >= 0) {
-          let d = data[i];
+          let d = $details[i];
           d.price = toNumber(p.price);
 
           if (found) {
@@ -325,10 +331,11 @@
             d.name = p.name;
             d.barcode = p.barcode;
             d.hpp = toNumber(p.hpp);
-						d.oldStock = p.oldStock ? 0 : toNumber(p.oldStock);
-						// console.log(p.oldStock);
+            d.oldStock = p.oldStock ? 0 : toNumber(p.oldStock);
+            // console.log(p.oldStock);
           }
-          d.subtotal = (toNumber(p.price) - toNumber(d.discount)) * toNumber(d.qty);
+          d.subtotal =
+            (toNumber(p.price) - toNumber(d.discount)) * toNumber(d.qty);
 
           updateCurrentDetail(d);
 
@@ -359,13 +366,13 @@
       }
     } else if (e.key === "Tab" && e.shiftKey) {
       e.preventDefault();
-      let i = data.findIndex((f) => f.id === id);
+      let i = $details.findIndex((f) => f.id === id);
       currentKey = "discount";
       if (i === 0) {
-        i = data.length;
+        i = $details.length;
       }
 
-      let currentDetail = data[i - 1];
+      let currentDetail = $details[i - 1];
       currentId = currentDetail.id;
 
       // setStringValue(currentDetail.qty, currentDetail.discount);
@@ -379,11 +386,11 @@
 
   function qtyOnChange(e: CustomEvent<string | number | null>, id: number) {
     if (typeof e.detail === "string") {
-      const i = data.findIndex((f) => f.id === id);
+      const i = $details.findIndex((f) => f.id === id);
       if (i >= 0) {
         const qty = getNumber(e.detail);
 
-        const d = data[i];
+        const d = $details[i];
 
         const c = {
           ...d,
@@ -401,10 +408,10 @@
     id: number,
   ) {
     if (typeof e.detail === "string") {
-      const i = data.findIndex((f) => f.id === id);
+      const i = $details.findIndex((f) => f.id === id);
       if (i >= 0) {
         const discount = getNumber(e.detail);
-        const d = data[i];
+        const d = $details[i];
         if (toNumber(d.price) - discount <= toNumber(d.hpp)) {
           // showNotification = true;
           // timeout = 3_000;
@@ -475,13 +482,29 @@
   let selectedRowIds: number[] = [];
   $: showNotification = timeout !== undefined;
   $: {
-    items = data.filter((f) => f.id > 0).length;
+    items = $details.filter((f) => f.id > 0).length;
+  }
+
+  function updateStock() {
+    let total = $details.reduce((o, t) => o + toNumber(t.subtotal), 0);
+    stock.update(
+      (s) =>
+        (s = {
+          ...s,
+          total: total,
+          remain: total - (toNumber(s.dp) + toNumber(s.payment)),
+          isModified: true,
+          isDetailChanged: true,
+        }),
+    );
   }
 
   async function deleteItems(e: MouseEvent) {
-    const test = data.filter((f) => !selectedRowIds.includes(f.id));
-    data = test;
-    dispatch("stockChanged", data);
+    const slices = $details.filter((f) => !selectedRowIds.includes(f.id));
+    details.update((o) => [...slices]);
+
+    updateStock();
+
     await tick();
     selectedRowIds = [];
   }
@@ -490,9 +513,15 @@
     e.preventDefault();
     dispatch(
       "save",
-      data.filter((f) => f.id !== 0),
+      $details.filter((f) => f.id !== 0),
     );
   }
+
+  $: isStockValid =
+    $stock.supplierId > 0 &&
+    $stock.warehouseId > 0 &&
+    $stock.total > 0 &&
+    $stock.invoiceId.trim().length > 0;
 </script>
 
 {#if showNotification}
@@ -523,7 +552,7 @@
     selectable
     batchSelection
     batchExpansion
-    rows={data}
+    rows={$details}
     {headers}
     nonExpandableRowIds={[0]}
     nonSelectableRowIds={[0]}
@@ -535,24 +564,30 @@
     <Toolbar size="sm">
       <ToolbarContent>
         <Button
-          kind="danger"
+          kind="danger-ghost"
           size="small"
           disabled={selectedRowIds.length == 0}
           icon={Delete}
           on:click={deleteItems}>Hapus item</Button
         >
         <Button
-          icon={InformationSquare}
-          on:click={() => dispatch("showInfo", data)}
-          disabled={items === 0}>Informasi stock</Button
-        >
-        <Button
           icon={NewTab}
+          kind="tertiary"
+          style="border: none;"
+          size="small"
           on:click={() => {
             dispatch("createNewStock", 0);
             selectedRowIds = [];
           }}
           disabled={items === 0}>Buat stock baru</Button
+        >
+        <Button
+          icon={Money}
+          kind="tertiary"
+          style="border: none;"
+          size="small"
+          on:click={() => dispatch("addDp", null)}
+          disabled={items === 0}>Pembayaran / Dp</Button
         >
         <Button icon={Save} disabled={!isStockValid} on:click={saveData}
           >Simpan</Button
@@ -561,7 +596,7 @@
           icon={Logout}
           kind="danger-ghost"
           size="small"
-          on:click={() => dispatch("close", null)}>Close</Button
+          on:click={() => dispatch("close", 0)}>Close</Button
         >
       </ToolbarContent>
     </Toolbar>
@@ -605,7 +640,8 @@
             size="sm"
             classes="cell-edit input-number"
             id="discount-id"
-            on:input={(e) => discountOnInput(e, toNumber(row["price"]), toNumber(row["hpp"]))}
+            on:input={(e) =>
+              discountOnInput(e, toNumber(row["price"]), toNumber(row["hpp"]))}
             on:change={(e) => discountOnChange(e, row.id)}
             on:focus={() => (currentKey = cell.key)}
             on:keydown={(e) => discountOnKeyDown(e, row.id)}
@@ -696,7 +732,11 @@
       {/if}
     </svelte:fragment>
     <svelte:fragment slot="expanded-row" let:row>
-      <ExpandedRow productId={row["productId"]} newQty={toNumber(row["qty"])} oldQty={toNumber(row["oldStock"])} />
+      <ExpandedRow
+        productId={row["productId"]}
+        newQty={toNumber(row["qty"])}
+        oldQty={toNumber(row["oldStock"])}
+      />
     </svelte:fragment>
   </DataTable>
 </div>

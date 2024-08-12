@@ -41,6 +41,8 @@ pub mod model {
 		pub supplier_name: Option<String>,
 		#[serde(rename = "warehouseName", skip_serializing_if = "Option::is_none")]
 		pub warehouse_name: Option<String>,
+		#[serde(rename = "isProtected", skip_serializing_if = "Option::is_none")]
+		pub is_protected: Option<bool>,
 	}
 
 	#[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
@@ -75,6 +77,8 @@ pub mod model {
 		pub created_at: Option<DateTime<Utc>>,
 		#[serde(rename = "updatedAt")]
 		pub updated_at: Option<DateTime<Utc>>,
+		#[serde(rename = "isProtected", skip_serializing_if = "Option::is_none")]
+		pub is_protected: Option<bool>,
 	}
 
 	#[derive(Debug, Deserialize, Serialize, sqlx::FromRow, Clone)]
@@ -162,7 +166,7 @@ pub mod db {
 			&self,
 			data: O,
 			details: T,
-		) -> Result<(Option<Stocks>, Vec<StockDetails>), sqlx::Error>
+		) -> Result<(i32, usize), sqlx::Error>
 		where
 			O: Into<Stock> + Send,
 			T: Into<Vec<StockDetail>> + Send;
@@ -171,7 +175,7 @@ pub mod db {
 			id: S,
 			data: O,
 			details: T,
-		) -> Result<(Option<Stocks>, Vec<StockDetails>), sqlx::Error>
+		) -> Result<(i32, usize), sqlx::Error>
 		where
 			S: Into<i32> + Send,
 			O: Into<Stock> + Send,
@@ -202,7 +206,7 @@ pub mod db {
 				sqlx::query_file_as!(StockDetails, "sql/order-detail-get-by-order-2.sql", id)
 					.fetch_all(&mut *tx)
 					.await?;
-			
+
 			tx.commit().await?;
 
 			Ok((stock, details))
@@ -240,11 +244,7 @@ pub mod db {
 			Ok((stocks, row.unwrap_or(0)))
 		}
 
-		async fn stock_create<O, T>(
-			&self,
-			data: O,
-			details: T,
-		) -> Result<(Option<Stocks>, Vec<StockDetails>), sqlx::Error>
+		async fn stock_create<O, T>(&self, data: O, details: T) -> Result<(i32, usize), sqlx::Error>
 		where
 			O: Into<Stock> + Send,
 			T: Into<Vec<StockDetail>> + Send,
@@ -311,7 +311,7 @@ pub mod db {
 				))
 				.build();
 			//self.create_ledger(o).await;
-			let len = details.len();
+			let detail_len = details.len();
 			let mut i = 0;
 
 			loop {
@@ -350,7 +350,7 @@ pub mod db {
 					i = i.checked_add(1).unwrap();
 				}
 
-				if i == len {
+				if i == detail_len {
 					break;
 				}
 			}
@@ -412,33 +412,14 @@ pub mod db {
 				}
 			}
 
-			let details: Vec<StockDetails> =
-				sqlx::query_file_as!(StockDetails, "sql/order-detail-get-by-order-2.sql", pid)
-					.fetch_all(&mut *tx)
-					.await?;
+			// let details: Vec<StockDetails> =
+			// 	sqlx::query_file_as!(StockDetails, "sql/order-detail-get-by-order-2.sql", pid)
+			// 		.fetch_all(&mut *tx)
+			// 		.await?;
 
 			tx.commit().await?;
 
-			Ok((
-				Some(Stocks {
-					id: stock.id,
-					customer_id: o.customer_id,
-					sales_id: o.sales_id,
-					payment_type: o.payment_type.unwrap_or(PaymentType::Cash),
-					updated_by: o.updated_by,
-					total: o.total,
-					dp: o.dp,
-					payment: o.payment,
-					remain: o.remain,
-					supplier_name: dto.supplier_name,
-					warehouse_name: dto.warehouse_name,
-					invoice_id: o.invoice_id,
-					due_at: o.due_at,
-					created_at: o.created_at,
-					updated_at: Some(Utc::now()),
-				}),
-				details,
-			))
+			Ok((pid, detail_len))
 		}
 
 		async fn stock_update<S, O, T>(
@@ -446,7 +427,7 @@ pub mod db {
 			id: S,
 			data: O,
 			details: T,
-		) -> Result<(Option<Stocks>, Vec<StockDetails>), sqlx::Error>
+		) -> Result<(i32, usize), sqlx::Error>
 		where
 			O: Into<Stock> + Send,
 			T: Into<Vec<StockDetail>> + Send,
@@ -494,7 +475,6 @@ pub mod db {
 			.with_dp(dto.dp)
 			.with_due_range(dto.due_range.unwrap_or(0))
 			.build();
-
 
 			let old_details = sqlx::query_as!(
 				ProductQuantity,
@@ -554,7 +534,7 @@ pub mod db {
 			.await?;
 
 			let mut i = 0;
-			let len = details.len();
+			let detail_len = details.len();
 
 			loop {
 				if let Some(d) = details.get(i) {
@@ -676,41 +656,22 @@ pub mod db {
 				}
 			}
 
-			let details: Vec<StockDetails> =
-				sqlx::query_file_as!(StockDetails, "sql/order-detail-get-by-order-2.sql", pid)
-					.fetch_all(&mut *tx)
-					.await?;
+			// let details: Vec<StockDetails> =
+			// 	sqlx::query_file_as!(StockDetails, "sql/order-detail-get-by-order-2.sql", pid)
+			// 		.fetch_all(&mut *tx)
+			// 		.await?;
 
 			tx.commit().await?;
 
-			Ok((
-				Some(Stocks {
-					id: pid,
-					customer_id: o.customer_id,
-					sales_id: o.sales_id,
-					payment_type: dto.payment_type,
-					updated_by: o.updated_by,
-					total: o.total,
-					dp: o.dp,
-					payment: o.payment,
-					remain: o.remain,
-					supplier_name: dto.supplier_name,
-					warehouse_name: dto.warehouse_name,
-					invoice_id: o.invoice_id,
-					due_at: o.due_at,
-					created_at: o.created_at,
-					updated_at: Some(Utc::now()),
-				}),
-				details,
-			))
+			Ok((pid, detail_len))
 		}
 
 		async fn stock_delete(&self, ids: Vec<i32>) -> Result<u64, sqlx::Error> {
 			let mut conn: sqlx::pool::PoolConnection<sqlx::Postgres> = self.pool.acquire().await?;
 			let mut tx: sqlx::Transaction<sqlx::Postgres> = conn.begin().await?;
 
-			let details = sqlx::query_as!(ProductQuantity,				
-				"SELECT product_id, qty FROM order_details WHERE order_id IN (SELECT unnest($1::INT[]))",			
+			let details = sqlx::query_as!(ProductQuantity,
+				"SELECT product_id, qty FROM order_details WHERE order_id IN (SELECT unnest($1::INT[]))",
 				&ids[..]
 			)
 			.fetch_all(&mut *tx)
@@ -762,7 +723,7 @@ pub mod db {
                     ledgers
                 WHERE
                     id IN (SELECT unnest($1::int[])) OR
-                    id IN (SELECT id FROM order_payments 
+                    id IN (SELECT id FROM order_payments
 				WHERE order_id IN (SELECT unnest($1::int[])))
                 -- id IN (SELECT ref_id FROM ledger_details WHERE ref_id = $1) OR
                     "#,
@@ -775,11 +736,13 @@ pub mod db {
 				r#"
 				DELETE FROM orders
 				WHERE id IN (SELECT unnest($1::int[]))
-				"#, &ids[..])
-				.execute(&mut *tx)
-				.await
-				.unwrap()
-				.rows_affected();
+				"#,
+				&ids[..]
+			)
+			.execute(&mut *tx)
+			.await
+			.unwrap()
+			.rows_affected();
 
 			tx.commit().await?;
 

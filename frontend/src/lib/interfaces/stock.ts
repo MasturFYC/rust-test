@@ -15,6 +15,7 @@ export type iStock = {
   updatedAt?: string;
   supplierName?: string;
   warehouseName?: string;
+  isProtected?: boolean;
   isModified?: boolean;
   isDetailChanged?: boolean;
   isPayed?: boolean;
@@ -33,6 +34,5 @@ export type iStockDetail = {
   price: number;
   discount: number;
   subtotal: number;
-	oldStock: number;
+  oldStock: number;
 };
-
