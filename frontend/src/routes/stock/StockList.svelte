@@ -13,6 +13,7 @@
   import dayjs from "dayjs";
   import { createEventDispatcher, tick } from "svelte";
   import StockInfo from "./StockInfo.svelte";
+	import {isStockUpdating, isStockLoading} from './store';
 
   export let data: iStock[] = [];
   // export let innerWidth = 720;
@@ -35,7 +36,10 @@
     { key: "cmd", value: "", width: "60px" },
   ];
 
-  function editStock(id: number) {
+  async function editStock(id: number) {
+		isStockLoading.set(true);
+		await tick();
+
     dispatch("edit", id);
   }
 
@@ -48,6 +52,8 @@
   }
 
   async function deleteItems(e: MouseEvent) {
+		isStockUpdating.set(true);
+		// await tick();
     dispatch("deleteStocks", selectedRowIds);
     await tick();
     selectedRowIds = [];
@@ -85,6 +91,8 @@
         size="small"
         kind="ghost"
         iconDescription="Edit"
+				disabled={$isStockUpdating || $isStockLoading}
+				skeleton={$isStockLoading}
         icon={Edit}
         on:click={() => editStock(row.id)}
       />
@@ -133,18 +141,19 @@
           ware_light = true;
         }}
         on:clear={() => {
-          dispatch("warehouseChange", undefined);
+          dispatch("warehouseChange", 0);
           ware_light = false;
         }}
       />
       <Button
         kind="danger"
         size="small"
-        disabled={selectedRowIds.length == 0}
+        disabled={selectedRowIds.length == 0 || $isStockLoading}
+				skeleton={$isStockUpdating}
         icon={Delete}
         on:click={deleteItems}>Hapus stock</Button
       >
-      <Button on:click={() => editStock(0)} icon={NewTab}>Buat baru</Button>
+      <Button size="small" disabled={$isStockUpdating || $isStockLoading} on:click={() => editStock(0)} icon={NewTab}>Buat baru</Button>
     </ToolbarContent>
   </Toolbar>
 </DataTable>

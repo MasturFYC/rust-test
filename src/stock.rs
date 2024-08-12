@@ -2,11 +2,14 @@ use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use serde_json::json;
 use validator::Validate;
 
-use crate::{dtos::RequestQueryDto, error::HttpError, extractors::auth::RequireAuth, AppState};
+use crate::{error::HttpError, extractors::auth::RequireAuth, AppState};
 
 use resdb::{
 	model::UserRole,
-	stock::{db::StockExt, model::RequestQueryStock},
+	stock::{
+		db::StockExt,
+		model::{RequestQueryStock, RequestStock},
+	},
 };
 
 pub fn stock_scope(conf: &mut web::ServiceConfig) {
@@ -77,10 +80,13 @@ async fn get_stock_with_details(
 
 #[get("")]
 async fn get_stocks(
-	opts: web::Query<RequestQueryDto>,
+	opts: web::Query<RequestStock>,
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
 	let query_params = opts.into_inner();
+
+	let page = query_params.page.unwrap_or(1);
+	let limit = query_params.page.unwrap_or(10);
 
 	// let map_err = query_params
 	//     .validate()
@@ -90,10 +96,7 @@ async fn get_stocks(
 	//     return HttpResponse::BadRequest().json(json!({"status":"fail", "message": "Bad request"}));
 	// }
 
-	let limit = query_params.limit.unwrap_or(10);
-	let page = query_params.page.unwrap_or(1);
-
-	let query_result = app_state.db_client.get_stocks(page, limit).await;
+	let query_result = app_state.db_client.get_stocks(query_params).await;
 
 	if query_result.is_err() {
 		let message = "Something bad happened while fetching all stock items";
@@ -109,7 +112,7 @@ async fn get_stocks(
 	let stocks = v.0;
 	// count all stocks in database
 	let length = v.1;
-	let lim = limit as i64;
+	let lim =  limit as i64;
 
 	let json_response = json!({
 		"status": "success",

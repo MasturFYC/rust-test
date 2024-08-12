@@ -131,6 +131,18 @@ pub mod model {
 		#[serde(rename = "oldStock")]
 		pub unit_in_stock: BigDecimal,
 	}
+
+	#[derive(Serialize, Deserialize, Validate, Clone)]
+	pub struct RequestStock {
+		#[validate(range(min = 1))]
+		pub page: Option<usize>,
+		#[validate(range(min = 1, max = 50))]
+		pub limit: Option<usize>,
+		pub opt: Option<usize>,
+		pub supid: Option<i16>,
+		pub wareid: Option<i16>,
+		pub txt: Option<String>,
+	}
 }
 
 pub mod db {
@@ -147,7 +159,9 @@ pub mod db {
 		model::{OrderBuilder, OrderType, LedgerBuilder, LedgerType},
 	};
 
-	use super::model::{ProductQuantity, Stock, StockDetail, StockDetails, StockInsertedId, Stocks};
+	use super::model::{
+		ProductQuantity, RequestStock, Stock, StockDetail, StockDetails, StockInsertedId, Stocks,
+	};
 	use crate::model::PaymentType;
 
 	#[async_trait]
@@ -157,11 +171,7 @@ pub mod db {
 			&self,
 			id: i32,
 		) -> Result<(Option<Stocks>, Vec<StockDetails>), sqlx::Error>;
-		async fn get_stocks(
-			&self,
-			page: usize,
-			limit: usize,
-		) -> Result<(Vec<Stocks>, i64), sqlx::Error>;
+		async fn get_stocks(&self, opts: RequestStock) -> Result<(Vec<Stocks>, i64), sqlx::Error>;
 		async fn stock_create<O, T>(
 			&self,
 			data: O,
@@ -211,11 +221,10 @@ pub mod db {
 
 			Ok((stock, details))
 		}
-		async fn get_stocks(
-			&self,
-			page: usize,
-			limit: usize,
-		) -> Result<(Vec<Stocks>, i64), sqlx::Error> {
+		async fn get_stocks(&self, opts: RequestStock) -> Result<(Vec<Stocks>, i64), sqlx::Error> {
+			let limit = opts.limit.unwrap_or(10);
+			let page = opts.page.unwrap_or(1);
+
 			let offset = (page - 1) * limit;
 
 			// acquire pg connection from current pool
@@ -226,22 +235,117 @@ pub mod db {
 
 			// start transaction
 			// get orders data from database
-			let stocks =
-				sqlx::query_file_as!(Stocks, "sql/stock-get-all.sql", limit as i64, offset as i64,)
+			let opt = opts.opt.unwrap_or(0);
+
+			let stocks = match opt {
+				1 => {
+					let txt = opts.txt.unwrap_or("".to_string()).to_lowercase();
+					let data = sqlx::query_file_as!(
+						Stocks,
+						"sql/stock-get-all-by-search.sql",
+						txt,
+						limit as i64,
+						offset as i64
+					)
 					.fetch_all(&mut *tx)
 					.await?;
+					let row = sqlx::query_scalar!(
+					r#"
+					SELECT
+						COUNT(*)
+					FROM
+						orders AS o
+					INNER JOIN
+						relations AS c ON c.id = o.customer_id
+   					INNER JOIN
+						relations AS s ON s.id = o.sales_id
+   					WHERE
+						o.order_type = 'stock'::order_enum
+						AND POSITION($1 IN (o.id::TEXT||' '||LOWER(c.name||' '||s.name||' '||COALESCE(o.invoice_id,' ')))) > 0
+						"#, txt)
+						.fetch_one(&mut *tx)
+						.await?;
+
+					(data, row)
+				}
+				2 => {
+					let supid = opts.supid.unwrap_or(0);
+					let data = sqlx::query_file_as!(
+						Stocks,
+						"sql/stock-get-all-by-supplier.sql",
+						supid,
+						limit as i64,
+						offset as i64
+					)
+					.fetch_all(&mut *tx)
+					.await?;
+					let row = sqlx::query_scalar!(
+						r#"
+						SELECT
+							COUNT(*)
+						FROM
+							orders AS o
+						WHERE
+							o.order_type = 'stock'::order_enum
+							AND o.customer_id = $1
+							"#,
+						supid
+					)
+					.fetch_one(&mut *tx)
+					.await?;
+					(data, row)
+				}
+				3 => {
+					let wareid = opts.wareid.unwrap_or(0);
+					let data = sqlx::query_file_as!(
+						Stocks,
+						"sql/stock-get-all-by-warehouse.sql",
+						wareid,
+						limit as i64,
+						offset as i64
+					)
+					.fetch_all(&mut *tx)
+					.await?;
+					let row = sqlx::query_scalar!(
+						r#"
+						SELECT
+							COUNT(*)
+						FROM
+							orders AS o
+						WHERE
+							o.order_type = 'stock'::order_enum
+							AND o.sales_id = $1
+							"#,
+						wareid
+					)
+					.fetch_one(&mut *tx)
+					.await?;
+					(data, row)
+				}
+				_ => {
+					let data = sqlx::query_file_as!(
+						Stocks,
+						"sql/stock-get-all.sql",
+						limit as i64,
+						offset as i64,
+					)
+					.fetch_all(&mut *tx)
+					.await?;
+					let row = sqlx::query_file_scalar!("sql/stock-count.sql")
+						.fetch_one(&mut *tx)
+						.await?;
+					(data, row)
+				}
+			};
 
 			// start transacrion
 			// get total record of stocks
-			let row = sqlx::query_file_scalar!("sql/stock-count.sql")
-				.fetch_one(&mut *tx)
-				.await?;
 
 			// finish transaction
 			tx.commit().await?;
 
 			// return result to caller
-			Ok((stocks, row.unwrap_or(0)))
+			Ok((stocks.0, stocks.1.unwrap_or(0)))
 		}
 
 		async fn stock_create<O, T>(&self, data: O, details: T) -> Result<(i32, usize), sqlx::Error>

@@ -25,3 +25,5 @@ export const initStock: iStock = {
 
 export const stock = writable<iStock>({ ...initStock });
 export const details = writable<iStockDetail[]>([]);
+export const isStockUpdating = writable(false);
+export const isStockLoading = writable(false);

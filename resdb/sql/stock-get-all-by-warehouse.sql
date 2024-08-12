@@ -18,5 +18,6 @@ FROM orders AS o
    INNER JOIN relations AS c ON c.id = o.customer_id
    INNER JOIN relations AS s ON s.id = o.sales_id
 WHERE o.order_type = 'stock'::order_enum
+      AND o.sales_id = $1
 ORDER BY o.id DESC
-LIMIT $1 OFFSET $2
+LIMIT $2 OFFSET $3

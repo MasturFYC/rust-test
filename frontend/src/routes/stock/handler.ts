@@ -4,7 +4,6 @@ import {
   type iStock,
   type iStockDetail,
 } from "$lib/interfaces";
-
 export async function getStockById(
   id: number,
   defaultValue?: { stock: iStock; details: iStockDetail[] },

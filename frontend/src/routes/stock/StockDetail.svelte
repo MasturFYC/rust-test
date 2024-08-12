@@ -30,6 +30,7 @@
   } from "carbon-icons-svelte";
   import { toNumber } from "./handler";
   import { stock, details } from "./store";
+	import { isStockUpdating } from "./store";
 
   const dispatch = createEventDispatcher();
 
@@ -509,11 +510,15 @@
     selectedRowIds = [];
   }
 
-  function saveData(e: MouseEvent): void {
+  async function saveData(e: MouseEvent) {
     e.preventDefault();
+
+		isStockUpdating.set(true);
+		await tick();
+
     dispatch(
       "save",
-      $details.filter((f) => f.id !== 0),
+      $details.filter((f) => f.id !== 0).map(m => ({...m, stockId: $stock.id})),
     );
   }
 
@@ -566,7 +571,7 @@
         <Button
           kind="danger-ghost"
           size="small"
-          disabled={selectedRowIds.length == 0}
+          disabled={selectedRowIds.length == 0 || $isStockUpdating}
           icon={Delete}
           on:click={deleteItems}>Hapus item</Button
         >
@@ -579,7 +584,7 @@
             dispatch("createNewStock", 0);
             selectedRowIds = [];
           }}
-          disabled={items === 0}>Buat stock baru</Button
+          disabled={items === 0 || $isStockUpdating || $stock.id === 0}>Buat stock baru</Button
         >
         <Button
           icon={Money}
@@ -587,15 +592,18 @@
           style="border: none;"
           size="small"
           on:click={() => dispatch("addDp", null)}
-          disabled={items === 0}>Pembayaran / Dp</Button
+          disabled={items === 0 || $isStockUpdating}>Pembayaran / Dp</Button
         >
         <Button icon={Save} disabled={!isStockValid} on:click={saveData}
+				size="small"
+				 skeleton={$isStockUpdating}
           >Simpan</Button
         >
         <Button
           icon={Logout}
           kind="danger-ghost"
           size="small"
+					disabled={$isStockUpdating}
           on:click={() => dispatch("close", 0)}>Close</Button
         >
       </ToolbarContent>
@@ -744,6 +752,7 @@
 
 <div>
   <Button size="small" icon={Add} kind="tertiary" on:click={totalItemClick}
+	disabled={$isStockUpdating}
     >Total: {items} item{items > 1 ? "s" : ""}</Button
   >
 </div>
