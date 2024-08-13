@@ -47,9 +47,14 @@ table td:nth-child(2) {
   padding: 0 2px;
   height: auto;
 }
+
 .bx--text-input.input-number {
   text-align: right;
 }
+.bx--text-input.align-left {
+  text-align: left;
+}
+
 .bx--table-header-label {
   margin: 0;
   padding: 0 !important;

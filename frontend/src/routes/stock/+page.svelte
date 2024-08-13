@@ -1,43 +1,41 @@
 <script lang="ts">
-  import type { iCurrentUser, iStock, iStockDetail } from "$lib/interfaces";
-  import { useQuery, useQueryClient } from "@sveltestack/svelte-query";
-  import dayjs from "dayjs";
-  import { getBarcodes, getSupplierProp } from "$lib/fetchers";
   import { browser } from "$app/environment";
-  import {
-    Column,
-    Grid,
-    Loading,
-    LocalStorage,
-    Pagination,
-    Row,
-    ToastNotification,
-  } from "carbon-components-svelte";
-  import { onDestroy, onMount, tick } from "svelte";
-  import StockDetail from "./StockDetail.svelte";
-  import ProductNotFound from "./ProductNotFound.svelte";
   import { formatNumber } from "$lib/components/NumberFormat";
+  import { getBarcodes, getSupplierProp } from "$lib/fetchers";
+  import type { iCurrentUser, iStock, iStockDetail } from "$lib/interfaces";
   import { numberToText } from "$lib/number-to-string";
-  import StockList from "./StockList.svelte";
+  import { useQuery, useQueryClient } from "@sveltestack/svelte-query";
   import {
-    getStockById,
-    getStocks,
-    postCreateStock,
-    postDeleteStock,
-    postUpdateOnlyStock,
-    postUpdateStock,
-    toNumber,
-  } from "./handler";
-  import {
-    initStock,
-    stock,
-    details,
-    isStockUpdating,
-    isStockLoading,
-  } from "./store";
-  import { updated } from "$app/stores";
+  	Column,
+  	Grid,
+  	Loading,
+  	LocalStorage,
+  	Pagination,
+  	Row,
+  	ToastNotification,
+  } from "carbon-components-svelte";
+  import dayjs from "dayjs";
+  import { onDestroy, tick } from "svelte";
   import FormStock from "./FormStock.svelte";
   import FormStockPayment from "./FormStockPayment.svelte";
+  import ProductNotFound from "./ProductNotFound.svelte";
+  import StockDetail from "./StockDetail.svelte";
+  import StockList from "./StockList.svelte";
+  import {
+  	getStockById,
+  	getStocks,
+  	postCreateStock,
+  	postDeleteStock,
+  	postUpdateOnlyStock,
+  	postUpdateStock,
+  } from "./handler";
+  import {
+  	details,
+  	initStock,
+  	isStockLoading,
+  	isStockUpdating,
+  	stock,
+  } from "./store";
 
   const client = useQueryClient();
 
