@@ -3,7 +3,10 @@ use serde_json::json;
 use validator::Validate;
 use resdb::{
 	model::UserRole,
-	product::{db::ProductExt, model::{DeleteResponseDto, FindName, Product, ProductResponseDto}},
+	product::{
+		db::ProductExt,
+		model::{DeleteResponseDto, FindName, Product, ProductResponseDto},
+	},
 };
 
 use crate::{
@@ -40,8 +43,8 @@ pub fn product_scope() -> Scope {
 		.route(
 			"/barcode/{code}",
 			web::get()
-			.to(find_barcode)
-			.wrap(RequireAuth::allowed_roles(vec![UserRole::Admin]))
+				.to(find_barcode)
+				.wrap(RequireAuth::allowed_roles(vec![UserRole::Admin])),
 		)
 		.route(
 			"/{id}",
@@ -114,7 +117,6 @@ pub async fn get_product(
 	}
 }
 
-
 #[utoipa::path(
     get,
     path = "/api/products/names/list",
@@ -129,14 +131,15 @@ pub async fn get_products_by_name(
 	query: web::Query<FindName>,
 	app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, HttpError> {
-
 	let params = query.into_inner();
 	let name = params.txt;
 	let lim = params.limit.unwrap_or(5);
 
-	let result = app_state.db_client
-	.get_products_by_name(lim as i64, name).await
-	.map_err(|e| HttpError::server_error(e.to_string()))?;
+	let result = app_state
+		.db_client
+		.get_products_by_name(lim as i64, name)
+		.await
+		.map_err(|e| HttpError::server_error(e.to_string()))?;
 
 	let response = json!({
 		"status": "success",
@@ -206,7 +209,6 @@ pub async fn get_products(
 	query: web::Query<RequestProductSearch>,
 	app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, HttpError> {
-
 	let query_params = query.into_inner();
 
 	query_params
@@ -248,11 +250,7 @@ pub async fn get_products(
         (status=500, description= "Internal Server Error", body=Response ),
     )
 )]
-pub async fn get_barcodes(
-	app_state: web::Data<AppState>,
-) -> Result<HttpResponse, HttpError> {
-
-
+pub async fn get_barcodes(app_state: web::Data<AppState>) -> Result<HttpResponse, HttpError> {
 	let barcodes = app_state
 		.db_client
 		.get_barcodes()
