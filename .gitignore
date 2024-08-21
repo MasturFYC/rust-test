@@ -33,3 +33,4 @@ frontend/*.sln
 frontend/*.sw?
 frontend/.env
 frontend/.build
+frontend/build
