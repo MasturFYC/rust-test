@@ -95,13 +95,13 @@ pub async fn get_product(
 
 	match result {
 		Ok(product) => {
-			if product.is_none() {
-				Err(HttpError::new(ErrorMessage::DataNotFound, 404))
-			} else {
+			if let Some(x) = product {
 				Ok(HttpResponse::Ok().json(ProductResponseDto {
 					status: "success".to_string(),
-					data: product.unwrap(),
+					data: x,
 				}))
+			} else {
+				Err(HttpError::new(ErrorMessage::DataNotFound, 404))
 			}
 		}
 		// Err(sqlx::Error::Database(db_err)) => {
@@ -173,13 +173,13 @@ pub async fn find_barcode(
 
 	match result {
 		Ok(product) => {
-			if product.is_none() {
-				Err(HttpError::new(ErrorMessage::DataNotFound, 404))
-			} else {
+			if let Some(x) = product {
 				Ok(HttpResponse::Ok().json(ProductResponseDto {
 					status: "success".to_string(),
-					data: product.unwrap(),
+					data: x,
 				}))
+			} else {
+				Err(HttpError::new(ErrorMessage::DataNotFound, 404))
 			}
 		}
 		// Err(sqlx::Error::Database(db_err)) => {

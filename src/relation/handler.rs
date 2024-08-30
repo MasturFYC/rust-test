@@ -2,7 +2,11 @@ use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use serde::Serialize;
 use serde_json::json;
 // use validator::Validate;
-use crate::{dtos::{RequestQueryDto, RequestRelationSearch}, extractors::auth::RequireAuth, AppState};
+use crate::{
+	dtos::{RequestQueryDto, RequestRelationSearch},
+	extractors::auth::RequireAuth,
+	AppState,
+};
 
 use resdb::{
 	model::{CreateRelationSchema, RelationType, UserRole},
@@ -10,7 +14,7 @@ use resdb::{
 };
 
 #[derive(Serialize)]
-struct RelationTypeWIthID {
+struct RelationTypeWithID {
 	id: RelationType,
 	text: String,
 }
@@ -32,21 +36,30 @@ pub fn relation_scope(conf: &mut web::ServiceConfig) {
 
 #[get("/list/types")]
 async fn get_relation_types() -> impl Responder {
-	let values: [RelationTypeWIthID; 4] = [
-		RelationTypeWIthID {id: RelationType::Customer, text: String::from("Pelanggan")},
-		RelationTypeWIthID {id: RelationType::Supplier, text: String::from("Supplier")},
-		RelationTypeWIthID {id: RelationType::Sales, text: String::from("Sales")},
-		// RelationTypeWIthID {id: RelationType::Member, text: String::from("Member")},
-		RelationTypeWIthID {id: RelationType::Employee, text: String::from("Karyawan")},
+	let values: [RelationTypeWithID; 4] = [
+		RelationTypeWithID {
+			id: RelationType::Customer,
+			text: String::from("Pelanggan"),
+		},
+		RelationTypeWithID {
+			id: RelationType::Supplier,
+			text: String::from("Supplier"),
+		},
+		RelationTypeWithID {
+			id: RelationType::Sales,
+			text: String::from("Sales"),
+		},
+		// RelationTypeWithID {id: RelationType::Member, text: String::from("Member")},
+		RelationTypeWithID {
+			id: RelationType::Employee,
+			text: String::from("Karyawan"),
+		},
 	];
-	return HttpResponse::Ok().json(json!(values));
+	HttpResponse::Ok().json(json!(values))
 }
 
 #[get("/{id}")]
-async fn get_relation(
-	path: web::Path<i16>,
-	app_state: web::Data<AppState>,
-) -> impl Responder {
+async fn get_relation(path: web::Path<i16>, app_state: web::Data<AppState>) -> impl Responder {
 	let rel_id = path.into_inner();
 	let query_result = app_state.db_client.get_relation(rel_id).await;
 
@@ -54,12 +67,11 @@ async fn get_relation(
 		Ok(relation) => {
 			let relation_response = serde_json::json!({"status": "success","data": relation});
 
-			return HttpResponse::Ok().json(relation_response);
+			HttpResponse::Ok().json(relation_response)
 		}
 		Err(_) => {
 			let message = format!("Category with ID: {} not found", rel_id);
-			return HttpResponse::NotFound()
-				.json(serde_json::json!({"status": "fail","message": message}));
+			HttpResponse::NotFound().json(serde_json::json!({"status": "fail","message": message}))
 		}
 	}
 }
@@ -86,10 +98,13 @@ async fn get_relations(
 	let txt = query_params.txt;
 	let reltype = query_params.reltype;
 
-	let query_result = app_state.db_client.get_relations(page, limit, opt, txt, reltype).await;
+	let query_result = app_state
+		.db_client
+		.get_relations(page, limit, opt, txt, reltype)
+		.await;
 
 	if query_result.is_err() {
-		println!("{:?}",query_result.err());
+		println!("{:?}", query_result.err());
 		let message = "Something bad happened while fetching all relation items";
 		return HttpResponse::InternalServerError()
 			.json(json!({"status": "error","message": message}));
@@ -190,7 +205,7 @@ async fn create(
 
 			let acc_response = serde_json::json!({"status": "success", "data": rel});
 
-			return HttpResponse::Created().json(acc_response);
+			HttpResponse::Created().json(acc_response)
 		}
 		Err(e) => {
 			if e.to_string()
@@ -201,8 +216,8 @@ async fn create(
 				);
 			}
 
-			return HttpResponse::InternalServerError()
-				.json(serde_json::json!({"status": "error","message": format!("{:?}", e)}));
+			HttpResponse::InternalServerError()
+				.json(serde_json::json!({"status": "error","message": format!("{:?}", e)}))
 		}
 	}
 }
@@ -240,12 +255,12 @@ async fn update(
 				"data": serde_json::json!(rel)
 			});
 
-			return HttpResponse::Ok().json(acc_response);
+			HttpResponse::Ok().json(acc_response)
 		}
 		Err(err) => {
 			let message = format!("Error: {:?}", err);
-			return HttpResponse::InternalServerError()
-				.json(serde_json::json!({"status": "error","message": message}));
+			HttpResponse::InternalServerError()
+				.json(serde_json::json!({"status": "error","message": message}))
 		}
 	}
 }
@@ -265,14 +280,12 @@ async fn delete(path: web::Path<i16>, app_state: web::Data<AppState>) -> impl Re
 					.json(serde_json::json!({"status": "fail","message": message}));
 			}
 
-			let json = HttpResponse::Ok()
-				.json(serde_json::json!({"status": "success","data": rows_affected}));
-			return json;
+			HttpResponse::Ok().json(serde_json::json!({"status": "success","data": rows_affected}))
 		}
 		Err(err) => {
 			let message = format!("Error: {:?}", err);
-			return HttpResponse::InternalServerError()
-				.json(serde_json::json!({"status": "error","message": message}));
+			HttpResponse::InternalServerError()
+				.json(serde_json::json!({"status": "error","message": message}))
 		}
 	}
 }

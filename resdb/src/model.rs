@@ -301,7 +301,7 @@ impl OrderBuilder {
 
 	pub fn with_due_range(&mut self, due_range: u64) -> &mut OrderBuilder {
 		self.due_range = Some(due_range);
-		let now = Some(self.created_at.unwrap_or(Utc::now()));
+		let now = self.created_at;
 		self.due_at = match self.payment_type {
 			PaymentType::Cash | PaymentType::Lunas => now,
 			_ => {

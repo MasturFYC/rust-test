@@ -8,10 +8,7 @@ use resdb::{
 use serde_json::json;
 
 #[get("/{id}")]
-async fn get_account(
-	path: web::Path<i16>,
-	app_state: web::Data<AppState>,
-) -> impl Responder {
+async fn get_account(path: web::Path<i16>, app_state: web::Data<AppState>) -> impl Responder {
 	let acc_id = path.into_inner();
 
 	let query_result = app_state.db_client.get_account(acc_id).await;
@@ -20,9 +17,8 @@ async fn get_account(
 		Ok(acc) => {
 			let message = format!("Account with ID: {} not found", acc_id);
 			if acc.is_none() {
-				return HttpResponse::NotFound().json(
-					serde_json::json!({"status": "fail","message": message}),
-				);
+				return HttpResponse::NotFound()
+					.json(serde_json::json!({"status": "fail","message": message}));
 			}
 
 			let acc_response = serde_json::json!({
@@ -30,13 +26,11 @@ async fn get_account(
 				"data": acc
 			});
 
-			return HttpResponse::Ok().json(acc_response);
+			HttpResponse::Ok().json(acc_response)
 		}
 		Err(_) => {
 			let message = format!("Account with ID: {} not found", acc_id);
-			return HttpResponse::NotFound().json(
-				serde_json::json!({"status": "fail","message": message}),
-			);
+			HttpResponse::NotFound().json(serde_json::json!({"status": "fail","message": message}))
 		}
 	}
 }
@@ -68,10 +62,7 @@ async fn get_accounts(
 }
 
 #[post("")]
-async fn create(
-	body: web::Json<Account>,
-	app_state: web::Data<AppState>,
-) -> impl Responder {
+async fn create(body: web::Json<Account>, app_state: web::Data<AppState>) -> impl Responder {
 	let data = body.into_inner();
 
 	let query_result = app_state.db_client.account_create(data).await;
@@ -84,22 +75,21 @@ async fn create(
 				);
 			}
 
-			let acc_response =
-				serde_json::json!({"status": "success", "data": acc});
+			let acc_response = serde_json::json!({"status": "success", "data": acc});
 
-			return HttpResponse::Created().json(acc_response);
+			HttpResponse::Created().json(acc_response)
 		}
 		Err(e) => {
 			if e.to_string()
 				.contains("duplicate key value violates unique constraint")
 			{
-				return HttpResponse::BadRequest()
-                .json(serde_json::json!({"status": "fail","message": "Note with that name already exists"}));
+				return HttpResponse::BadRequest().json(
+					serde_json::json!({"status": "fail","message": "Note with that name already exists"}),
+				);
 			}
 
-			return HttpResponse::InternalServerError().json(
-				serde_json::json!({"status": "error","message": format!("{:?}", e)}),
-			);
+			HttpResponse::InternalServerError()
+				.json(serde_json::json!({"status": "error","message": format!("{:?}", e)}))
 		}
 	}
 }
@@ -115,9 +105,8 @@ async fn update(
 	let query_result = app_state.db_client.get_account(acc_id).await;
 
 	if query_result.is_err() {
-		return HttpResponse::BadRequest().json(
-			serde_json::json!({"status": "fail","message": "Bad request"}),
-		);
+		return HttpResponse::BadRequest()
+			.json(serde_json::json!({"status": "fail","message": "Bad request"}));
 	}
 
 	let old = query_result.unwrap_or(None);
@@ -137,22 +126,18 @@ async fn update(
 				"account": acc
 			})});
 
-			return HttpResponse::Ok().json(acc_response);
+			HttpResponse::Ok().json(acc_response)
 		}
 		Err(err) => {
 			let message = format!("Error: {:?}", err);
-			return HttpResponse::InternalServerError().json(
-				serde_json::json!({"status": "error","message": message}),
-			);
+			HttpResponse::InternalServerError()
+				.json(serde_json::json!({"status": "error","message": message}))
 		}
 	}
 }
 
 #[delete("/{id}")]
-async fn delete(
-	path: web::Path<i16>,
-	app_state: web::Data<AppState>,
-) -> impl Responder {
+async fn delete(path: web::Path<i16>, app_state: web::Data<AppState>) -> impl Responder {
 	let acc_id = path.into_inner();
 
 	let query_result = app_state.db_client.account_delete(acc_id).await;
@@ -162,21 +147,21 @@ async fn delete(
 			if rows_affected == 0 {
 				let message = format!("Account with ID: {} not found", acc_id);
 
-				return HttpResponse::NotFound().json(
-					serde_json::json!({"status": "fail","message": message}),
-				);
+				return HttpResponse::NotFound()
+					.json(serde_json::json!({"status": "fail","message": message}));
 			}
 
-			let json = HttpResponse::Ok().json(
-				serde_json::json!({"status": "success","data": rows_affected}),
-			);
-			return json;
+			HttpResponse::Ok().json(serde_json::json!({
+				"status": "success",
+				"data": rows_affected
+			}))
 		}
 		Err(err) => {
 			let message = format!("Error: {:?}", err);
-			return HttpResponse::InternalServerError().json(
-				serde_json::json!({"status": "error","message": message}),
-			);
+			HttpResponse::InternalServerError().json(serde_json::json!({
+				"status": "error",
+				"message": message
+			}))
 		}
 	}
 }

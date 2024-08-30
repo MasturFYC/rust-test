@@ -13,8 +13,6 @@ pub mod model {
 	}
 	#[derive(Validate, Debug, Default, Clone, Serialize, Deserialize)]
 	pub struct Stock {
-		#[serde(skip_serializing_if = "Option::is_none")]
-		pub id: Option<i32>,
 		#[serde(rename = "supplierId")]
 		pub customer_id: i16,
 		#[serde(rename = "warehouseId")]
@@ -541,9 +539,9 @@ pub mod db {
 			T: Into<Vec<StockDetail>> + Send,
 			S: Into<i32> + Send,
 		{
-			let pid: i32 = id.try_into().unwrap();
-			let dto: Stock = data.try_into().unwrap();
-			let details: Vec<StockDetail> = details.try_into().unwrap();
+			let pid: i32 = id.into(); //.unwrap();
+			let dto: Stock = data.into(); //.unwrap();
+			let details: Vec<StockDetail> = details.into(); //.try_into().unwrap();
 
 			let pass = BigDecimal::from(0);
 			let total = details.iter().fold(pass.to_owned(), |d, t| {
@@ -599,12 +597,10 @@ pub mod db {
 				if let Some(d) = old_details.get(i) {
 					let _ = sqlx::query!(
 						r#"
-                    UPDATE
-                        products
-                    SET
-                        unit_in_stock = (unit_in_stock - $2)
-                    WHERE
-                        id = $1"#,
+                        UPDATE  products
+                        SET     unit_in_stock = (unit_in_stock - $2)
+                        WHERE   id = $1
+                        "#,
 						d.product_id,
 						d.qty
 					)
@@ -713,12 +709,12 @@ pub mod db {
 
 			let _ = sqlx::query!(
 				r#"
-            DELETE
-            FROM
-                ledger_details
-            WHERE
-                ledger_id = $1
-            "#,
+                DELETE
+                FROM
+                    ledger_details
+                WHERE
+                    ledger_id = $1
+                "#,
 				pid
 			)
 			.execute(&mut *tx)

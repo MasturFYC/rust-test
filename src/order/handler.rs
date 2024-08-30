@@ -22,10 +22,7 @@ pub fn order_scope(conf: &mut web::ServiceConfig) {
 }
 
 #[get("/{id}")]
-async fn get_order(
-	path: web::Path<i32>,
-	app_state: web::Data<AppState>,
-) -> impl Responder {
+async fn get_order(path: web::Path<i32>, app_state: web::Data<AppState>) -> impl Responder {
 	let order_id = path.into_inner();
 	let query_result = app_state.db_client.get_order(order_id).await;
 
@@ -33,19 +30,17 @@ async fn get_order(
 		Ok(order) => {
 			match order {
 				None => {
-					let message =
-						format!("Order with ID: {} not found", order_id);
-					return HttpResponse::NotFound().json(json!({
+					let message = format!("Order with ID: {} not found", order_id);
+					HttpResponse::NotFound().json(json!({
 						"status": "fail",
 						"message": message
-					}));
+					}))
 				}
 				Some(x) => {
 					let order_response = json!({"status": "success","data": x});
-					return HttpResponse::Ok().json(order_response);
+					HttpResponse::Ok().json(order_response)
 				}
-			};
-
+			}
 			// if order.is_none() {
 			//     let message = format!("Order with ID: {} not found", order_id);
 			//         return HttpResponse::NotFound()
@@ -57,19 +52,18 @@ async fn get_order(
 		}
 		Err(e) => {
 			let message = format!("Error {:?}", e);
-			return HttpResponse::InternalServerError().json(
-				serde_json::json!({"status": "fail","message": message}),
-			);
+			HttpResponse::InternalServerError()
+				.json(serde_json::json!({"status": "fail","message": message}))
 		}
 	}
 }
 
 #[get("")]
 async fn get_orders(
-	opts: web::Query<RequestQueryDto>,
+	qp: web::Query<RequestQueryDto>,
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
-	let query_params = opts.into_inner();
+	let query_params = qp.into_inner();
 
 	// let map_err = query_params
 	//     .validate()
@@ -129,15 +123,15 @@ async fn create(
 			let details = o.1;
 			let detail_response = json!({
 				"status": "success",
-				"data": json!({
+				"data": {
 					"order" : order,
 					"details" : details
-				})
+				}
 			});
 
 			// println!("{:?}", v);
 
-			return HttpResponse::Created().json(detail_response);
+			HttpResponse::Created().json(detail_response)
 		}
 		Err(e) => {
 			if e.to_string()
@@ -149,10 +143,10 @@ async fn create(
 				}));
 			}
 
-			return HttpResponse::InternalServerError().json(json!({
+			HttpResponse::InternalServerError().json(json!({
 				"status": "error",
 				"message": format!("{:?}", e)
-			}));
+			}))
 		}
 	}
 }
@@ -168,15 +162,13 @@ async fn update(
 	let query_result = app_state.db_client.get_order(order_id).await;
 
 	if query_result.is_err() {
-		return HttpResponse::BadRequest()
-			.json(json!({"status": "fail","message": "Bad request"}));
+		return HttpResponse::BadRequest().json(json!({"status": "fail","message": "Bad request"}));
 	}
 	// let old = ; //_or(None);
 
 	if query_result.unwrap().is_none() {
 		let message = format!("Order with ID: {} not found", order_id);
-		return HttpResponse::NotFound()
-			.json(json!({"status": "fail","message": message}));
+		return HttpResponse::NotFound().json(json!({"status": "fail","message": message}));
 	}
 
 	let data = body.into_inner();
@@ -194,21 +186,17 @@ async fn update(
 				"details": order.1
 			})});
 
-			return HttpResponse::Ok().json(order_response);
+			HttpResponse::Ok().json(order_response)
 		}
 		Err(err) => {
 			let message = format!("Error: {:?}", err);
-			return HttpResponse::InternalServerError()
-				.json(json!({"status": "error","message": message}));
+			HttpResponse::InternalServerError().json(json!({"status": "error","message": message}))
 		}
 	}
 }
 
 #[delete("/{id}")]
-async fn delete(
-	path: web::Path<i32>,
-	app_state: web::Data<AppState>,
-) -> impl Responder {
+async fn delete(path: web::Path<i32>, app_state: web::Data<AppState>) -> impl Responder {
 	let order_id = path.into_inner();
 
 	let query_result = app_state.db_client.order_delete(order_id).await;
@@ -224,18 +212,17 @@ async fn delete(
 				}));
 			}
 
-			let json = HttpResponse::Ok().json(json!({
+			HttpResponse::Ok().json(json!({
 				"status": "success",
 				"data": rows_affected
-			}));
-			return json;
+			}))
 		}
 		Err(err) => {
 			let message = format!("Error: {:?}", err);
-			return HttpResponse::InternalServerError().json(json!({
+			HttpResponse::InternalServerError().json(json!({
 				"status": "error",
 				"message": message
-			}));
+			}))
 		}
 	}
 }

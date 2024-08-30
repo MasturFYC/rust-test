@@ -21,7 +21,7 @@
 	export let employees: iRelationProp[] = [];
 
 	export let txt = "";
-	export let seletedSupplierId = 0;
+	export let selectedSupplierId = 0;
 	export let selectedWarehouseId = 0;
 	let sup_light = false;
 	let ware_light = false;
@@ -115,12 +115,12 @@
 			/>
 			<ComboBox
 				type="inline"
-				light={sup_light || seletedSupplierId > 0}
+				light={sup_light || selectedSupplierId > 0}
 				size="sm"
 				style="width: 165px; border-bottom: none;"
 				class={"supplier"}
 				placeholder="supplier"
-				selectedId={seletedSupplierId}
+				selectedId={selectedSupplierId}
 				items={suppliers.map((m) => ({ id: m.id, text: m.text }))}
 				on:select={(e) => {
 					dispatch("supplierChange", e.detail.selectedId);

@@ -33,25 +33,23 @@ async fn get_stock(path: web::Path<i32>, app_state: web::Data<AppState>) -> impl
 	let query_result = app_state.db_client.get_stock(stock_id).await;
 
 	match query_result {
-		Ok(stock) => {
-			match stock {
-				None => {
-					let message = format!("Stock with ID: {} not found", stock_id);
-					return HttpResponse::NotFound().json(json!({
-						"status": "fail",
-						"message": message
-					}));
-				}
-				Some(x) => {
-					let stock_response = json!({"status": "success","data": x});
-					return HttpResponse::Ok().json(stock_response);
-				}
-			};
-		}
+		Ok(stock) => match stock {
+			None => {
+				let message = format!("Stock with ID: {} not found", stock_id);
+				HttpResponse::NotFound().json(json!({
+					"status": "fail",
+					"message": message
+				}))
+			}
+			Some(x) => {
+				let stock_response = json!({"status": "success","data": x});
+				HttpResponse::Ok().json(stock_response)
+			}
+		},
 		Err(e) => {
 			let message = format!("Error {:?}", e);
-			return HttpResponse::InternalServerError()
-				.json(serde_json::json!({"status": "fail","message": message}));
+			HttpResponse::InternalServerError()
+				.json(serde_json::json!({"status": "fail","message": message}))
 		}
 	}
 }
@@ -76,7 +74,7 @@ async fn get_stock_with_details(
 		"details": details
 	});
 
-	return Ok(HttpResponse::Ok().json(response));
+	Ok(HttpResponse::Ok().json(response))
 }
 
 #[get("")]
@@ -85,20 +83,9 @@ async fn get_stocks(
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
 	let query_params = opts.into_inner();
-
 	let page = query_params.page.unwrap_or(1);
 	let limit = query_params.page.unwrap_or(10);
-
-	// let map_err = query_params
-	//     .validate()
-	//     .map_err(|e| e);
-
-	// if map_err.is_err() {
-	//     return HttpResponse::BadRequest().json(json!({"status":"fail", "message": "Bad request"}));
-	// }
-
 	let query_result = app_state.db_client.get_stocks(query_params).await;
-
 	if query_result.is_err() {
 		let message = "Something bad happened while fetching all stock items";
 		return HttpResponse::InternalServerError().json(json!({
@@ -106,7 +93,6 @@ async fn get_stocks(
 			"message": message
 		}));
 	}
-
 	// let (stocks, length) = query_result.unwrap();
 	let v = query_result.unwrap();
 	// selected stocks by page and limit
@@ -114,7 +100,6 @@ async fn get_stocks(
 	// count all stocks in database
 	let length = v.1;
 	let lim = limit as i64;
-
 	let json_response = json!({
 		"status": "success",
 		"totalPages": (length / lim) + (if length % lim == 0 {0} else {1}),
@@ -136,8 +121,6 @@ async fn create(
 		println!("{:?}", e.errors());
 		HttpError::bad_request(e.to_string())
 	})?;
-
-	// println!("WELCOME");
 	let data = body.into_inner();
 	// let response = json!({
 	// 			"status": "success",
@@ -149,7 +132,6 @@ async fn create(
 		.db_client
 		.stock_create(data.stock, data.details)
 		.await;
-
 	match query_result {
 		Ok(o) => {
 			// let id = o.0;
@@ -162,7 +144,7 @@ async fn create(
 
 			// println!("{:?}", v);
 
-			return Ok(HttpResponse::Created().json(response));
+			Ok(HttpResponse::Created().json(response))
 		}
 		// Err(e) => {
 		Err(e) => Err(HttpError::server_error(e.to_string())),
@@ -175,7 +157,6 @@ async fn create(
 		// 		"message": "Note with that name already exists"
 		// 	})));
 		// }
-
 		// return Err(HttpResponse::InternalServerError().json(json!({
 		// 	"status": "error",
 		// 	"message": format!("{:?}", e)
@@ -191,26 +172,21 @@ async fn update(
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
 	let stock_id = path.into_inner();
-
 	let query_result = app_state.db_client.get_stock(stock_id).await;
-
 	if query_result.is_err() {
 		return HttpResponse::BadRequest()
 			.json(json!({"status": "fail-1","message": "Bad request"}));
 	}
 	// let old = ; //_or(None);
-
 	if query_result.unwrap().is_none() {
 		let message = format!("Stock with ID: {} not found", stock_id);
 		return HttpResponse::NotFound().json(json!({"status": "fail-2","message": message}));
 	}
-
 	let data = body.into_inner();
 	let query_result = app_state
 		.db_client
 		.stock_update(stock_id, data.stock, data.details)
 		.await;
-
 	match query_result {
 		Ok(result) => {
 			let stock_response = json!({
@@ -219,12 +195,11 @@ async fn update(
 			"length": result.1
 			});
 
-			return HttpResponse::Ok().json(stock_response);
+			HttpResponse::Ok().json(stock_response)
 		}
 		Err(err) => {
 			let message = format!("Error: {:?}", err);
-			return HttpResponse::InternalServerError()
-				.json(json!({"status": "error1","message": message}));
+			HttpResponse::InternalServerError().json(json!({"status": "error1","message": message}))
 		}
 	}
 }
@@ -235,23 +210,18 @@ async fn update_only_stock(
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
 	let stock_id = path.into_inner();
-
 	let query_result = app_state.db_client.get_stock(stock_id).await;
-
 	if query_result.is_err() {
 		return HttpResponse::BadRequest()
 			.json(json!({"status": "fail-1","message": "Bad request"}));
 	}
 	// let old = ; //_or(None);
-
 	if query_result.unwrap().is_none() {
 		let message = format!("Stock with ID: {} not found", stock_id);
 		return HttpResponse::NotFound().json(json!({"status": "fail-2","message": message}));
 	}
-
 	let data = body.into_inner();
 	let query_result = app_state.db_client.stock_update_only(stock_id, data).await;
-
 	match query_result {
 		Ok(result) => {
 			let stock_response = json!({
@@ -259,12 +229,11 @@ async fn update_only_stock(
 			"id": result,
 			});
 
-			return HttpResponse::Ok().json(stock_response);
+			HttpResponse::Ok().json(stock_response)
 		}
 		Err(err) => {
 			let message = format!("Error: {:?}", err);
-			return HttpResponse::InternalServerError()
-				.json(json!({"status": "error1","message": message}));
+			HttpResponse::InternalServerError().json(json!({"status": "error1","message": message}))
 		}
 	}
 }
@@ -276,9 +245,7 @@ async fn delete(
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
 	let ids = body.into_inner();
-
 	let query_result = app_state.db_client.stock_delete(ids).await;
-
 	match query_result {
 		Ok(rows_affected) => {
 			if rows_affected == 0 {
@@ -290,18 +257,17 @@ async fn delete(
 				}));
 			}
 
-			let json = HttpResponse::Ok().json(json!({
+			HttpResponse::Ok().json(json!({
 				"status": "success",
 				"data": rows_affected
-			}));
-			return json;
+			}))
 		}
 		Err(err) => {
 			let message = format!("Error: {:?}", err);
-			return HttpResponse::InternalServerError().json(json!({
+			HttpResponse::InternalServerError().json(json!({
 				"status": "error",
 				"message": message
-			}));
+			}))
 		}
 	}
 }

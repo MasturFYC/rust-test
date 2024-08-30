@@ -6,13 +6,13 @@
   import { numberToText } from "$lib/number-to-string";
   import { useQuery, useQueryClient } from "@sveltestack/svelte-query";
   import {
-  	Column,
-  	Grid,
-  	Loading,
-  	LocalStorage,
-  	Pagination,
-  	Row,
-  	ToastNotification,
+    Column,
+    Grid,
+    Loading,
+    LocalStorage,
+    Pagination,
+    Row,
+    ToastNotification,
   } from "carbon-components-svelte";
   import dayjs from "dayjs";
   import { onDestroy, tick } from "svelte";
@@ -22,19 +22,19 @@
   import StockDetail from "./StockDetail.svelte";
   import StockList from "./StockList.svelte";
   import {
-  	getStockById,
-  	getStocks,
-  	postCreateStock,
-  	postDeleteStock,
-  	postUpdateOnlyStock,
-  	postUpdateStock,
+    getStockById,
+    getStocks,
+    postCreateStock,
+    postDeleteStock,
+    postUpdateOnlyStock,
+    postUpdateStock,
   } from "./handler";
   import {
-  	details,
-  	initStock,
-  	isStockLoading,
-  	isStockUpdating,
-  	stock,
+    details,
+    initStock,
+    isStockLoading,
+    isStockUpdating,
+    stock,
   } from "./store";
 
   const client = useQueryClient();
@@ -48,6 +48,8 @@
   let stockId = 0;
   let open = false;
   const qKey = "stocks";
+  let innerWidth = 0;
+  let timeout: number | undefined = undefined;
 
   let isEdit = false;
 
@@ -150,8 +152,6 @@
     // console.log([qKey, p, l, o, t, r]);
     // console.log(q_key);
   }
-  let innerWidth = 0;
-  let timeout: number | undefined = undefined;
 
   function stockClose(e: CustomEvent<any>): void {
     changeStockSession(0, false);
@@ -218,7 +218,7 @@
 
   async function saveStock(e: CustomEvent<iStockDetail[]>) {
     if ($stock.isDetailChanged) {
-      console.log("UDPATE-WITH-DETAILS");
+      // console.log("UDPATE-WITH-DETAILS");
       if (e.detail.length > 0) {
         const x = dayjs($stock.createdAt);
         const y = dayjs($stock.dueAt);
@@ -276,7 +276,7 @@
         changeStockSession(0, false);
       }
     } else {
-      console.log("UDPATE-ONLY-STOCK");
+      // console.log("UDPATE-ONLY-STOCK");
       updateOnlyStock();
     }
   }
@@ -364,7 +364,7 @@
     suppliers={$supplierQuery.data?.data}
     employees={$employeeQuery.data?.data}
     {txt}
-    seletedSupplierId={supplierId}
+    selectedSupplierId={supplierId}
     selectedWarehouseId={warehouseId}
     on:supplierChange={(e) => {
       opt = e.detail === 0 ? 0 : 2;

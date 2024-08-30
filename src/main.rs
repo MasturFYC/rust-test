@@ -12,8 +12,8 @@ mod payment;
 mod product;
 mod relation;
 mod scopes;
-mod utils;
 mod stock;
+mod utils;
 
 use actix_cors::Cors;
 use actix_web::{get, http::header, middleware::Logger, web, App, HttpResponse, HttpServer, Responder};
