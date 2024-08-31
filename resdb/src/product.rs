@@ -521,7 +521,6 @@ pub mod db {
 			)
 			.fetch_one(&self.pool)
 			.await?;
-
 			Ok(product)
 		}
 
@@ -531,7 +530,6 @@ pub mod db {
 				.await
 				.unwrap()
 				.rows_affected();
-
 			Ok(rows_affected)
 		}
 	}

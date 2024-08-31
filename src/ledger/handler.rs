@@ -31,26 +31,21 @@ async fn get_ledgers(
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
 	let query_params: RequestQueryDto = opts.into_inner();
-
 	let limit = query_params.limit.unwrap_or(10);
 	let page = query_params.page.unwrap_or(1);
-
 	let get_ledgers = app_state.db_client.get_ledgers(page, limit);
 	let query_result = get_ledgers.await;
-
 	if query_result.is_err() {
 		let message = "Something bad happened while fetching all ledger items";
 		return HttpResponse::InternalServerError()
 			.json(json!({"status": "error","message": message}));
 	}
-
 	//let result = query_result;//.unwrap();
-
-	let (ledgers, count) = query_result.unwrap(); //.expect("No data found");
-											  // let ledgers = result.0;
-											  // let count = result.1;
+	let (ledgers, count) = query_result.unwrap();
+	//.expect("No data found");
+	// let ledgers = result.0;
+	// let count = result.1;
 	let lim = limit as i64;
-
 	let json_response = json!({
 		"status": "success",
 		"totalPages": (count / lim) + (if count % lim == 0 {0} else {1}),
@@ -74,9 +69,7 @@ async fn create(body: web::Json<LedgerSchema>, app_state: web::Data<AppState>) -
 					serde_json::json!({"status": "fail","message": "Cannot create new ledger"}),
 				);
 			}
-
 			let ledger_response = json!({"status": "success", "data": ledger});
-
 			HttpResponse::Created().json(ledger_response)
 		}
 		Err(e) => {
@@ -87,7 +80,6 @@ async fn create(body: web::Json<LedgerSchema>, app_state: web::Data<AppState>) -
 					serde_json::json!({"status": "fail","message": "Note with that name already exists"}),
 				);
 			}
-
 			HttpResponse::InternalServerError()
 				.json(serde_json::json!({"status": "error","message": format!("{:?}", e)}))
 		}
@@ -135,9 +127,7 @@ async fn update(
 #[delete("/{id}")]
 async fn delete(path: web::Path<i32>, app_state: web::Data<AppState>) -> impl Responder {
 	let ledger_id = path.into_inner();
-
 	let query_result = app_state.db_client.ledger_delete(ledger_id).await;
-
 	match query_result {
 		Ok(rows_affected) => {
 			if rows_affected == 0 {

@@ -64,9 +64,7 @@ async fn get_accounts(
 #[post("")]
 async fn create(body: web::Json<Account>, app_state: web::Data<AppState>) -> impl Responder {
 	let data = body.into_inner();
-
 	let query_result = app_state.db_client.account_create(data).await;
-
 	match query_result {
 		Ok(acc) => {
 			if acc.is_none() {
@@ -101,25 +99,19 @@ async fn update(
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
 	let acc_id = path.into_inner();
-
 	let query_result = app_state.db_client.get_account(acc_id).await;
-
 	if query_result.is_err() {
 		return HttpResponse::BadRequest()
 			.json(serde_json::json!({"status": "fail","message": "Bad request"}));
 	}
-
 	let old = query_result.unwrap_or(None);
-
 	if old.is_none() {
 		let message = format!("Account with ID: {} not found", acc_id);
 		return HttpResponse::NotFound()
 			.json(serde_json::json!({"status": "fail","message": message}));
 	}
-
 	let data = body.into_inner();
 	let query_result = app_state.db_client.account_update(acc_id, data).await;
-
 	match query_result {
 		Ok(acc) => {
 			let acc_response = serde_json::json!({"status": "success","data": serde_json::json!({

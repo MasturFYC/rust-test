@@ -274,13 +274,9 @@ impl LedgerUtil {
 	}
 
 	/// ## Ledger untuk transaksi pembayaran piutang
-	///
 	/// `(+) 101 - Kas` -> **amount**
-	///
 	/// `(-) 106 - Persediaan barang` -> **amount**
-	///
 	/// **`ref_id`** payment id
-	///
 	/// **`ledger_id`** ledger id biasanya sama dengan payment id
 	///
 	pub fn from_stock(

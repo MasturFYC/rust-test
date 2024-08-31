@@ -1,9 +1,7 @@
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use serde_json::json;
 use validator::Validate;
-
 use crate::{error::HttpError, extractors::auth::RequireAuth, AppState};
-
 use resdb::{
 	model::UserRole,
 	stock::{
@@ -23,7 +21,6 @@ pub fn stock_scope(conf: &mut web::ServiceConfig) {
 		.service(update_only_stock)
 		.service(update)
 		.service(delete);
-
 	conf.service(scope);
 }
 
@@ -31,7 +28,6 @@ pub fn stock_scope(conf: &mut web::ServiceConfig) {
 async fn get_stock(path: web::Path<i32>, app_state: web::Data<AppState>) -> impl Responder {
 	let stock_id = path.into_inner();
 	let query_result = app_state.db_client.get_stock(stock_id).await;
-
 	match query_result {
 		Ok(stock) => match stock {
 			None => {
