@@ -22,8 +22,8 @@ use config::Config;
 use resdb::db::DBClient;
 use dotenv::dotenv;
 use dtos::{
-	FilterUserDto, LoginUserDto, RegisterUserDto, Response, UserData, UserListResponseDto,
-	UserLoginResponseDto, UserResponseDto,
+	FilterUserDto, LoginUserDto, RegisterUserDto, Response, UserData, UserListResponseDto, UserLoginResponseDto,
+	UserResponseDto,
 };
 
 use scopes::{auth, users};
@@ -114,10 +114,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 		db_client,
 	};
 
-	println!(
-		"{}",
-		format!("Server is running on http://localhost:{}", config.port)
-	);
+	println!("{}", format!("Server is running on http://localhost:{}", config.port));
 
 	let openapi = ApiDoc::openapi();
 
@@ -132,11 +129,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 			//			.allowed_origin("http://127.0.0.1:8080")
 			//			.allowed_origin("https://rust.codevoweb.com")
 			.allowed_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
-			.allowed_headers(vec![
-				header::CONTENT_TYPE,
-				header::AUTHORIZATION,
-				header::ACCEPT,
-			])
+			.allowed_headers(vec![header::CONTENT_TYPE, header::AUTHORIZATION, header::ACCEPT])
 			.supports_credentials();
 
 		App::new()
@@ -189,16 +182,13 @@ mod tests {
 	async fn test_health_checker_handler() {
 		let app = test::init_service(App::new().service(health_checker_handler)).await;
 
-		let req = test::TestRequest::get()
-			.uri("/api/healthchecker")
-			.to_request();
+		let req = test::TestRequest::get().uri("/api/healthchecker").to_request();
 		let resp = test::call_service(&app, req).await;
 
 		assert_eq!(resp.status(), StatusCode::OK);
 
 		let body = test::read_body(resp).await;
-		let expected_json =
-			serde_json::json!({"status": "success", "message": "Complete Restful API in Rust"});
+		let expected_json = serde_json::json!({"status": "success", "message": "Complete Restful API in Rust"});
 
 		assert_eq!(body, serde_json::to_string(&expected_json).unwrap());
 	}

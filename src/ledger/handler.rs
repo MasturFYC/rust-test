@@ -20,7 +20,10 @@ async fn get_ledger(path: web::Path<i32>, app_state: web::Data<AppState>) -> imp
 		}
 		Err(_) => {
 			let message = format!("Ledger with ID: {} not found", id);
-			HttpResponse::NotFound().json(serde_json::json!({"status": "fail","message": message}))
+			HttpResponse::NotFound().json(serde_json::json!({
+				"status": "fail",
+				"message": message
+			}))
 		}
 	}
 }

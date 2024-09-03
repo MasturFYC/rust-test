@@ -44,8 +44,7 @@ async fn get_stock(path: web::Path<i32>, app_state: web::Data<AppState>) -> impl
 		},
 		Err(e) => {
 			let message = format!("Error {:?}", e);
-			HttpResponse::InternalServerError()
-				.json(serde_json::json!({"status": "fail","message": message}))
+			HttpResponse::InternalServerError().json(serde_json::json!({"status": "fail","message": message}))
 		}
 	}
 }
@@ -74,10 +73,7 @@ async fn get_stock_with_details(
 }
 
 #[get("")]
-async fn get_stocks(
-	opts: web::Query<RequestStock>,
-	app_state: web::Data<AppState>,
-) -> impl Responder {
+async fn get_stocks(opts: web::Query<RequestStock>, app_state: web::Data<AppState>) -> impl Responder {
 	let query_params = opts.into_inner();
 	let page = query_params.page.unwrap_or(1);
 	let limit = query_params.page.unwrap_or(10);
@@ -109,10 +105,7 @@ async fn get_stocks(
 }
 
 #[post("")]
-async fn create(
-	body: web::Json<RequestQueryStock>,
-	app_state: web::Data<AppState>,
-) -> Result<HttpResponse, HttpError> {
+async fn create(body: web::Json<RequestQueryStock>, app_state: web::Data<AppState>) -> Result<HttpResponse, HttpError> {
 	body.validate().map_err(|e| {
 		println!("{:?}", e.errors());
 		HttpError::bad_request(e.to_string())
@@ -124,10 +117,7 @@ async fn create(
 	// 			"details" : 200
 	// });
 	// return Ok(HttpResponse::Created().json(response));
-	let query_result = app_state
-		.db_client
-		.stock_create(data.stock, data.details)
-		.await;
+	let query_result = app_state.db_client.stock_create(data.stock, data.details).await;
 	match query_result {
 		Ok(o) => {
 			// let id = o.0;
@@ -170,8 +160,7 @@ async fn update(
 	let stock_id = path.into_inner();
 	let query_result = app_state.db_client.get_stock(stock_id).await;
 	if query_result.is_err() {
-		return HttpResponse::BadRequest()
-			.json(json!({"status": "fail-1","message": "Bad request"}));
+		return HttpResponse::BadRequest().json(json!({"status": "fail-1","message": "Bad request"}));
 	}
 	// let old = ; //_or(None);
 	if query_result.unwrap().is_none() {
@@ -208,8 +197,7 @@ async fn update_only_stock(
 	let stock_id = path.into_inner();
 	let query_result = app_state.db_client.get_stock(stock_id).await;
 	if query_result.is_err() {
-		return HttpResponse::BadRequest()
-			.json(json!({"status": "fail-1","message": "Bad request"}));
+		return HttpResponse::BadRequest().json(json!({"status": "fail-1","message": "Bad request"}));
 	}
 	// let old = ; //_or(None);
 	if query_result.unwrap().is_none() {

@@ -1,4 +1,5 @@
-UPDATE ledgers
+UPDATE
+    ledgers
 SET
     relation_id = $2,
     ledger_type = $3,

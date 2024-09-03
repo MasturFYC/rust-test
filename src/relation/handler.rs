@@ -280,7 +280,7 @@ async fn delete(path: web::Path<i16>, app_state: web::Data<AppState>) -> impl Re
 					.json(serde_json::json!({"status": "fail","message": message}));
 			}
 
-			HttpResponse::Ok().json(serde_json::json!({"status": "success","data": rows_affected}))
+			HttpResponse::Ok().json(json!({"status": "success","data": rows_affected}))
 		}
 		Err(err) => {
 			let message = format!("Error: {:?}", err);

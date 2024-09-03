@@ -64,20 +64,9 @@ async fn get_orders(
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
 	let query_params = qp.into_inner();
-
-	// let map_err = query_params
-	//     .validate()
-	//     .map_err(|e| e);
-
-	// if map_err.is_err() {
-	//     return HttpResponse::BadRequest().json(json!({"status":"fail", "message": "Bad request"}));
-	// }
-
 	let limit = query_params.limit.unwrap_or(10);
 	let page = query_params.page.unwrap_or(1);
-
 	let query_result = app_state.db_client.get_orders(page, limit).await;
-
 	if query_result.is_err() {
 		let message = "Something bad happened while fetching all order items";
 		return HttpResponse::InternalServerError().json(json!({
@@ -85,7 +74,6 @@ async fn get_orders(
 			"message": message
 		}));
 	}
-
 	// let (orders, length) = query_result.unwrap();
 	let v = query_result.unwrap();
 	// selected orders by page and limit
@@ -93,7 +81,6 @@ async fn get_orders(
 	// count all orders in database
 	let length = v.1;
 	let lim = limit as i64;
-
 	let json_response = json!({
 		"status": "success",
 		"totalPages": (length / lim) + (if length % lim == 0 {0} else {1}),
@@ -101,7 +88,6 @@ async fn get_orders(
 		"data": orders, // selected orders
 		"totalItems": length, // all item orders in database
 	});
-
 	HttpResponse::Ok().json(json_response)
 }
 
@@ -116,7 +102,6 @@ async fn create(
 		.db_client
 		.order_create(data.order, data.details)
 		.await;
-
 	match query_result {
 		Ok(o) => {
 			let order = o.0;
@@ -128,9 +113,7 @@ async fn create(
 					"details" : details
 				}
 			});
-
 			// println!("{:?}", v);
-
 			HttpResponse::Created().json(detail_response)
 		}
 		Err(e) => {
@@ -142,7 +125,6 @@ async fn create(
 					"message": "Note with that name already exists"
 				}));
 			}
-
 			HttpResponse::InternalServerError().json(json!({
 				"status": "error",
 				"message": format!("{:?}", e)
@@ -158,34 +140,28 @@ async fn update(
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
 	let order_id = path.into_inner();
-
 	let query_result = app_state.db_client.get_order(order_id).await;
-
 	if query_result.is_err() {
 		return HttpResponse::BadRequest().json(json!({"status": "fail","message": "Bad request"}));
 	}
 	// let old = ; //_or(None);
-
 	if query_result.unwrap().is_none() {
 		let message = format!("Order with ID: {} not found", order_id);
 		return HttpResponse::NotFound().json(json!({"status": "fail","message": message}));
 	}
-
 	let data = body.into_inner();
 	let query_result = app_state
 		.db_client
 		.order_update(order_id, data.order, data.details)
 		.await;
-
 	match query_result {
 		Ok(order) => {
 			let order_response = json!({
 			"status": "success",
-			"data": json!({
+			"data": {
 				"order": order.0,
 				"details": order.1
-			})});
-
+			}});
 			HttpResponse::Ok().json(order_response)
 		}
 		Err(err) => {
@@ -198,9 +174,7 @@ async fn update(
 #[delete("/{id}")]
 async fn delete(path: web::Path<i32>, app_state: web::Data<AppState>) -> impl Responder {
 	let order_id = path.into_inner();
-
 	let query_result = app_state.db_client.order_delete(order_id).await;
-
 	match query_result {
 		Ok(rows_affected) => {
 			if rows_affected == 0 {
@@ -211,7 +185,6 @@ async fn delete(path: web::Path<i32>, app_state: web::Data<AppState>) -> impl Re
 					"message": message
 				}));
 			}
-
 			HttpResponse::Ok().json(json!({
 				"status": "success",
 				"data": rows_affected
