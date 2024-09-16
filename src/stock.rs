@@ -160,7 +160,10 @@ async fn update(
 	let stock_id = path.into_inner();
 	let query_result = app_state.db_client.get_stock(stock_id).await;
 	if query_result.is_err() {
-		return HttpResponse::BadRequest().json(json!({"status": "fail-1","message": "Bad request"}));
+		return HttpResponse::BadRequest().json(json!({
+			"status": "fail-1",
+			"message": "Bad request"
+		}));
 	}
 	// let old = ; //_or(None);
 	if query_result.unwrap().is_none() {
@@ -240,7 +243,6 @@ async fn delete(
 					"message": message
 				}));
 			}
-
 			HttpResponse::Ok().json(json!({
 				"status": "success",
 				"data": rows_affected

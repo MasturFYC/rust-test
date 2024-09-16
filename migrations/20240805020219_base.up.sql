@@ -35,6 +35,11 @@ CREATE SEQUENCE IF NOT EXISTS category_id_seq AS SMALLINT
    INCREMENT BY 1
       START 1;
 
+CREATE SEQUENCE IF NOT EXISTS gudang_seq AS SMALLINT
+   INCREMENT BY 1
+      START 1;
+
+
 CREATE TABLE "categories" (
    id SMALLINT NOT NULL DEFAULT nextval('category_id_seq'::regclass),
    name VARCHAR(50) NOT NULL,
@@ -52,6 +57,7 @@ CREATE TABLE
         city VARCHAR(50) NOT NULL,
         street VARCHAR(255),
         phone VARCHAR(25),
+        region VARCHAR(50),
         is_active BOOLEAN NOT NULL DEFAULT TRUE,
         is_special BOOLEAN NOT NULL DEFAULT FALSE,
         relation_type relation_enum[] NOT NULL DEFAULT '{customer}',
@@ -75,7 +81,6 @@ CREATE TABLE "products" (
    name VARCHAR(50) NOT NULL,
    barcode VARCHAR(25) NOT NULL,
    unit VARCHAR(6) NOT NULL,
-   unit_in_stock NUMERIC(12,2) NOT NULL DEFAULT 0,
    content NUMERIC(9,2) NOT NULL DEFAULT 1,
    hpp NUMERIC(9,2) NOT NULL DEFAULT 0,
    margin NUMERIC(7,4) NOT NULL DEFAULT 0,
@@ -195,7 +200,7 @@ CREATE TABLE "ledger_details" (
    ledger_id INT NOT NULL,
    detail_id SMALLINT NOT NULL,
    account_id SMALLINT NOT NULL,
-   amount NUMERIC(9,2) NOT NULL DEFAULT 0,
+   amount NUMERIC(12,2) NOT NULL DEFAULT 0,
    direction SMALLINT NOT NULL,
    ref_id INT NOT NULL DEFAULT 0,
    descriptions VARCHAR(128),
@@ -231,3 +236,50 @@ CREATE INDEX ix_order_payment
 ALTER TABLE "order_payments"
     ADD CONSTRAINT fk_order_payment FOREIGN KEY (order_id)
         REFERENCES orders (id) ON DELETE CASCADE;
+
+-- Add up migration script here
+INSERT INTO accounts (id, name, normal, en_name)
+    VALUES (101, 'Kas', 1, 'Cash');
+INSERT INTO accounts (id, name, normal, en_name)
+    VALUES (106, 'Persediaan barang', 1, 'Inventory');
+INSERT INTO accounts (id, name, normal, en_name)
+    VALUES (111, 'Piutang penjualan', 1, 'Loan');
+INSERT INTO accounts (id, name, normal, en_name)
+    VALUES (204, 'Utang dagang', -1, 'Account payable');
+INSERT INTO accounts (id, name, normal, en_name)
+    VALUES (421, 'Penjualan barang', -1,  'Revenue');
+INSERT INTO accounts (id, name, normal, en_name)
+    VALUES (521, 'Biaya beli barang', 1,  'Cost of goods sold');
+
+CREATE SEQUENCE "gudang_id_seq" AS SMALLINT INCREMENT BY 1 START 1;
+
+CREATE TABLE "gudangs" (
+    id SMALLINT NOT NULL DEFAULT nextval('gudang_id_seq'::regclass),
+    name VARCHAR (50) NOT NULL,
+    employee_id SMALLINT NOT NULL,
+    locate VARCHAR(128),
+    PRIMARY KEY (id)
+);
+
+CREATE TABLE "stocks" (
+    gudang_id SMALLINT NOT NULL,
+    product_id SMALLINT NOT NULL,
+    qty NUMERIC(12,2) NOT NULL DEFAULT 0,
+    PRIMARY KEY (gudang_id, product_id)
+);
+
+CREATE UNIQUE INDEX "ixq_gudang_name" ON gudangs (name);
+
+CREATE INDEX "ix_gudang_employee" ON gudangs (employee_id);
+
+ALTER TABLE "gudangs"
+   ADD CONSTRAINT "fk_gudang_employee" FOREIGN KEY (employee_id)
+      REFERENCES "relations" (id);
+
+ALTER TABLE "stocks"
+   ADD CONSTRAINT "fk_stock_gudang" FOREIGN KEY (gudang_id)
+      REFERENCES "gudangs" (id) ON DELETE CASCADE;
+
+ALTER TABLE "stocks"
+    ADD CONSTRAINT fk_stock_product FOREIGN KEY (product_id)
+        REFERENCES "products" (id) ON DELETE CASCADE;
