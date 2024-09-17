@@ -3,13 +3,24 @@ pub mod model {
 	use chrono::prelude::*;
 	use serde::{Deserialize, Serialize};
 	use validator::Validate;
+    use sqlx::{types::Json, FromRow, Row};
+
+    #[derive(Default, Serialize, Clone, Deserialize, Debug, FromRow, sqlx::Type)]
+    pub struct ProductStock {
+	    #[serde(rename = "gudangId")]
+        pub gudang_id: i16,
+        #[serde(rename = "productId")]
+        pub product_id: i16,
+        pub qty: BigDecimal,
+	    pub name: String,
+    }
 
 	#[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
 	pub struct BarcodeList {
 		pub barcode: String,
 	}
 
-	#[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
+	#[derive(Debug, Deserialize, Serialize, Clone)]
 	pub struct Products {
 		pub id: i16,
 		#[serde(rename = "supplierId")]
@@ -19,8 +30,6 @@ pub mod model {
 		pub name: String,
 		pub barcode: String,
 		pub unit: String,
-		#[serde(rename = "unitInStock")]
-		pub unit_in_stock: BigDecimal,
 		pub content: BigDecimal,
 		pub hpp: BigDecimal,
 		pub margin: BigDecimal,
@@ -40,7 +49,9 @@ pub mod model {
 		pub category_name: String,
 		#[serde(rename = "supplierName")]
 		pub supplier_name: String,
+        pub stocks: Option<Json<Vec<ProductStock>>>,
 	}
+
 
 	#[derive(Validate, Debug, Default, Clone, Serialize, Deserialize)]
 	pub struct Product {
@@ -68,13 +79,8 @@ pub mod model {
 		pub variant_name: Option<String>,
 		#[serde(skip_serializing_if = "Option::is_none")]
 		pub descriptions: Option<String>,
-		// #[serde(rename = "createdAt", skip_serializing_if = "Option::is_none")]
-		// pub created_at: Option<DateTime<Utc>>,
-		// #[serde(rename = "updatedAt", skip_serializing_if = "Option::is_none")]
-		// pub updated_at: Option<DateTime<Utc>>,
 	}
 
-	// #[derive(Debug, Serialize, Deserialize, sqlx::FromRow, sqlx::Type, Clone)]
 	#[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
 	pub struct ProductOriginal {
 		pub id: i16,
@@ -85,8 +91,6 @@ pub mod model {
 		pub name: String,
 		pub barcode: String,
 		pub unit: String,
-		#[serde(rename = "unitInStock")]
-		pub unit_in_stock: BigDecimal,
 		pub content: BigDecimal,
 		pub hpp: BigDecimal,
 		pub margin: BigDecimal,
@@ -133,15 +137,73 @@ pub mod model {
 		pub txt: String,
 		pub limit: Option<usize>
 	}
+
+    impl<'r> sqlx::FromRow<'r, sqlx::postgres::PgRow> for Products {
+        fn from_row(row: &'r sqlx::postgres::PgRow) -> Result<Self, sqlx::Error> {
+            let id = row.get("id");
+            let supplier_id = row.get("supplier_id");
+            let category_id = row.get("category_id");
+            let name = row.get("name");
+            let barcode = row.get("barcode");
+            let unit = row.get("unit");
+            let content = row.get("content");
+            let hpp = row.get("hpp");
+            let margin = row.get("margin");
+            let price = row.get("price");
+            let ppn = row.get("ppn");
+            let heavy = row.get("heavy");
+            let is_active = row.get("is_active");
+    		let variant_name = Some(row.get("variant_name"));
+            let descriptions = Some(row.get("descriptions"));
+            let created_at = Some(row.get("created_at"));
+            let updated_at = Some(row.get("updated_at"));
+            let category_name = row.get("category_name");
+            let supplier_name = row.get("supplier_name");
+        // let products = rows_affected
+            // .try_get::<sqlx::types::Json<Vec<CategoryProduct>>, _>("products")
+            // .map(|r| if r.is_empty() {None} else { Some (r.0) })
+            // .unwrap_or(None);
+            let stocks = row
+                .try_get::<sqlx::types::Json<Vec<ProductStock>>, _>("stocks")
+                .map(|x| if x.is_empty() { None } else { Some(x) })
+                .unwrap_or(None);
+            // serde_json::from_value(row.get("products")).unwrap_or(None);
+            // let products: Option<Vec<CategoryProduct>> = serde_json::from_value(r.get("products")).unwrap_or(None);
+
+		Ok(Self {
+            id,
+            supplier_id, 
+            category_id,
+            name, 
+            barcode,
+            unit,
+            content,
+            hpp,
+            margin,
+            price,
+            ppn,
+            heavy,
+            is_active,
+            variant_name,
+            descriptions,
+            created_at,
+            updated_at,
+            category_name,
+            supplier_name,
+            stocks
+            })
+	    }
+    }
+
+
 }
 
 pub mod db {
 
 	use crate::db::DBClient;
-	use async_trait::async_trait;
-	use sqlx::{self, Acquire};
-
-	use super::model::{BarcodeList, Product, ProductOriginal, Products};
+    use async_trait::async_trait;
+	use sqlx::{self, Acquire, types::Json};
+	use super::model::{BarcodeList, Product, ProductOriginal, Products, ProductStock};
 
 	#[async_trait]
 	pub trait ProductExt {
@@ -194,16 +256,23 @@ pub mod db {
 			&self,
 			id: i16,
 		) -> Result<Option<ProductOriginal>, sqlx::Error> {
-			let product =
-				sqlx::query_file_as!(ProductOriginal, "sql/product-get-origin-by-id.sql", id)
-					.fetch_optional(&self.pool)
-					.await?;
+			let product = sqlx::query_file_as!(
+                ProductOriginal,
+                "sql/product-get-origin-by-id.sql",
+                id
+                )
+                .fetch_optional(&self.pool)
+                .await?;
 
 			Ok(product)
 		}
 
 		async fn get_product(&self, id: i16) -> Result<Option<Products>, sqlx::Error> {
-			let product = sqlx::query_file_as!(Products, "sql/product-get-by-id.sql", id)
+			let product = sqlx::query_file_as!(
+                Products, 
+                "sql/product-get-by-id.sql",
+                id
+                )
 				.fetch_optional(&self.pool)
 				.await?;
 
@@ -222,10 +291,14 @@ pub mod db {
 
 		async fn get_barcodes(&self) -> Result<Vec<BarcodeList>, sqlx::Error> {
 			
-			let barcodes = sqlx::query_file_as!(BarcodeList, "sql/product-get-barcodes.sql")
-			.fetch_all(&self.pool)
-			.await?;
-			Ok(barcodes)
+			let barcodes = sqlx::query_file_as!(
+                BarcodeList,
+                "sql/product-get-barcodes.sql"
+                )
+                .fetch_all(&self.pool)
+                .await?;
+
+            Ok(barcodes)
 		}
 		async fn get_products_by_name(
 			&self,
@@ -234,25 +307,12 @@ pub mod db {
 		) -> Result<Vec<Products>, sqlx::Error> {
 			let search_text = txt.trim().to_lowercase();
 
-			let products = sqlx::query_as!(Products,
-				r#"
-				SELECT 
-					p.*,
-					c.name AS category_name,
-					r.name AS supplier_name
-				FROM 
-					products AS p
-					INNER JOIN categories AS c ON c.id = p.category_id
-					INNER JOIN relations AS r ON r.id = p.supplier_id
-				WHERE 
-					POSITION($1 IN LOWER(p.name||' '||p.barcode)) > 0
-				ORDER BY
-					p.name
-				LIMIT $2
-				"#, 
-					search_text,
-					limit
-					)
+			let products = sqlx::query_file_as!(
+                Products,
+                "sql/product-get-by-name.sql", 
+                search_text,
+                limit
+                )
 				.fetch_all(&self.pool)
 				.await?;
 
@@ -318,77 +378,31 @@ pub mod db {
 			//				.await?;
 
 			let products = match op {
-                    1_i8 => sqlx::query_as!(
-                        Products,r#"
-                        SELECT
-                           p.*,
-                           c.name AS category_name,
-                           r.name AS supplier_name
-                        FROM 
-                           products AS p
-                           INNER JOIN categories AS c ON c.id = p.category_id
-                           INNER JOIN relations AS r ON r.id = p.supplier_id
-                        WHERE 
-                           POSITION($1 IN LOWER(r.name||' '||c.name||' '||p.name||' '||p.barcode||' '||COALESCE(p.variant_name,'')||' '||COALESCE(p.descriptions, ''))) > 0
-								ORDER BY
-									p.name
-                        LIMIT $2
-                        OFFSET $3"#,
-                        search_text,
-                        limit as i64,
-                        offset as i64,
-                        )
-                    .fetch_all(&mut *tx)
-                    .await?,
-                    2_i8 => sqlx::query_as!(
-                        Products,r#"
-                        SELECT
-                           p.*,
-                           c.name AS category_name,
-                           r.name AS supplier_name
-                        FROM 
-                           products AS p
-                           INNER JOIN categories AS c ON c.id = p.category_id
-                           INNER JOIN relations AS r ON r.id = p.supplier_id
-                        WHERE 
-                           supplier_id = $1
-								ORDER BY
-									p.name
-                        LIMIT $2
-                        OFFSET $3"#,
+                    1_i8 => sqlx::query_file_as!(Products, "sql/product-get-all-2.sql",
+                        search_text, limit as i64, offset as i64)
+                        .fetch_all(&mut *tx)
+                        .await?,
+                    2_i8 => sqlx::query_file_as!(Products,"sql/product-get-all-3.sql",
                         relid.unwrap(),
                         limit as i64,
                         offset as i64,
                         )
-                    .fetch_all(&mut *tx)
-                    .await?,
+                        .fetch_all(&mut *tx)
+                        .await?,
 					3_i8 => {
 						let cat_id = catid.unwrap_or(0);
-						sqlx::query_as!(
-							Products,r#"
-							SELECT
-								p.*,
-								c.name AS category_name,
-								r.name AS supplier_name
-							FROM 
-								products AS p
-								INNER JOIN categories AS c ON c.id = p.category_id
-								INNER JOIN relations AS r ON r.id = p.supplier_id
-							WHERE 
-								category_id = $1
-							ORDER BY
-								p.name
-							LIMIT $2
-							OFFSET $3"#,
+						sqlx::query_file_as!(Products, "sql/product-get-all-4.sql",
 							cat_id,
 							limit as i64,
 							offset as i64,
 							)
-						.fetch_all(&mut *tx)
-						.await?
+                            .fetch_all(&mut *tx)
+                            .await?
 					},
-                    _ => sqlx::query_file_as!(
-                        Products, "sql/product-get-all.sql", limit as i64, offset as i64)
+                    _ => sqlx::query_file_as!(Products, "sql/product-get-all.sql",
+                        limit as i64,
+                        offset as i64
+                        )
                         .fetch_all(&mut * tx)
                         .await?,
             };
@@ -416,9 +430,7 @@ pub mod db {
 			.fetch_one(&mut *tx)
 			.await?;
 
-			let products = sqlx::query_file_as!(
-				Products,
-				"sql/product-get-all-by-category.sql",
+			let products = sqlx::query_file_as!(Products, "sql/product-get-all-by-category.sql",
 				category_id,
 				limit as i64,
 				offset as i64
@@ -449,9 +461,7 @@ pub mod db {
 			.fetch_one(&mut *tx)
 			.await?;
 
-			let products = sqlx::query_file_as!(
-				Products,
-				"sql/product-get-all-by-supplier.sql",
+			let products = sqlx::query_file_as!(Products, "sql/product-get-all-by-supplier.sql",
 				supplier_id,
 				limit as i64,
 				offset as i64
@@ -466,9 +476,7 @@ pub mod db {
 
 		async fn product_create(&self, data: Product) -> Result<ProductOriginal, sqlx::Error> {
 			// let mut stmt = self.pool.prepare("SELECT * FROM users WHERE id = $1").await?;
-			let product = sqlx::query_file_as!(
-				ProductOriginal,
-				"sql/product-insert.sql",
+			let product = sqlx::query_file_as!(ProductOriginal,	"sql/product-insert.sql",
 				data.name,
 				data.barcode.to_ascii_uppercase(),
 				data.unit,
@@ -496,9 +504,7 @@ pub mod db {
 			data: Product,
 			old: ProductOriginal,
 		) -> Result<ProductOriginal, sqlx::Error> {
-			let product = sqlx::query_file_as!(
-				ProductOriginal,
-				"sql/product-update.sql",
+			let product = sqlx::query_file_as!(ProductOriginal,	"sql/product-update.sql",
 				id,
 				data.name,
 				data.barcode.to_uppercase(),

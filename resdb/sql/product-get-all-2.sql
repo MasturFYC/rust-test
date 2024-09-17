@@ -1,4 +1,5 @@
-SELECT  p.*,
+SELECT
+        p.*,
         c.name AS category_name,
         r.name AS supplier_name,
         COALESCE((SELECT json_agg(x) FROM (
@@ -7,9 +8,15 @@ SELECT  p.*,
                     INNER JOIN gudangs g ON g.id = s.gudang_id
                     WHERE s.product_id = p.id
         ) AS x), '[]') AS "stocks!: Json<Vec<ProductStock>>"
-FROM products p
-   INNER JOIN categories c ON c.id = p.category_id
-   INNER JOIN relations r ON r.id = p.supplier_id
-WHERE p.supplier_id = $1
-ORDER BY p.supplier_id, p.name
-LIMIT $2 OFFSET $3;
+FROM
+    products AS p
+INNER JOIN
+    categories AS c ON c.id = p.category_id
+INNER JOIN
+    relations AS r ON r.id = p.supplier_id
+WHERE
+    POSITION($1 IN LOWER(r.name||' '||c.name||' '||p.name||' '||p.barcode||' '||COALESCE(p.variant_name,'')||' '||COALESCE(p.descriptions, ''))) > 0
+ORDER BY
+    p.name
+LIMIT $2
+OFFSET $3

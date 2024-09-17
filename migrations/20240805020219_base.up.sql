@@ -39,7 +39,6 @@ CREATE SEQUENCE IF NOT EXISTS gudang_seq AS SMALLINT
    INCREMENT BY 1
       START 1;
 
-
 CREATE TABLE "categories" (
    id SMALLINT NOT NULL DEFAULT nextval('category_id_seq'::regclass),
    name VARCHAR(50) NOT NULL,
@@ -72,6 +71,17 @@ CREATE INDEX idx_relation_name ON relations (name);
 CREATE SEQUENCE IF NOT EXISTS product_id_seq AS SMALLINT
    INCREMENT BY 1
       START 1;
+
+CREATE SEQUENCE "gudang_id_seq" AS SMALLINT INCREMENT BY 1 START 1;
+
+CREATE TABLE "gudangs" (
+    id SMALLINT NOT NULL DEFAULT nextval('gudang_id_seq'::regclass),
+    name VARCHAR (50) NOT NULL,
+    employee_id SMALLINT NOT NULL,
+    locate VARCHAR(128),
+    PRIMARY KEY (id)
+);
+
 
 
 CREATE TABLE "products" (
@@ -161,6 +171,7 @@ CREATE TABLE
       price NUMERIC(12,2) NOT NULL DEFAULT 0,
       discount NUMERIC(9,2) NOT NULL DEFAULT 0,
       subtotal NUMERIC(12,2) NOT NULL DEFAULT 0,
+      gudang_id SMALLINT NOT NULL DEFAULT 1,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       PRIMARY KEY (order_id, detail_id)
@@ -169,6 +180,8 @@ CREATE INDEX ix_order_detail
    ON "order_details" (order_id, created_at);
 CREATE INDEX ix_order_detail_updated
    ON "order_details" (product_id, updated_at DESC);
+CREATE INDEX ix_detail_gudang
+    ON "order_details" (gudang_id);
 
 ALTER TABLE "order_details"
    ADD CONSTRAINT fk_detail_order FOREIGN KEY (order_id)
@@ -177,6 +190,10 @@ ALTER TABLE "order_details"
 ALTER TABLE "order_details"
    ADD CONSTRAINT fk_detail_product FOREIGN KEY (product_id)
       REFERENCES "products" (id);
+
+ALTER TABLE "order_details"
+    ADD CONSTRAINT fk_gudang_order FOREIGN KEY (gudang_id)
+    REFERENCES "gudangs" (id);
 
 CREATE SEQUENCE IF NOT EXISTS ledger_id_seq AS INT
    INCREMENT BY 1
@@ -250,16 +267,6 @@ INSERT INTO accounts (id, name, normal, en_name)
     VALUES (421, 'Penjualan barang', -1,  'Revenue');
 INSERT INTO accounts (id, name, normal, en_name)
     VALUES (521, 'Biaya beli barang', 1,  'Cost of goods sold');
-
-CREATE SEQUENCE "gudang_id_seq" AS SMALLINT INCREMENT BY 1 START 1;
-
-CREATE TABLE "gudangs" (
-    id SMALLINT NOT NULL DEFAULT nextval('gudang_id_seq'::regclass),
-    name VARCHAR (50) NOT NULL,
-    employee_id SMALLINT NOT NULL,
-    locate VARCHAR(128),
-    PRIMARY KEY (id)
-);
 
 CREATE TABLE "stocks" (
     gudang_id SMALLINT NOT NULL,
