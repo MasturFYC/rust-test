@@ -44,7 +44,10 @@ async fn get_stock(path: web::Path<i32>, app_state: web::Data<AppState>) -> impl
 		},
 		Err(e) => {
 			let message = format!("Error {:?}", e);
-			HttpResponse::InternalServerError().json(serde_json::json!({"status": "fail","message": message}))
+			HttpResponse::InternalServerError().json(serde_json::json!({
+				"status": "fail",
+				"message": message
+			}))
 		}
 	}
 }
@@ -168,7 +171,10 @@ async fn update(
 	// let old = ; //_or(None);
 	if query_result.unwrap().is_none() {
 		let message = format!("Stock with ID: {} not found", stock_id);
-		return HttpResponse::NotFound().json(json!({"status": "fail-2","message": message}));
+		return HttpResponse::NotFound().json(json!({
+			"status": "fail-2",
+			"message": message
+		}));
 	}
 	let data = body.into_inner();
 	let query_result = app_state
@@ -187,7 +193,10 @@ async fn update(
 		}
 		Err(err) => {
 			let message = format!("Error: {:?}", err);
-			HttpResponse::InternalServerError().json(json!({"status": "error1","message": message}))
+			HttpResponse::InternalServerError().json(json!({
+				"status": "error1",
+				"message": message
+			}))
 		}
 	}
 }
@@ -200,12 +209,18 @@ async fn update_only_stock(
 	let stock_id = path.into_inner();
 	let query_result = app_state.db_client.get_stock(stock_id).await;
 	if query_result.is_err() {
-		return HttpResponse::BadRequest().json(json!({"status": "fail-1","message": "Bad request"}));
+		return HttpResponse::BadRequest().json(json!({
+			"status": "fail-1",
+			"message": "Bad request"
+		}));
 	}
 	// let old = ; //_or(None);
 	if query_result.unwrap().is_none() {
 		let message = format!("Stock with ID: {} not found", stock_id);
-		return HttpResponse::NotFound().json(json!({"status": "fail-2","message": message}));
+		return HttpResponse::NotFound().json(json!({
+			"status": "fail-2",
+			"message": message
+		}));
 	}
 	let data = body.into_inner();
 	let query_result = app_state.db_client.stock_update_only(stock_id, data).await;
@@ -220,7 +235,10 @@ async fn update_only_stock(
 		}
 		Err(err) => {
 			let message = format!("Error: {:?}", err);
-			HttpResponse::InternalServerError().json(json!({"status": "error1","message": message}))
+			HttpResponse::InternalServerError().json(json!({
+				"status": "error1",
+				"message": message
+			}))
 		}
 	}
 }
