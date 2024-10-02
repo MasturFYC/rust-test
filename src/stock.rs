@@ -16,7 +16,6 @@ pub fn stock_scope(conf: &mut web::ServiceConfig) {
 		.service(get_stock)
 		.service(get_stock_with_details)
 		.service(get_stocks)
-		// .service(get_relations_by_type)
 		.service(create)
 		.service(update_only_stock)
 		.service(update)
@@ -223,7 +222,10 @@ async fn update_only_stock(
 		}));
 	}
 	let data = body.into_inner();
-	let query_result = app_state.db_client.stock_update_only(stock_id, data).await;
+	let query_result = app_state //
+		.db_client
+		.stock_update_only(stock_id, data)
+		.await;
 	match query_result {
 		Ok(result) => {
 			let stock_response = json!({
