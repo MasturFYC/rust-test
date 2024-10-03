@@ -16,7 +16,7 @@ charset = utf-8
 trim_trailing_whitespace = false
 insert_final_newline = false
 # max_line_length = 80
-rulers = 80, 100
+rulers = 80, 110
 
 [*.sql]
 indent_style = space

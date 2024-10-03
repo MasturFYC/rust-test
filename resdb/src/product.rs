@@ -278,7 +278,8 @@ pub mod db {
 
 			Ok(product)
 		}
-		async fn get_product_by_barcode(&self, barcode: String) -> Result<Option<Products>, sqlx::Error> {
+		async fn get_product_by_barcode(&self, barcode: String) // 
+            -> Result<Option<Products>, sqlx::Error> {
 			let product = sqlx::query_file_as!(
 				Products,
 				"sql/product-get-by-barcode.sql",
@@ -335,7 +336,10 @@ pub mod db {
             // start transaction
 			let mut tx = conn.begin().await?;
             // remove space and convert to lower case from search parameter
-			let search_text = txt.unwrap_or("".to_string()).trim().to_lowercase();
+			let search_text = txt //
+                .unwrap_or("".to_string())
+                .trim()
+                .to_lowercase();
             //get supplier id
             let op = opt.unwrap_or(0_18);
 
@@ -451,7 +455,10 @@ pub mod db {
 		) -> Result<(Vec<Products>, i64), sqlx::Error> {
 			let offset = (page - 1) * limit as u32;
 
-			let mut conn = self.pool.acquire().await?;
+			let mut conn = self
+                .pool
+                .acquire()
+                .await?;
 			let mut tx = conn.begin().await?;
 
 			let count = sqlx::query_scalar!(
@@ -461,7 +468,9 @@ pub mod db {
 			.fetch_one(&mut *tx)
 			.await?;
 
-			let products = sqlx::query_file_as!(Products, "sql/product-get-all-by-supplier.sql",
+			let products = sqlx::query_file_as!(
+                Products,
+                "sql/product-get-all-by-supplier.sql",
 				supplier_id,
 				limit as i64,
 				offset as i64
@@ -504,7 +513,9 @@ pub mod db {
 			data: Product,
 			old: ProductOriginal,
 		) -> Result<ProductOriginal, sqlx::Error> {
-			let product = sqlx::query_file_as!(ProductOriginal,	"sql/product-update.sql",
+			let product = sqlx::query_file_as!(
+                ProductOriginal,
+                "sql/product-update.sql",
 				id,
 				data.name,
 				data.barcode.to_uppercase(),
