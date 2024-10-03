@@ -35,11 +35,20 @@ pub mod model {
 		pub created_at: Option<DateTime<Utc>>,
 		#[serde(rename = "updatedAt")]
 		pub updated_at: Option<DateTime<Utc>>,
-		#[serde(rename = "supplierName", skip_serializing_if = "Option::is_none")]
+		#[serde(
+			rename = "supplierName",
+			skip_serializing_if = "Option::is_none"
+		)]
 		pub supplier_name: Option<String>,
-		#[serde(rename = "warehouseName", skip_serializing_if = "Option::is_none")]
+		#[serde(
+			rename = "warehouseName",
+			skip_serializing_if = "Option::is_none"
+		)]
 		pub warehouse_name: Option<String>,
-		#[serde(rename = "isProtected", skip_serializing_if = "Option::is_none")]
+		#[serde(
+			rename = "isProtected",
+			skip_serializing_if = "Option::is_none"
+		)]
 		pub is_protected: Option<bool>,
 	}
 
@@ -63,9 +72,15 @@ pub mod model {
 		pub dp: BigDecimal,
 		pub payment: BigDecimal,
 		pub remain: BigDecimal,
-		#[serde(rename = "supplierName", skip_serializing_if = "Option::is_none")]
+		#[serde(
+			rename = "supplierName",
+			skip_serializing_if = "Option::is_none"
+		)]
 		pub supplier_name: Option<String>,
-		#[serde(rename = "warehouseName", skip_serializing_if = "Option::is_none")]
+		#[serde(
+			rename = "warehouseName",
+			skip_serializing_if = "Option::is_none"
+		)]
 		pub warehouse_name: Option<String>,
 		#[serde(rename = "invoiceId")]
 		pub invoice_id: Option<String>,
@@ -75,7 +90,10 @@ pub mod model {
 		pub created_at: Option<DateTime<Utc>>,
 		#[serde(rename = "updatedAt")]
 		pub updated_at: Option<DateTime<Utc>>,
-		#[serde(rename = "isProtected", skip_serializing_if = "Option::is_none")]
+		#[serde(
+			rename = "isProtected",
+			skip_serializing_if = "Option::is_none"
+		)]
 		pub is_protected: Option<bool>,
 	}
 
@@ -85,7 +103,9 @@ pub mod model {
 		pub qty: BigDecimal,
 	}
 
-	#[derive(Validate, Default, Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
+	#[derive(
+		Validate, Default, Debug, Deserialize, sqlx::FromRow, Serialize, Clone,
+	)]
 	pub struct StockDetail {
 		#[serde(rename = "stockId")]
 		pub order_id: i32,
@@ -105,7 +125,9 @@ pub mod model {
 		pub updated_at: Option<DateTime<Utc>>,
 		pub subtotal: BigDecimal,
 	}
-	#[derive(Validate, Default, Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
+	#[derive(
+		Validate, Default, Debug, Deserialize, sqlx::FromRow, Serialize, Clone,
+	)]
 	pub struct StockDetails {
 		#[serde(rename = "stockId")]
 		pub order_id: i32,
@@ -158,18 +180,25 @@ pub mod db {
 	};
 
 	use super::model::{
-		ProductQuantity, RequestStock, Stock, StockDetail, StockDetails, StockInsertedId, Stocks,
+		ProductQuantity, RequestStock, Stock, StockDetail, StockDetails,
+		StockInsertedId, Stocks,
 	};
 	use crate::model::PaymentType;
 
 	#[async_trait]
 	pub trait StockExt {
-		async fn get_stock(&self, id: i32) -> Result<Option<Stocks>, sqlx::Error>;
+		async fn get_stock(
+			&self,
+			id: i32,
+		) -> Result<Option<Stocks>, sqlx::Error>;
 		async fn get_stock_with_details(
 			&self,
 			id: i32,
 		) -> Result<(Option<Stocks>, Vec<StockDetails>), sqlx::Error>;
-		async fn get_stocks(&self, opts: RequestStock) -> Result<(Vec<Stocks>, i64), sqlx::Error>;
+		async fn get_stocks(
+			&self,
+			opts: RequestStock,
+		) -> Result<(Vec<Stocks>, i64), sqlx::Error>;
 		async fn stock_create<O, T>(
 			&self,
 			data: O,
@@ -188,19 +217,28 @@ pub mod db {
 			S: Into<i32> + Send,
 			O: Into<Stock> + Send,
 			T: Into<Vec<StockDetail>> + Send;
-		async fn stock_update_only<S, O>(&self, id: S, data: O) -> Result<i32, sqlx::Error>
+		async fn stock_update_only<S, O>(
+			&self,
+			id: S,
+			data: O,
+		) -> Result<i32, sqlx::Error>
 		where
 			S: Into<i32> + Send,
 			O: Into<Stock> + Send;
-		async fn stock_delete(&self, ids: Vec<i32>) -> Result<u64, sqlx::Error>;
+		async fn stock_delete(&self, ids: Vec<i32>)
+			-> Result<u64, sqlx::Error>;
 	}
 
 	#[async_trait]
 	impl StockExt for DBClient {
-		async fn get_stock(&self, id: i32) -> Result<Option<Stocks>, sqlx::Error> {
-			let stock = sqlx::query_file_as!(Stocks, "sql/stock-get-by-id.sql", id)
-				.fetch_optional(&self.pool)
-				.await?;
+		async fn get_stock(
+			&self,
+			id: i32,
+		) -> Result<Option<Stocks>, sqlx::Error> {
+			let stock =
+				sqlx::query_file_as!(Stocks, "sql/stock-get-by-id.sql", id)
+					.fetch_optional(&self.pool)
+					.await?;
 
 			Ok(stock)
 		}
@@ -211,19 +249,26 @@ pub mod db {
 			let mut conn = self.pool.acquire().await?;
 			let mut tx = conn.begin().await?;
 
-			let stock = sqlx::query_file_as!(Stocks, "sql/stock-get-by-id.sql", id)
-				.fetch_optional(&mut *tx)
-				.await?;
-			let details =
-				sqlx::query_file_as!(StockDetails, "sql/order-detail-get-by-order-2.sql", id)
-					.fetch_all(&mut *tx)
+			let stock =
+				sqlx::query_file_as!(Stocks, "sql/stock-get-by-id.sql", id)
+					.fetch_optional(&mut *tx)
 					.await?;
+			let details = sqlx::query_file_as!(
+				StockDetails,
+				"sql/order-detail-get-by-order-2.sql",
+				id
+			)
+			.fetch_all(&mut *tx)
+			.await?;
 
 			tx.commit().await?;
 
 			Ok((stock, details))
 		}
-		async fn get_stocks(&self, opts: RequestStock) -> Result<(Vec<Stocks>, i64), sqlx::Error> {
+		async fn get_stocks(
+			&self,
+			opts: RequestStock,
+		) -> Result<(Vec<Stocks>, i64), sqlx::Error> {
 			let limit = opts.limit.unwrap_or(10);
 			let page = opts.page.unwrap_or(1);
 
@@ -350,7 +395,11 @@ pub mod db {
 			Ok((stocks.0, stocks.1.unwrap_or(0)))
 		}
 
-		async fn stock_create<O, T>(&self, data: O, details: T) -> Result<(i32, usize), sqlx::Error>
+		async fn stock_create<O, T>(
+			&self,
+			data: O,
+			details: T,
+		) -> Result<(i32, usize), sqlx::Error>
 		where
 			O: Into<Stock> + Send,
 			T: Into<Vec<StockDetail>> + Send,
@@ -381,8 +430,10 @@ pub mod db {
 				d + ((&t.price - &t.discount) * &t.qty)
 			});
 
-			let mut conn: sqlx::pool::PoolConnection<sqlx::Postgres> = self.pool.acquire().await?;
-			let mut tx: sqlx::Transaction<sqlx::Postgres> = conn.begin().await?;
+			let mut conn: sqlx::pool::PoolConnection<sqlx::Postgres> =
+				self.pool.acquire().await?;
+			let mut tx: sqlx::Transaction<sqlx::Postgres> =
+				conn.begin().await?;
 
 			let new_stock = sqlx::query_file_as!(
 				StockInsertedId,
@@ -442,11 +493,11 @@ pub mod db {
 					let _ = sqlx::query!(
 						r#"
                     UPDATE
-                        products
+                        stocks
                     SET
-                        unit_in_stock = (unit_in_stock + $2)
+                        qty = (qty + $2)
                     WHERE
-                        id = $1"#,
+                        product_id = $1"#,
 						d.product_id,
 						d.qty
 					)
@@ -477,7 +528,8 @@ pub mod db {
 			)
 			.execute(&mut *tx)
 			.await?;
-			let (ledger_details, len) = LedgerUtil::from_stock(&total, &o.dp, pid, pid);
+			let (ledger_details, len) =
+				LedgerUtil::from_stock(&total, &o.dp, pid, pid);
 
 			let mut i: usize = 0;
 			//        let len = ledger_details.len();
@@ -548,8 +600,10 @@ pub mod db {
 				d + ((&t.price - &t.discount) * &t.qty)
 			});
 
-			let mut conn: sqlx::pool::PoolConnection<sqlx::Postgres> = self.pool.acquire().await?;
-			let mut tx: sqlx::Transaction<sqlx::Postgres> = conn.begin().await?;
+			let mut conn: sqlx::pool::PoolConnection<sqlx::Postgres> =
+				self.pool.acquire().await?;
+			let mut tx: sqlx::Transaction<sqlx::Postgres> =
+				conn.begin().await?;
 
 			let test = sqlx::query_scalar(
 				r#"
@@ -590,16 +644,16 @@ pub mod db {
 			.fetch_all(&mut *tx)
 			.await?;
 
-			let mut i = 0;
+			let mut i: usize = 0;
 			let len = old_details.len();
 
 			loop {
 				if let Some(d) = old_details.get(i) {
 					let _ = sqlx::query!(
 						r#"
-                        UPDATE  products
-                        SET     unit_in_stock = (unit_in_stock - $2)
-                        WHERE   id = $1
+                        UPDATE  stocks
+                        SET     qty = (qty - $2)
+                        WHERE   product_id = $1
                         "#,
 						d.product_id,
 						d.qty
@@ -615,9 +669,12 @@ pub mod db {
 				}
 			}
 
-			let _ = sqlx::query!("DELETE FROM order_details WHERE order_id = $1", pid)
-				.execute(&mut *tx)
-				.await?;
+			let _ = sqlx::query!(
+				"DELETE FROM order_details WHERE order_id = $1",
+				pid
+			)
+			.execute(&mut *tx)
+			.await?;
 
 			let _ = sqlx::query_file!(
 				"sql/stock-update.sql",
@@ -646,11 +703,11 @@ pub mod db {
 					let _ = sqlx::query!(
 						r#"
 					UPDATE
-						products
+					    stocks
 					SET
-						unit_in_stock = (unit_in_stock + $2)
+						qty = (qty + $2)
 					WHERE
-						id = $1
+						product_id = $1
 					"#,
 						d.product_id,
 						d.qty
@@ -720,7 +777,8 @@ pub mod db {
 			.execute(&mut *tx)
 			.await?;
 
-			let (ledger_details, len) = LedgerUtil::from_stock(&total, &o.dp, pid, pid);
+			let (ledger_details, len) =
+				LedgerUtil::from_stock(&total, &o.dp, pid, pid);
 
 			let mut i = 0;
 
@@ -770,7 +828,11 @@ pub mod db {
 			Ok((pid, detail_len))
 		}
 
-		async fn stock_update_only<S, O>(&self, id: S, data: O) -> Result<i32, sqlx::Error>
+		async fn stock_update_only<S, O>(
+			&self,
+			id: S,
+			data: O,
+		) -> Result<i32, sqlx::Error>
 		where
 			S: Into<i32> + Send,
 			O: Into<Stock> + Send,
@@ -780,8 +842,10 @@ pub mod db {
 
 			let total = dto.total.to_owned();
 
-			let mut conn: sqlx::pool::PoolConnection<sqlx::Postgres> = self.pool.acquire().await?;
-			let mut tx: sqlx::Transaction<sqlx::Postgres> = conn.begin().await?;
+			let mut conn: sqlx::pool::PoolConnection<sqlx::Postgres> =
+				self.pool.acquire().await?;
+			let mut tx: sqlx::Transaction<sqlx::Postgres> =
+				conn.begin().await?;
 
 			let test = sqlx::query_scalar(
 				r#"
@@ -870,7 +934,8 @@ pub mod db {
 			.execute(&mut *tx)
 			.await?;
 
-			let (ledger_details, len) = LedgerUtil::from_stock(&total, &o.dp, pid, pid);
+			let (ledger_details, len) =
+				LedgerUtil::from_stock(&total, &o.dp, pid, pid);
 
 			let mut i = 0;
 
@@ -915,9 +980,14 @@ pub mod db {
 			Ok(pid)
 		}
 
-		async fn stock_delete(&self, ids: Vec<i32>) -> Result<u64, sqlx::Error> {
-			let mut conn: sqlx::pool::PoolConnection<sqlx::Postgres> = self.pool.acquire().await?;
-			let mut tx: sqlx::Transaction<sqlx::Postgres> = conn.begin().await?;
+		async fn stock_delete(
+			&self,
+			ids: Vec<i32>,
+		) -> Result<u64, sqlx::Error> {
+			let mut conn: sqlx::pool::PoolConnection<sqlx::Postgres> =
+				self.pool.acquire().await?;
+			let mut tx: sqlx::Transaction<sqlx::Postgres> =
+				conn.begin().await?;
 
 			let details = sqlx::query_as!(ProductQuantity,
 				"SELECT product_id, qty FROM order_details WHERE order_id IN (SELECT unnest($1::INT[]))",
@@ -934,11 +1004,11 @@ pub mod db {
 					let _ = sqlx::query!(
 						r#"
                     UPDATE
-                        products
+                       stocks 
                     SET
-                        unit_in_stock = (unit_in_stock - $2)
+                        qty = (qty - $2)
                     WHERE
-                        id = $1
+                        product_id = $1
                     "#,
 						d.product_id,
 						d.qty,

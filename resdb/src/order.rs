@@ -10,8 +10,9 @@ pub mod db {
 		db::DBClient,
 		ledger::LedgerUtil,
 		model::{
-			CreateOrderDetailSchema, DetailMark, Order, OrderBuilder, OrderDetail, OrderDtos,
-			OrderType, PaymentType, ResponseOrder, LedgerBuilder, LedgerType,
+			CreateOrderDetailSchema, DetailMark, Order, OrderBuilder,
+			OrderDetail, OrderDtos, OrderType, PaymentType, ResponseOrder,
+			LedgerBuilder, LedgerType,
 		},
 	};
 
@@ -19,7 +20,10 @@ pub mod db {
 
 	#[async_trait]
 	pub trait OrderExt {
-		async fn get_order(&self, id: i32) -> Result<Option<Order>, sqlx::Error>;
+		async fn get_order(
+			&self,
+			id: i32,
+		) -> Result<Option<Order>, sqlx::Error>;
 		async fn get_orders(
 			&self,
 			page: usize,
@@ -61,10 +65,14 @@ pub mod db {
 
 	#[async_trait]
 	impl OrderExt for DBClient {
-		async fn get_order(&self, id: i32) -> Result<Option<Order>, sqlx::Error> {
-			let order = sqlx::query_file_as!(Order, "sql/order-get-by-id.sql", id)
-				.fetch_optional(&self.pool)
-				.await?;
+		async fn get_order(
+			&self,
+			id: i32,
+		) -> Result<Option<Order>, sqlx::Error> {
+			let order =
+				sqlx::query_file_as!(Order, "sql/order-get-by-id.sql", id)
+					.fetch_optional(&self.pool)
+					.await?;
 
 			Ok(order)
 		}
@@ -119,7 +127,8 @@ pub mod db {
 			O: Into<OrderDtos> + Send,
 			T: Into<Vec<CreateOrderDetailSchema>> + Send,
 		{
-			let details: Vec<CreateOrderDetailSchema> = details.try_into().unwrap();
+			let details: Vec<CreateOrderDetailSchema> =
+				details.try_into().unwrap();
 			let dtos: OrderDtos = data.try_into().unwrap();
 
 			let o = OrderBuilder::new(
@@ -145,8 +154,10 @@ pub mod db {
 				d + ((&t.price - &t.discount) * &t.qty)
 			});
 
-			let mut conn: sqlx::pool::PoolConnection<sqlx::Postgres> = self.pool.acquire().await?;
-			let mut tx: sqlx::Transaction<sqlx::Postgres> = conn.begin().await?;
+			let mut conn: sqlx::pool::PoolConnection<sqlx::Postgres> =
+				self.pool.acquire().await?;
+			let mut tx: sqlx::Transaction<sqlx::Postgres> =
+				conn.begin().await?;
 
 			let ord = sqlx::query_file_as!(
 				Order,
@@ -190,7 +201,10 @@ pub mod db {
 				.ledger_type(LedgerType::Order)
 				.is_valid(true)
 				.updated_by(o.updated_by)
-				.descriptions(format!("Order {} by {}", customer_name, sales_name))
+				.descriptions(format!(
+					"Order {} by {}",
+					customer_name, sales_name
+				))
 				.build();
 			//self.create_ledger(o).await;
 			let len = details.len();
@@ -218,11 +232,11 @@ pub mod db {
 					let _ = sqlx::query!(
 						r#"
                     UPDATE
-                        products
+                        stocks
                     SET
-                        unit_in_stock = (unit_in_stock - $2)
+                        qty = (qty - $2)
                     WHERE
-                        id = $1"#,
+                        product_id = $1"#,
 						d.product_id,
 						d.qty
 					)
@@ -278,7 +292,8 @@ pub mod db {
 			//     .await?;
 			// }
 			//        let payment = .to_owned();
-			let (ledger_details, len) = LedgerUtil::from_order(&total, &order.dp, &hpp, nid, nid);
+			let (ledger_details, len) =
+				LedgerUtil::from_order(&total, &order.dp, &hpp, nid, nid);
 
 			let mut i: usize = 0;
 			//        let len = ledger_details.len();
@@ -319,10 +334,13 @@ pub mod db {
 				}
 			}
 
-			let details: Vec<OrderDetail> =
-				sqlx::query_file_as!(OrderDetail, "sql/order-detail-get-by-order.sql", nid)
-					.fetch_all(&mut *tx)
-					.await?;
+			let details: Vec<OrderDetail> = sqlx::query_file_as!(
+				OrderDetail,
+				"sql/order-detail-get-by-order.sql",
+				nid
+			)
+			.fetch_all(&mut *tx)
+			.await?;
 
 			tx.commit().await?;
 
@@ -342,7 +360,8 @@ pub mod db {
 		{
 			let uid: i32 = id.try_into().unwrap();
 			let dtos: OrderDtos = data.try_into().unwrap();
-			let details: Vec<CreateOrderDetailSchema> = details.try_into().unwrap();
+			let details: Vec<CreateOrderDetailSchema> =
+				details.try_into().unwrap();
 
 			let pass = BigDecimal::from(0);
 			let total = details.iter().fold(pass.to_owned(), |d, t| {
@@ -352,8 +371,10 @@ pub mod db {
 				.iter()
 				.fold(pass.to_owned(), |d, t| d + (&t.hpp * &t.qty));
 
-			let mut conn: sqlx::pool::PoolConnection<sqlx::Postgres> = self.pool.acquire().await?;
-			let mut tx: sqlx::Transaction<sqlx::Postgres> = conn.begin().await?;
+			let mut conn: sqlx::pool::PoolConnection<sqlx::Postgres> =
+				self.pool.acquire().await?;
+			let mut tx: sqlx::Transaction<sqlx::Postgres> =
+				conn.begin().await?;
 
 			let test = sqlx::query_scalar(
 				r#"
@@ -418,11 +439,11 @@ pub mod db {
 							let _ = sqlx::query!(
 								r#"
                             UPDATE
-                                products
+                                stocks
                             SET
-                                unit_in_stock = (unit_in_stock + $2)
+                                qty = (qty + $2)
                             WHERE
-                                id = $1
+                                product_id = $1
                             "#,
 								d.old_product_id,
 								d.old_qty
@@ -430,9 +451,12 @@ pub mod db {
 							.execute(&mut *tx)
 							.await?;
 
-							let _ = sqlx::query_file!("sql/order-detail-delete.sql", d.detail_id)
-								.execute(&mut *tx)
-								.await?;
+							let _ = sqlx::query_file!(
+								"sql/order-detail-delete.sql",
+								d.detail_id
+							)
+							.execute(&mut *tx)
+							.await?;
 						}
 
 						DetailMark::Update => {
@@ -455,11 +479,11 @@ pub mod db {
 							let _ = sqlx::query!(
 								r#"
                             UPDATE
-                                products
+                                stocks
                             SET
-                                unit_in_stock = (unit_in_stock + $2)
+                                qty = (qty + $2)
                             WHERE
-                                id = $1
+                                product_id = $1
                             "#,
 								d.old_product_id,
 								d.old_qty
@@ -470,11 +494,11 @@ pub mod db {
 							let _ = sqlx::query!(
 								r#"
                             UPDATE
-                                products
+                                stocks
                             SET
-                                unit_in_stock = (unit_in_stock - $2)
+                                qty = (qty - $2)
                             WHERE
-                                id = $1
+                                product_id = $1
                             "#,
 								d.product_id,
 								d.qty,
@@ -502,11 +526,11 @@ pub mod db {
 							let _ = sqlx::query!(
 								r#"
                             UPDATE
-                                products
+                                stocks
                             SET
-                                unit_in_stock = (unit_in_stock - $2)
+                                qty = (qty - $2)
                             WHERE
-                                id = $1"#,
+                                product_id = $1"#,
 								d.product_id,
 								d.qty,
 							)
@@ -557,7 +581,8 @@ pub mod db {
 			.execute(&mut *tx)
 			.await?;
 
-			let (ledger_details, len) = LedgerUtil::from_order(&total, &o.dp, &hpp, uid, uid);
+			let (ledger_details, len) =
+				LedgerUtil::from_order(&total, &o.dp, &hpp, uid, uid);
 
 			let mut i = 0;
 
@@ -597,10 +622,13 @@ pub mod db {
 				}
 			}
 
-			let details: Vec<OrderDetail> =
-				sqlx::query_file_as!(OrderDetail, "sql/order-detail-get-by-order.sql", uid)
-					.fetch_all(&mut *tx)
-					.await?;
+			let details: Vec<OrderDetail> = sqlx::query_file_as!(
+				OrderDetail,
+				"sql/order-detail-get-by-order.sql",
+				uid
+			)
+			.fetch_all(&mut *tx)
+			.await?;
 
 			tx.commit().await?;
 
@@ -608,13 +636,18 @@ pub mod db {
 		}
 
 		async fn order_delete(&self, id: i32) -> Result<u64, sqlx::Error> {
-			let mut conn: sqlx::pool::PoolConnection<sqlx::Postgres> = self.pool.acquire().await?;
-			let mut tx: sqlx::Transaction<sqlx::Postgres> = conn.begin().await?;
+			let mut conn: sqlx::pool::PoolConnection<sqlx::Postgres> =
+				self.pool.acquire().await?;
+			let mut tx: sqlx::Transaction<sqlx::Postgres> =
+				conn.begin().await?;
 
-			let details: Vec<OrderDetail> =
-				sqlx::query_file_as!(OrderDetail, "sql/order-detail-get-by-order.sql", id)
-					.fetch_all(&mut *tx)
-					.await?;
+			let details: Vec<OrderDetail> = sqlx::query_file_as!(
+				OrderDetail,
+				"sql/order-detail-get-by-order.sql",
+				id
+			)
+			.fetch_all(&mut *tx)
+			.await?;
 
 			let mut i = 0;
 			let len = details.len();
@@ -624,11 +657,11 @@ pub mod db {
 					let _ = sqlx::query!(
 						r#"
                     UPDATE
-                        products
+                        stocks
                     SET
-                        unit_in_stock = (unit_in_stock + $2)
+                        qty = (qty + $2)
                     WHERE
-                        id = $1
+                        product_id = $1
                     "#,
 						d.product_id,
 						d.qty,
@@ -670,11 +703,12 @@ pub mod db {
 			.execute(&mut *tx)
 			.await?;
 
-			let rows_affected: u64 = sqlx::query_file!("sql/order-delete.sql", id,)
-				.execute(&mut *tx)
-				.await
-				.unwrap()
-				.rows_affected();
+			let rows_affected: u64 =
+				sqlx::query_file!("sql/order-delete.sql", id,)
+					.execute(&mut *tx)
+					.await
+					.unwrap()
+					.rows_affected();
 
 			tx.commit().await?;
 			Ok(rows_affected)

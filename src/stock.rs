@@ -24,29 +24,43 @@ pub fn stock_scope(conf: &mut web::ServiceConfig) {
 }
 
 #[get("/{id}")]
-async fn get_stock(path: web::Path<i32>, app_state: web::Data<AppState>) -> impl Responder {
+async fn get_stock(
+	path: web::Path<i32>,
+	app_state: web::Data<AppState>,
+) -> impl Responder {
 	let stock_id = path.into_inner();
-	let query_result = app_state.db_client.get_stock(stock_id).await;
+	let query_result = app_state //
+		.db_client
+		.get_stock(stock_id)
+		.await;
 	match query_result {
 		Ok(stock) => match stock {
 			None => {
-				let message = format!("Stock with ID: {} not found", stock_id);
+				let message = format!(
+					//
+					"Stock with ID: {} not found",
+					stock_id
+				);
 				HttpResponse::NotFound().json(json!({
 					"status": "fail",
 					"message": message
 				}))
 			}
 			Some(x) => {
-				let stock_response = json!({"status": "success","data": x});
+				let stock_response = json!({
+					"status": "success",
+					"data": x
+				});
 				HttpResponse::Ok().json(stock_response)
 			}
 		},
 		Err(e) => {
 			let message = format!("Error {:?}", e);
-			HttpResponse::InternalServerError().json(serde_json::json!({
+			let response = serde_json::json!({
 				"status": "fail",
 				"message": message
-			}))
+			});
+			HttpResponse::InternalServerError().json(response)
 		}
 	}
 }
@@ -75,11 +89,17 @@ async fn get_stock_with_details(
 }
 
 #[get("")]
-async fn get_stocks(opts: web::Query<RequestStock>, app_state: web::Data<AppState>) -> impl Responder {
+async fn get_stocks(
+	opts: web::Query<RequestStock>,
+	app_state: web::Data<AppState>,
+) -> impl Responder {
 	let query_params = opts.into_inner();
 	let page = query_params.page.unwrap_or(1);
 	let limit = query_params.page.unwrap_or(10);
-	let query_result = app_state.db_client.get_stocks(query_params).await;
+	let query_result = app_state
+		.db_client //
+		.get_stocks(query_params)
+		.await;
 	if query_result.is_err() {
 		let message = "Something bad happened while fetching all stock items";
 		return HttpResponse::InternalServerError().json(json!({
@@ -107,7 +127,10 @@ async fn get_stocks(opts: web::Query<RequestStock>, app_state: web::Data<AppStat
 }
 
 #[post("")]
-async fn create(body: web::Json<RequestQueryStock>, app_state: web::Data<AppState>) -> Result<HttpResponse, HttpError> {
+async fn create(
+	body: web::Json<RequestQueryStock>,
+	app_state: web::Data<AppState>,
+) -> Result<HttpResponse, HttpError> {
 	body.validate().map_err(|e| {
 		println!("{:?}", e.errors());
 		HttpError::bad_request(e.to_string())
@@ -119,7 +142,10 @@ async fn create(body: web::Json<RequestQueryStock>, app_state: web::Data<AppStat
 	// 			"details" : 200
 	// });
 	// return Ok(HttpResponse::Created().json(response));
-	let query_result = app_state.db_client.stock_create(data.stock, data.details).await;
+	let query_result = app_state
+		.db_client
+		.stock_create(data.stock, data.details)
+		.await;
 	match query_result {
 		Ok(o) => {
 			// let id = o.0;
@@ -160,7 +186,10 @@ async fn update(
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
 	let stock_id = path.into_inner();
-	let query_result = app_state.db_client.get_stock(stock_id).await;
+	let query_result = app_state //
+		.db_client
+		.get_stock(stock_id)
+		.await;
 	if query_result.is_err() {
 		return HttpResponse::BadRequest().json(json!({
 			"status": "fail-1",
@@ -206,7 +235,10 @@ async fn update_only_stock(
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
 	let stock_id = path.into_inner();
-	let query_result = app_state.db_client.get_stock(stock_id).await;
+	let query_result = app_state
+		.db_client //
+		.get_stock(stock_id)
+		.await;
 	if query_result.is_err() {
 		return HttpResponse::BadRequest().json(json!({
 			"status": "fail-1",
@@ -252,7 +284,10 @@ async fn delete(
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
 	let ids = body.into_inner();
-	let query_result = app_state.db_client.stock_delete(ids).await;
+	let query_result = app_state
+		.db_client
+		.stock_delete(ids) //
+		.await;
 	match query_result {
 		Ok(rows_affected) => {
 			if rows_affected == 0 {
