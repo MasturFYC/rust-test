@@ -15,9 +15,9 @@
     "format": "prettier --plugin-search-dir . --write ."
   },
   "devDependencies": {
-    "@sveltejs/adapter-auto": "^2.1.0",
-    "@sveltejs/adapter-static": "^2.0.2",
-    "@sveltejs/kit": "^1.22.3",
+    "@sveltejs/adapter-auto": "^3.2.5",
+    "@sveltejs/adapter-static": "^3.0.5",
+    "@sveltejs/kit": "^2.6.2",
     "@sveltestack/svelte-query": "^1.6.0",
     "@typescript-eslint/eslint-plugin": "^6.1.0",
     "@typescript-eslint/parser": "^6.1.0",
@@ -35,7 +35,7 @@
     "svelte": "^4.0.5",
     "svelte-check": "^3.7.1",
     "svelte-highlight": "^7.6.1",
-    "svelte-language-server": "^0.16.13",
+    "svelte-language-server": "^0.17.1",
     "svelte-preprocess": "^5.0.4",
     "svelte-qrcode": "^1.0.0",
     "tslib": "^2.6.0",

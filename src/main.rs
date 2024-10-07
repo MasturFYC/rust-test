@@ -6,6 +6,7 @@ mod extractors;
 // mod models;
 mod account;
 mod category;
+mod gudang;
 mod ledger;
 mod order;
 mod payment;
@@ -16,14 +17,17 @@ mod stock;
 mod utils;
 
 use actix_cors::Cors;
-use actix_web::{get, http::header, middleware::Logger, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{
+	get, http::header, middleware::Logger, web, App, HttpResponse, HttpServer,
+	Responder,
+};
 
 use config::Config;
 use resdb::db::DBClient;
 use dotenv::dotenv;
 use dtos::{
-	FilterUserDto, LoginUserDto, RegisterUserDto, Response, UserData, UserListResponseDto, UserLoginResponseDto,
-	UserResponseDto,
+	FilterUserDto, LoginUserDto, RegisterUserDto, Response, UserData,
+	UserListResponseDto, UserLoginResponseDto, UserResponseDto,
 };
 
 use scopes::{auth, users};
@@ -114,7 +118,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 		db_client,
 	};
 
-	println!("{}", format!("Server is running on http://localhost:{}", config.port));
+	println!(
+		"{}",
+		format!("Server is running on http://localhost:{}", config.port)
+	);
 
 	let openapi = ApiDoc::openapi();
 
@@ -129,7 +136,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 			//			.allowed_origin("http://127.0.0.1:8080")
 			//			.allowed_origin("https://rust.codevoweb.com")
 			.allowed_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
-			.allowed_headers(vec![header::CONTENT_TYPE, header::AUTHORIZATION, header::ACCEPT])
+			.allowed_headers(vec![
+				header::CONTENT_TYPE,
+				header::AUTHORIZATION,
+				header::ACCEPT,
+			])
 			.supports_credentials();
 
 		App::new()
@@ -145,11 +156,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 			.configure(relation::handler::relation_scope)
 			.configure(order::handler::order_scope)
 			.configure(stock::stock_scope)
+			.configure(gudang::gudang_scope)
 			.configure(ledger::handler::ledger_scope)
 			.configure(payment::handler::payment_scope)
 			.service(Redoc::with_url("/redoc", openapi.clone()))
 			.service(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc"))
-			.service(SwaggerUi::new("/{_:.*}").url("/api-docs/openapi.json", openapi.clone()))
+			.service(
+				SwaggerUi::new("/{_:.*}")
+					.url("/api-docs/openapi.json", openapi.clone()),
+			)
 	})
 	.bind(("0.0.0.0", config.port))?
 	.run()
@@ -170,7 +185,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 async fn health_checker_handler() -> impl Responder {
 	const MESSAGE: &str = "Complete Restful API in Rust";
 
-	HttpResponse::Ok().json(serde_json::json!({"status": "success", "message": MESSAGE}))
+	HttpResponse::Ok()
+		.json(serde_json::json!({"status": "success", "message": MESSAGE}))
 }
 
 #[cfg(test)]
@@ -180,9 +196,13 @@ mod tests {
 
 	#[actix_web::test]
 	async fn test_health_checker_handler() {
-		let app = test::init_service(App::new().service(health_checker_handler)).await;
+		let app =
+			test::init_service(App::new().service(health_checker_handler))
+				.await;
 
-		let req = test::TestRequest::get().uri("/api/healthchecker").to_request();
+		let req = test::TestRequest::get()
+			.uri("/api/healthchecker")
+			.to_request();
 		let resp = test::call_service(&app, req).await;
 
 		assert_eq!(resp.status(), StatusCode::OK);

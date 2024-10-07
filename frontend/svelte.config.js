@@ -1,5 +1,5 @@
 import adapter from '@sveltejs/adapter-static';
-import { vitePreprocess } from '@sveltejs/kit/vite';
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import { optimizeCss, optimizeImports } from "carbon-preprocess-svelte";
 import path from 'path';
 import preprocess from 'svelte-preprocess';
@@ -35,7 +35,7 @@ const config = {
 		// 		throw new Error(message);
 		// 	}
 		// }
-	}	
+	}
 };
 
 export default config;

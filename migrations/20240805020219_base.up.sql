@@ -82,8 +82,6 @@ CREATE TABLE "gudangs" (
     PRIMARY KEY (id)
 );
 
-
-
 CREATE TABLE "products" (
    id SMALLINT NOT NULL DEFAULT nextval('product_id_seq'::regclass),
    supplier_id SMALLINT NOT NULL,
@@ -117,6 +115,7 @@ CREATE INDEX "ix_product_supplier" ON products (supplier_id);
 ALTER TABLE "products"
    ADD CONSTRAINT fk_product_category FOREIGN KEY (category_id)
       REFERENCES categories (id);
+
 ALTER TABLE "products"
    ADD CONSTRAINT fk_product_supplier FOREIGN KEY (supplier_id)
       REFERENCES relations (id);
@@ -124,7 +123,6 @@ ALTER TABLE "products"
 CREATE SEQUENCE IF NOT EXISTS order_id_seq AS INT
    INCREMENT BY 1
       START 1;
-
 
 CREATE TABLE
     "orders" (
@@ -158,12 +156,12 @@ ALTER TABLE "orders"
    ADD CONSTRAINT fk_order_sales FOREIGN KEY (sales_id)
       REFERENCES relations (id);
 
-
 CREATE TABLE
    "order_details" (
       order_id INT NOT NULL,
       detail_id SMALLINT NOT NULL,
       product_id SMALLINT NOT NULL,
+      gudang_id SMALLINT NOT NULL DEFAULT 1,
       qty NUMERIC(9,2) NOT NULL DEFAULT 1,
       direction SMALLINT NOT NULL DEFAULT 0,
       unit VARCHAR(6) NOT NULL,
@@ -171,7 +169,6 @@ CREATE TABLE
       price NUMERIC(12,2) NOT NULL DEFAULT 0,
       discount NUMERIC(9,2) NOT NULL DEFAULT 0,
       subtotal NUMERIC(12,2) NOT NULL DEFAULT 0,
-      gudang_id SMALLINT NOT NULL DEFAULT 1,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       PRIMARY KEY (order_id, detail_id)
@@ -290,3 +287,7 @@ ALTER TABLE "stocks"
 ALTER TABLE "stocks"
     ADD CONSTRAINT fk_stock_product FOREIGN KEY (product_id)
         REFERENCES "products" (id) ON DELETE CASCADE;
+
+-- ALTER TABLE "order_details"
+   -- ADD CONSTRAINT fk_order_gudang FOREIGN KEY (gudang_id)
+     --   REFERENCES "gudangs" (id) ON DELETE CASCADE;

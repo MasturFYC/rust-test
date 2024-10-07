@@ -2,6 +2,7 @@ SELECT
    d.order_id,
    d.detail_id,
    d.product_id,
+   d.gudang_id,
    d.qty,
    d.direction,
    d.unit,

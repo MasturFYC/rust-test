@@ -1,6 +1,7 @@
 SELECT order_id,
    detail_id,
    product_id,
+   gudang_id,
    qty,
    direction,
    unit,

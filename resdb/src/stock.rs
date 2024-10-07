@@ -100,6 +100,7 @@ pub mod model {
 	#[derive(Debug, Deserialize, Serialize, sqlx::FromRow, Clone)]
 	pub struct ProductQuantity {
 		pub product_id: i16,
+		pub gudang_id: i16,
 		pub qty: BigDecimal,
 	}
 
@@ -113,6 +114,8 @@ pub mod model {
 		pub detail_id: i16,
 		#[serde(rename = "productId")]
 		pub product_id: i16,
+		#[serde(rename = "gudangId")]
+		pub gudang_id: i16,
 		pub qty: BigDecimal,
 		pub direction: i16,
 		pub unit: String,
@@ -135,6 +138,8 @@ pub mod model {
 		pub detail_id: i16,
 		#[serde(rename = "productId")]
 		pub product_id: i16,
+		#[serde(rename = "gudangId")]
+		pub gudang_id: i16,
 		pub qty: BigDecimal,
 		pub direction: i16,
 		pub unit: String,
@@ -495,10 +500,12 @@ pub mod db {
                     UPDATE
                         stocks
                     SET
-                        qty = (qty + $2)
+                        qty = (qty + $3)
                     WHERE
-                        product_id = $1"#,
+                        product_id = $1 AND gudang_id = $2
+                        "#,
 						d.product_id,
+						d.gudang_id,
 						d.qty
 					)
 					.execute(&mut *tx)
@@ -638,7 +645,7 @@ pub mod db {
 
 			let old_details = sqlx::query_as!(
 				ProductQuantity,
-				"SELECT product_id, qty FROM order_details WHERE order_id = $1",
+				"SELECT product_id, gudang_id, qty FROM order_details WHERE order_id = $1",
 				pid
 			)
 			.fetch_all(&mut *tx)
@@ -652,10 +659,11 @@ pub mod db {
 					let _ = sqlx::query!(
 						r#"
                         UPDATE  stocks
-                        SET     qty = (qty - $2)
-                        WHERE   product_id = $1
+                        SET     qty = (qty - $3)
+                        WHERE   product_id = $1 AND gudang_id = $2
                         "#,
 						d.product_id,
+						d.gudang_id,
 						d.qty
 					)
 					.execute(&mut *tx)
@@ -705,11 +713,12 @@ pub mod db {
 					UPDATE
 					    stocks
 					SET
-						qty = (qty + $2)
+						qty = (qty + $3)
 					WHERE
-						product_id = $1
+						product_id = $1 AND gudang_id = $2
 					"#,
 						d.product_id,
+						d.gudang_id,
 						d.qty
 					)
 					.execute(&mut *tx)
@@ -989,8 +998,15 @@ pub mod db {
 			let mut tx: sqlx::Transaction<sqlx::Postgres> =
 				conn.begin().await?;
 
-			let details = sqlx::query_as!(ProductQuantity,
-				"SELECT product_id, qty FROM order_details WHERE order_id IN (SELECT unnest($1::INT[]))",
+			let details = sqlx::query_as!(
+				ProductQuantity,
+				r#"
+                SELECT 
+                    product_id, gudang_id, qty 
+                FROM 
+                    order_details 
+                WHERE 
+                    order_id IN (SELECT unnest($1::INT[]))"#,
 				&ids[..]
 			)
 			.fetch_all(&mut *tx)
@@ -1006,11 +1022,12 @@ pub mod db {
                     UPDATE
                        stocks 
                     SET
-                        qty = (qty - $2)
+                        qty = (qty - $3)
                     WHERE
-                        product_id = $1
+                        product_id = $1 AND gudang_id = $2
                     "#,
 						d.product_id,
+						d.gudang_id,
 						d.qty,
 					)
 					.execute(&mut *tx)

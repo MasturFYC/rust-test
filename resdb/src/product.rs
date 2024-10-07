@@ -5,9 +5,10 @@ pub mod model {
 	use validator::Validate;
     use sqlx::{types::Json, FromRow, Row};
 
+
     #[derive(Default, Serialize, Clone, Deserialize, Debug, FromRow, sqlx::Type)]
     pub struct ProductStock {
-	    #[serde(rename = "gudangId")]
+        #[serde(rename = "gudangId")]
         pub gudang_id: i16,
         #[serde(rename = "productId")]
         pub product_id: i16,
@@ -19,6 +20,11 @@ pub mod model {
 	pub struct BarcodeList {
 		pub barcode: String,
 	}
+
+    #[derive(Debug, Deserialize, Serialize)]
+    pub struct ProductIds {
+        pub id: i16,
+    }
 
 	#[derive(Debug, Deserialize, Serialize, Clone)]
 	pub struct Products {
@@ -49,6 +55,7 @@ pub mod model {
 		pub category_name: String,
 		#[serde(rename = "supplierName")]
 		pub supplier_name: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub stocks: Option<Json<Vec<ProductStock>>>,
 	}
 
@@ -194,8 +201,6 @@ pub mod model {
             })
 	    }
     }
-
-
 }
 
 pub mod db {
@@ -203,7 +208,7 @@ pub mod db {
 	use crate::db::DBClient;
     use async_trait::async_trait;
 	use sqlx::{self, Acquire, types::Json};
-	use super::model::{BarcodeList, Product, ProductOriginal, Products, ProductStock};
+	use super::model::{BarcodeList, Product, ProductOriginal, Products, ProductStock, ProductIds};
 
 	#[async_trait]
 	pub trait ProductExt {
@@ -485,7 +490,16 @@ pub mod db {
 
 		async fn product_create(&self, data: Product) -> Result<ProductOriginal, sqlx::Error> {
 			// let mut stmt = self.pool.prepare("SELECT * FROM users WHERE id = $1").await?;
-			let product = sqlx::query_file_as!(ProductOriginal,	"sql/product-insert.sql",
+			let mut conn = self.pool.acquire().await?;
+            let mut tx = conn.begin().await?;
+            let ids = sqlx::query_file_as!(
+                ProductIds,
+                "sql/gudang-get-all-order-by-id.sql"
+            )
+                .fetch_all(&mut *tx)
+                .await?;
+            
+            let product = sqlx::query_file_as!(ProductOriginal,	"sql/product-insert.sql",
 				data.name,
 				data.barcode.to_ascii_uppercase(),
 				data.unit,
@@ -501,10 +515,32 @@ pub mod db {
 				data.category_id,
 				data.supplier_id
 			)
-			.fetch_one(&self.pool)
+			.fetch_optional(&mut *tx)
 			.await?;
 
-			Ok(product)
+            let ids_length = ids.len();
+            let mut i: usize = 0;
+            let p = product.unwrap();
+
+            loop {
+                if let Some(x) = ids.get(i)  {
+                   let _ = sqlx::query!(
+                       "INSERT INTO stocks (gudang_id, product_id, qty) VALUES ($1,$2, 0)",
+                       x.id,
+                       p.id
+                       )
+                       .execute(&mut *tx)
+                       .await?;    
+                }
+                i = i.checked_add(1).unwrap();
+				if i == ids_length {
+					break;
+				}
+            }
+
+            tx.commit().await?;
+
+			Ok(p)
 		}
 
 		async fn product_update(

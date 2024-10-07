@@ -208,6 +208,10 @@ pub struct CreateOrderDetailSchema {
 	pub order_id: Option<i32>,
 	#[serde(rename = "productId")]
 	pub product_id: i16,
+	#[serde(rename = "gudangId")]
+	pub gudang_id: i16,
+	#[serde(rename = "oldGudangId")]
+	pub old_gudang_id: i16,
 	#[serde(rename = "oldProductId")]
 	pub old_product_id: Option<i16>,
 	pub qty: BigDecimal,
@@ -239,6 +243,8 @@ pub struct OrderDetail {
 	pub detail_id: i16,
 	#[serde(rename = "productId")]
 	pub product_id: i16,
+	#[serde(rename = "gudangId")]
+	pub gudang_id: i16,
 	pub qty: BigDecimal,
 	pub direction: i16,
 	pub unit: String,

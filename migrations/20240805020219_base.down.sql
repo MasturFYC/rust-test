@@ -13,6 +13,8 @@ ALTER TABLE gudangs DROP CONSTRAINT fk_gudang_employee;
 ALTER TABLE stocks DROP CONSTRAINT fk_stock_gudang;
 ALTER TABLE stocks DROP CONSTRAINT fk_stock_product;
 ALTER TABLE order_details DROP CONSTRAINT fk_gudang_order;
+-- ALTER TABLE orders DROP CONSTRAINT fk_order_gudang;
+
 DROP INDEX ixq_gudang_name;
 DROP INDEX ix_gudang_employee;
 DROP INDEX ix_order_payment;

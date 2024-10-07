@@ -4,13 +4,14 @@ use sqlx::{Pool, postgres::PgPoolOptions, Postgres};
 pub mod account;
 pub mod category;
 pub mod db;
+pub mod gudang;
 pub mod ledger;
 pub mod model;
 pub mod order;
-pub mod stock;
 pub mod order_payment;
 pub mod product;
 pub mod relation;
+pub mod stock;
 pub mod user;
 
 #[derive(Debug, Deserialize, Serialize)]
