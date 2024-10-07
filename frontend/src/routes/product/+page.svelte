@@ -51,7 +51,6 @@
     name: "",
     barcode: "",
     unit: "",
-    unitInStock: 0.0,
     content: 0.0,
     hpp: 0.0,
     margin: 11,
@@ -64,6 +63,7 @@
     categoryId: 0,
     createdAt: dayjs().toISOString(),
     updatedAt: dayjs().toISOString(),
+		stocks: []
   };
 
   let pageSize = 5;

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { formatNumber } from "$lib/components/NumberFormat";
-  import type { iProduct, iPropertyID, iRelationProp } from "$lib/interfaces";
+  import type { iProduct, iProductStock, iPropertyID, iRelationProp } from "$lib/interfaces";
   import {
     Button,
     ComboBox,
@@ -22,7 +22,7 @@
   const headers = [
     { key: "name", value: "Nama Barang", width: "auto" },
     { key: "barcode", value: "Barcode", width: "100px" },
-    { key: "unitInStock", value: "Stock", width: "90px" },
+    { key: "stocks", value: "Stock", width: "90px" },
     { key: "hpp", value: "HPP", width: "80px" },
     { key: "margin", value: "Margin", width: "80px" },
     { key: "price", value: "Harga", width: "90px" },
@@ -30,7 +30,7 @@
   ];
   const headers2 = [
     { key: "name", value: "Nama Barang", width: "auto" },
-    { key: "unitInStock", value: "Stock", width: "90px" },
+    { key: "stocks", value: "Stock", width: "90px" },
     { key: "price", value: "Harga", width: "90px" },
     { key: "cmd", value: "", width: "60px" },
   ];
@@ -59,6 +59,13 @@
   // function get_suppliers() {
   // 	return suppliers.map((m) => ({ id: m.id, text: m.text }));
   // }
+	const defaultStock = (stocks: iProductStock[]) => {
+		const d = stocks.filter(f => f.gudangId === 1)[0];
+		if (d) {
+			return d.qty;
+		}
+		return 0;
+	}
 
   let sup_light = false;
   let cat_light = false;
@@ -74,7 +81,8 @@
   rows={data}
 >
   <svelte:fragment slot="cell-header" let:header>
-    {#if header.key === "price" || header.key === "hpp" || header.key === "unitInStock"|| header.key === "margin"}
+    {#if header.key === "price" || header.key === "hpp" || header.key ===
+			"stocks"|| header.key === "margin"}
       <div class="cell-right">{header.value}</div>
     {:else}
       {header.value}
@@ -99,8 +107,8 @@
       <div class="cell-right">{formatNumber(cell.value)}</div>
     {:else if cell.key === "margin"}
       <div class="cell-right">{formatNumber(cell.value, 2)}%</div>
-    {:else if cell.key === "unitInStock"}
-      <div class="cell-right">{cell.value} {row["unit"]}</div>
+    {:else if cell.key === "stocks"}
+      <div class="cell-right">{formatNumber(defaultStock(cell.value))} {row["unit"]}</div>
     {:else}
       {cell.value}
     {/if}

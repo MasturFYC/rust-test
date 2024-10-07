@@ -3,6 +3,7 @@
   import { Column, Grid, Row } from "carbon-components-svelte";
   import type { DataTableRow } from "carbon-components-svelte/types/DataTable/DataTable.svelte";
   import DeleteProduct from "./DeleteProduct.svelte";
+  import Stocks from "./stock.svelte";
 
   export let row: DataTableRow;
   export let innerWidth = 720;
@@ -31,6 +32,11 @@ Supplier:   {row["supplierName"]}
 Deskripsi:  {row["descriptions"]}</pre></code
       ></Column
     >
+		<Column><code class="code-pre">
+			Stock Gudang:<br />
+			<Stocks stocks={row["stocks"]} unit={row["unit"]} />
+			</code>
+		</Column>
     <Column>
       <DeleteProduct productId={row.id} on:deleteData />
     </Column>

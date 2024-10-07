@@ -3,6 +3,13 @@ export type iCategory = {
   name: string;
 };
 
+export type iProductStock = {
+	gudangId: number;
+	productId: number;
+	name: string;
+	qty: number;
+}
+
 export type iProduct = {
   id: number;
   supplierId: number;
@@ -10,7 +17,6 @@ export type iProduct = {
   name: string;
   barcode: string;
   unit: string;
-  unitInStock: number;
   content: number;
   hpp: number;
   margin: number;
@@ -24,4 +30,5 @@ export type iProduct = {
   updatedAt: string;
   categoryName?: string;
   supplierName?: string;
+	stocks: iProductStock[];
 };
