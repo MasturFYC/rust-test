@@ -3,12 +3,20 @@ export type iCategory = {
   name: string;
 };
 
+export type iGudang = {
+  id: number;
+  name: string;
+  employeeId: number;
+  locate?: string;
+  employeeName: string;
+};
+
 export type iProductStock = {
-	gudangId: number;
-	productId: number;
-	name: string;
-	qty: number;
-}
+  gudangId: number;
+  productId: number;
+  name: string;
+  qty: number;
+};
 
 export type iProduct = {
   id: number;
@@ -30,5 +38,5 @@ export type iProduct = {
   updatedAt: string;
   categoryName?: string;
   supplierName?: string;
-	stocks: iProductStock[];
+  stocks: iProductStock[];
 };

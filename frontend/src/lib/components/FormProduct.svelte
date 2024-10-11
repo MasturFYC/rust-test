@@ -15,10 +15,11 @@
   import { Save } from "carbon-icons-svelte";
   import { createEventDispatcher, onMount } from "svelte";
 
-  import type { ComboBoxItem } from "carbon-components-svelte/types/ComboBox/ComboBox.svelte";
+  // import type { ComboBoxItem } from "carbon-components-svelte/types/ComboBox/ComboBox.svelte";
   import { formatNumber, getNumber, getPercent } from "./NumberFormat";
   import InputNumber from "./NumberInput.svelte";
   import NumberPercent from "./NumberPercent.svelte";
+  import type { ComboBoxItem } from "carbon-components-svelte/src/ComboBox/ComboBox.svelte";
 
   export let innerWidth = 720;
   export let open = false;

@@ -1,14 +1,15 @@
 <script lang="ts">
   import { browser } from "$app/environment";
-  import { baseURL, credential_include, type iCategory } from "$lib/interfaces";
+  import { baseURL, credential_include, type iGudang } from "$lib/interfaces";
   import { useQuery } from "@sveltestack/svelte-query";
   import ListCategory from "./list.svelte";
+  import { getRelationProp } from "$lib/fetchers";
 
-  const url = `${baseURL}/categories`;
+  const url = `${baseURL}/gudangs`;
 
   type iResult = {
     count: number;
-    data: iCategory[];
+    data: iGudang[];
     status: string;
   };
 
@@ -22,7 +23,7 @@
 
   // let cred: RequestCredentials = "same-origin";
 
-  async function fetchCategories(): Promise<iResult> {
+  async function fetchGudangs(): Promise<iResult> {
     const options = {
       headers: {
         "content-type": "application/json",
@@ -37,35 +38,49 @@
     return (await result.json()) as iResult;
   }
 
-  const queryCategoryOptions = () => ({
-    queryKey: ["category", "list"],
-    queryFn: async () => await fetchCategories(),
+  const queryGudangOptions = () => ({
+    queryKey: ["gudang", "list"],
+    queryFn: async () => await fetchGudangs(),
     enabled: browser,
   });
 
-  const query = useQuery<iResult, Error>(queryCategoryOptions());
+  const query = useQuery<iResult, Error>(queryGudangOptions());
 
   function showErrorMessage() {
     if ($query.error instanceof Error) {
       return $query.error.message;
     }
-    return "Cannot load category list.";
+    return "Cannot load gudang.";
   }
 
-  $: query.setEnabled(browser);
+  const employeeQuery = useQuery(
+    "empProp",
+    async () => await getRelationProp(["Employee"]),
+    {
+      enabled: browser,
+    },
+  );
+
+  $: {
+    query.setEnabled(browser);
+    employeeQuery.setEnabled(browser);
+  }
 </script>
 
 <svelte:head>
-  <title>Kategori</title>
-  <meta name="description" content="Category this app" />
+  <title>Gudang</title>
+  <meta name="description" content="Gudang this app" />
 </svelte:head>
 
-{#if $query.isLoading}
+{#if $query.isLoading || $employeeQuery.isLoading}
   <p>Loading...</p>
 {:else if $query.isError}
   <p>Error: {showErrorMessage()}</p>
 {:else if $query.isSuccess}
-  <ListCategory categories={$query.data.data} />
+  <ListCategory
+    gudangs={$query.data.data}
+    employees={$employeeQuery.data?.data}
+  />
   <p>Total: {$query.data.count} item{$query.data.count > 1 ? "s" : ""}</p>
 {/if}
 

@@ -12,7 +12,7 @@ pub mod model {
 		#[serde(rename = "employeeId")]
 		pub employee_id: i16,
 		#[serde(
-			rename = "employee_name",
+			rename = "employeeName",
 			skip_serializing_if = "Option::is_none"
 		)]
 		pub employee_name: Option<String>,

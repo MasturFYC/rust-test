@@ -5,7 +5,7 @@
 
   import {
     getCategoryProp,
-    getSupplierProp,
+    getRelationProp,
     type iPropertyWithID,
   } from "$lib/fetchers";
   import {
@@ -63,7 +63,7 @@
     categoryId: 0,
     createdAt: dayjs().toISOString(),
     updatedAt: dayjs().toISOString(),
-		stocks: []
+    stocks: [],
   };
 
   let pageSize = 5;
@@ -371,7 +371,7 @@
 
   const supplierQuery = useQuery(
     "supProp",
-    async () => await getSupplierProp(["Supplier"]),
+    async () => await getRelationProp(["Supplier"]),
     {
       enabled: browser,
     },
@@ -442,3 +442,14 @@
     on:click:button--previous={(e) => (page = e.detail.page)}
   />
 {/if}
+
+<style lang="css">
+  :global(.bx--label) {
+    margin-bottom: 3px;
+    margin-top: 9px;
+  }
+
+  :global(.bx--list-box__menu-item, .bx--list-box__menu-item__option) {
+    height: auto;
+  }
+</style>

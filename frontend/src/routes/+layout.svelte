@@ -95,12 +95,18 @@
     },
     {
       id: 4,
+      href: "/gudang",
+      title: "Gudang",
+      icon: Category,
+    },
+    {
+      id: 5,
       href: "/product",
       title: "Data barang",
       icon: Product,
     },
     {
-      id: 5,
+      id: 6,
       href: "/stock",
       title: "Stock",
       icon: SendToBack,

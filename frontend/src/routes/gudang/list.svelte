@@ -1,5 +1,10 @@
 <script lang="ts">
-  import { baseURL, credential_include, type iCategory } from "$lib/interfaces";
+  import {
+    baseURL,
+    credential_include,
+    type iGudang,
+    type iRelationProp,
+  } from "$lib/interfaces";
   import { useMutation, useQueryClient } from "@sveltestack/svelte-query";
   import {
     Button,
@@ -12,21 +17,26 @@
     Toolbar,
     ToolbarContent,
     ToolbarMenu,
+    ComboBox,
     ToolbarMenuItem,
   } from "carbon-components-svelte";
   import { Edit, NewTab, Save } from "carbon-icons-svelte";
-  import DeleteGudang from "./DeleteCategory.svelte";
+  // import type { ComboBoxItem } from "carbon-components-svelte/types/ComboBox/ComboBox.svelte";
+  import DeleteGudang from "./DeleteGudang.svelte";
+  import type { ComboBoxItem } from "carbon-components-svelte/src/ComboBox/ComboBox.svelte";
+
+  export let employees: iRelationProp[] = [];
 
   const client = useQueryClient();
   let isUpdating = false;
   let isError = false;
   let err_msg = "";
 
-  export let categories: iCategory[] = [];
+  export let gudangs: iGudang[] = [];
 
   type iResult = {
     count: number;
-    data: iCategory[];
+    data: iGudang[];
     status: string;
   };
 
@@ -36,13 +46,13 @@
   // 	status: ""
   // };
 
-  const fetchUpdateData = async (e: iCategory): Promise<iCategory> => {
-    const url = `${baseURL}/categories/${category.id}`;
+  const fetchUpdateData = async (e: iGudang): Promise<iGudang> => {
+    const url = `${baseURL}/gudangs/${gudang.id}`;
     const request = new Request(url, {
       headers: {
         "content-type": "application/json",
       },
-      body: JSON.stringify(category),
+      body: JSON.stringify(gudang),
       method: "PUT",
       credentials: credential_include,
     });
@@ -51,13 +61,13 @@
     return await result.json();
   };
 
-  const fetchCreateData = async (e: iCategory): Promise<iCategory> => {
-    const url = `${baseURL}/categories`;
+  const fetchCreateData = async (e: iGudang): Promise<iGudang> => {
+    const url = `${baseURL}/gudangs`;
     const request = new Request(url, {
       headers: {
         "content-type": "application/json",
       },
-      body: JSON.stringify(category),
+      body: JSON.stringify(gudang),
       method: "POST",
       credentials: credential_include,
     });
@@ -66,7 +76,7 @@
   };
 
   const fetchDeleteData = async (e: number) => {
-    const url = `${baseURL}/categories/${e}`;
+    const url = `${baseURL}/gudangs/${e}`;
     const request = new Request(url, {
       method: "DELETE",
       credentials: credential_include,
@@ -76,12 +86,12 @@
   };
 
   const createData = useMutation(fetchCreateData, {
-    onMutate: async (e: iCategory) => {
+    onMutate: async (e: iGudang) => {
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
       await client.cancelQueries();
 
       // Snapshot the previous value
-      const previousData = client.getQueryData<iResult>(["category", "list"]);
+      const previousData = client.getQueryData<iResult>(["gudang", "list"]);
 
       // Optimistically update to the new value
       if (previousData) {
@@ -90,7 +100,7 @@
 
       return previousData;
     },
-    onSuccess: async (data: any, variable: iCategory, context) => {
+    onSuccess: async (data: any, variable: iGudang, context) => {
       if (context) {
         setTimeout(() => {
           isUpdating = false;
@@ -109,39 +119,33 @@
     onError: (err: any, variables: any, context: any) => {
       console.log(err);
       if (context?.previousData) {
-        client.setQueryData<iResult>(
-          ["category", "list"],
-          context.previousData,
-        );
+        client.setQueryData<iResult>(["gudang", "list"], context.previousData);
       }
       //      selectedCategoryId.set($category.id)
       // errorMesage.set(`Nama kategori '${$category.name}'' sudah ada!`);
     },
     // Always refetch after error or success:
     onSettled: async () => {
-      await client.invalidateQueries(["category", "list"]);
+      await client.invalidateQueries(["gudang", "list"]);
     },
   });
 
   const updateData = useMutation(fetchUpdateData, {
-    onMutate: async (e: iCategory) => {
+    onMutate: async (e: iGudang) => {
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
       await client.cancelQueries();
 
       // Snapshot the previous value
-      const previousCategories = client.getQueryData<iResult>([
-        "category",
-        "list",
-      ]);
+      const previousGudang = client.getQueryData<iResult>(["gudang", "list"]);
 
       // Optimistically update to the new value
-      if (previousCategories) {
-        client.setQueryData<iResult>(["category", "list"], previousCategories);
+      if (previousGudang) {
+        client.setQueryData<iResult>(["gudang", "list"], previousGudang);
       }
 
-      return previousCategories;
+      return previousGudang;
     },
-    onSuccess: async (data: any, variable: iCategory, context) => {
+    onSuccess: async (data: any, variable: iGudang, context) => {
       if (context) {
         setTimeout(() => {
           isUpdating = false;
@@ -158,10 +162,10 @@
     },
     // If the mutation fails, use the context returned from onMutate to roll back
     onError: (err: any, variables: any, context: any) => {
-      if (context?.previousCategories) {
+      if (context?.previousGudang) {
         client.setQueryData<iResult>(
-          ["category", "list"],
-          context.previousCategories,
+          ["Gudang", "list"],
+          context.previousGudang,
         );
         //        selectedCategoryId.set($category.id)
       }
@@ -170,10 +174,10 @@
     onSettled: async (
       data: any,
       error: any,
-      variables: iCategory,
+      variables: iGudang,
       context: iResult | undefined,
     ) => {
-      await client.invalidateQueries(["category", "list"]);
+      await client.invalidateQueries(["gudang", "list"]);
     },
   });
 
@@ -183,34 +187,33 @@
       await client.cancelQueries();
 
       // Snapshot the previous value
-      const previousCategories = client.getQueryData<iResult>([
-        "category",
-        "list",
-      ]);
+      const previousGudang = client.getQueryData<iResult>(["gudang", "list"]);
 
       // Optimistically update to the new value
-      if (previousCategories) {
-        client.setQueryData<iResult>(["category", "list"], previousCategories);
+      if (previousGudang) {
+        client.setQueryData<iResult>(["gudang", "list"], previousGudang);
       }
 
-      return previousCategories;
+      return previousGudang;
     },
     onSuccess: async () => {
       setTimeout(() => {
         isUpdating = false;
       }, 1500);
 
-      category = {
+      gudang = {
         id: 0,
         name: "",
+        employeeId: 0,
+        employeeName: "",
       };
     },
     // If the mutation fails, use the context returned from onMutate to roll back
     onError: (err: any, variables: any, context: any) => {
-      if (context?.previousCategories) {
+      if (context?.previousGudang) {
         client.setQueryData<iResult>(
-          ["category", "list"],
-          context.previousCategories,
+          ["gudang", "list"],
+          context.previousGudang,
         );
       }
     },
@@ -225,30 +228,37 @@
         err_msg = data.message;
         timeout = 3_000;
       }
-      await client.invalidateQueries(["category", "list"]);
+      await client.invalidateQueries(["gudang", "list"]);
       isUpdating = false;
     },
   });
 
-  function delete_category(e: CustomEvent<number>) {
+  function delete_gudang(e: CustomEvent<number>) {
     isUpdating = true;
     $deleteData.mutate(e.detail);
   }
 
+  function get_employees() {
+    return employees.map((m) => ({ id: m.id, text: m.text }));
+  }
+
   let open = false;
-  let category: iCategory = {
+  let gudang: iGudang = {
     id: 0,
     name: "",
+    employeeId: 0,
+    employeeName: "",
+    locate: "",
   };
 
-  function edit_category(id: number) {
+  function edit_gudang(id: number) {
     isError = false;
     err_msg = "";
     // timeout = undefined;
 
-    let test = categories.filter((f) => f.id == id);
+    let test = gudangs.filter((f) => f.id == id);
     if (test.length > 0) {
-      category = test[0];
+      gudang = { ...test[0] };
       open = true;
     }
   }
@@ -256,27 +266,32 @@
   let headers = [
     { key: "id", value: "#ID", width: "10%" },
     { key: "name", value: "Nama", width: "auto" },
+    { key: "employeeName", value: "Penjaga Gudang", width: "auto" },
+    { key: "locate", value: "Lokasi Gudang", width: "auto" },
     { key: "cmd", value: "", width: "150px" },
   ];
 
   function submit() {
     isError = false;
     isUpdating = true;
-    if (category.id > 0) {
-      $updateData.mutate(category);
+    if (gudang.id > 0) {
+      $updateData.mutate(gudang);
     } else {
-      $createData.mutate(category);
+      $createData.mutate(gudang);
     }
   }
 
-  function new_category() {
+  function new_gudang() {
     isError = false;
     err_msg = "";
     // timeout = undefined;
 
-    category = {
+    gudang = {
       id: 0,
       name: "",
+      employeeId: 0,
+      employeeName: "",
+      locate: "",
     };
     open = true;
   }
@@ -312,12 +327,19 @@
 
   // 	$: reset(3);
 
-  let selectedRowIds = [categories.length > 0 ? categories[0].id : 0];
+  let selectedRowIds = [gudangs.length > 0 ? gudangs[0].id : 0];
 
   let client_width = 0;
   let timeout: undefined | number = undefined;
   let showNotification = false;
+
+  // function shouldFilterItem(item: ComboBoxItem, value: string) {
+  //   if (!value) return true;
+  //   return item.text.toLowerCase().includes(value.toLowerCase());
+  // }
+
   $: showNotification = timeout !== undefined;
+  $: employee_invalid = gudang.employeeId === 0;
 
   // $: console.log("selectedRowIds", selectedRowIds);
 </script>
@@ -327,25 +349,51 @@
 <Modal
   bind:open
   hasForm
+  id="gud-modal"
   preventCloseOnClickOutside
-  modalHeading="Kategori"
+  modalHeading="Gudang"
   primaryButtonText="Simpan"
   primaryButtonIcon={Save}
   secondaryButtonText="Batal"
-  selectorPrimaryFocus={"#cat-name"}
+  selectorPrimaryFocus={"#gud-name"}
   on:click:button--secondary={() => (open = false)}
   on:click:button--primary={submit}
   size="xs"
-  primaryButtonDisabled={isUpdating}
+  primaryButtonDisabled={isUpdating || employee_invalid}
 >
-  <FluidForm>
-    <TextInput id="cat-name" bind:value={category.name} labelText="Nama" />
-  </FluidForm>
+  <form>
+    <TextInput
+      id="gud-name"
+      bind:value={gudang.name}
+      labelText="Nama"
+      placeholder="e.g. Junaedi"
+    />
+    <ComboBox
+      id="gud-ware"
+      titleText="Penjaga gudang"
+      placeholder="Pilih penjaga gudang"
+      selectedId={gudang.employeeId}
+      warn={employee_invalid}
+      items={get_employees()}
+      on:select={(e) => {
+        if (e.detail.selectedId > 0) {
+          gudang.employeeId = e.detail.selectedId;
+        }
+      }}
+      on:clear={() => (gudang.employeeId = 0)}
+    />
+    <TextInput
+      id="gud-locate"
+      bind:value={gudang.locate}
+      labelText="Lokasi"
+      placeholder="Jl. Merdeka Barat"
+    />
+  </form>
 
   {#if isUpdating}
     <InlineLoading
       status="active"
-      description={category.id === 0 ? "Posting data..." : "Updating data..."}
+      description={gudang.id === 0 ? "Posting data..." : "Updating data..."}
     />
   {/if}
 
@@ -358,10 +406,10 @@
   useStaticWidth={client_width > 640}
   zebra
   size="short"
-  title="Kategori Barang"
-  description="Tabel daftar katagori barang"
+  title="Gudang Barang"
+  description="Tabel daftar gudang"
   {headers}
-  rows={categories}
+  rows={gudangs}
   bind:selectedRowIds
 >
   <svelte:fragment slot="cell" let:row let:cell>
@@ -373,9 +421,11 @@
         kind="ghost"
         iconDescription="Edit"
         icon={Edit}
-        on:click={() => edit_category(row.id)}
+        on:click={() => edit_gudang(row.id)}
       />
-      <DeleteGudang gudangId={row.id} on:deleteGudang={delete_category} />
+      <DeleteGudang gudangId={row.id} on:deleteGudang={delete_gudang} />
+    {:else if cell.key === "locate"}
+      {cell.value ?? "-"}
     {:else}
       {cell.value}
     {/if}
@@ -391,7 +441,7 @@
         >
         <ToolbarMenuItem hasDivider danger>Stop all</ToolbarMenuItem>
       </ToolbarMenu>
-      <Button on:click={new_category} icon={NewTab}>Buat baru</Button>
+      <Button on:click={new_gudang} icon={NewTab}>Buat baru</Button>
     </ToolbarContent>
   </Toolbar>
 </DataTable>
@@ -407,3 +457,21 @@
     }}
   />
 {/if}
+
+<style lang="css">
+  :global(#menu-gud-ware.bx--list-box__menu) {
+    position: fixed;
+    z-index: 1;
+    margin-left: 17px;
+    margin-right: 17px;
+    width: auto;
+  }
+  :global(#gud-ware) {
+    margin-top: 6px;
+    margin-bottom: 6px;
+  }
+  :global(#gud-modal .bx--modal-container.bx--modal-container--xs) {
+    max-height: 100%;
+    /* height: 640px; */
+  }
+</style>

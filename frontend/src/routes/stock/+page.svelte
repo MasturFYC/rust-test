@@ -1,7 +1,7 @@
 <script lang="ts">
   import { browser } from "$app/environment";
   import { formatNumber } from "$lib/components/NumberFormat";
-  import { getBarcodes, getSupplierProp } from "$lib/fetchers";
+  import { getBarcodes, getRelationProp } from "$lib/fetchers";
   import type { iCurrentUser, iStock, iStockDetail } from "$lib/interfaces";
   import { numberToText } from "$lib/number-to-string";
   import { useQuery, useQueryClient } from "@sveltestack/svelte-query";
@@ -75,7 +75,7 @@
 
   const supplierQuery = useQuery(
     "supProp",
-    async () => await getSupplierProp(["Supplier"]),
+    async () => await getRelationProp(["Supplier"]),
     {
       enabled: browser,
     },
@@ -83,7 +83,7 @@
 
   const employeeQuery = useQuery(
     "emplProp",
-    async () => await getSupplierProp(["Employee"]),
+    async () => await getRelationProp(["Employee"]),
     {
       enabled: browser,
     },

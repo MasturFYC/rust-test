@@ -78,6 +78,7 @@ async fn get_gudangs(app_state: web::Data<AppState>) -> impl Responder {
 	let json_response = json!({
 		"status": "success",
 		"data": data, // all item stocks in database
+		"count": data.len()
 	});
 
 	HttpResponse::Ok().json(json_response)
