@@ -35,6 +35,7 @@
     Product,
     GroupAccount as Relation,
     SendToBack,
+		IbmDb2Warehouse as Warehouse
   } from "carbon-icons-svelte";
   import { expoIn } from "svelte/easing";
 
@@ -97,7 +98,7 @@
       id: 4,
       href: "/gudang",
       title: "Gudang",
-      icon: Category,
+      icon: Warehouse,
     },
     {
       id: 5,

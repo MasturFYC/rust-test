@@ -18,6 +18,7 @@
 </script>
 
 <Button
+	disabled={gudangId === 1}
   skeleton={is_deleting}
   tooltipAlignment="end"
   size="small"

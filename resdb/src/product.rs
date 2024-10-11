@@ -565,7 +565,7 @@ pub mod db {
 			loop {
 				if let Some(x) = ids.get(i) {
 					let _ = sqlx::query!(
-                       "INSERT INTO stocks (gudang_id, product_id, qty) VALUES ($1,$2, 0)",
+                       "INSERT INTO stocks (gudang_id, product_id, qty) VALUES ($1, $2, 0)",
                        x.id,
                        p.id
                        )

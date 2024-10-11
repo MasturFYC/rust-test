@@ -5,6 +5,7 @@
   import ListCategory from "./list.svelte";
   import { getRelationProp } from "$lib/fetchers";
 
+
   const url = `${baseURL}/gudangs`;
 
   type iResult = {

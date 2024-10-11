@@ -23,7 +23,8 @@
   import { Edit, NewTab, Save } from "carbon-icons-svelte";
   // import type { ComboBoxItem } from "carbon-components-svelte/types/ComboBox/ComboBox.svelte";
   import DeleteGudang from "./DeleteGudang.svelte";
-  import type { ComboBoxItem } from "carbon-components-svelte/src/ComboBox/ComboBox.svelte";
+//  import type { ComboBoxItem } from "carbon-components-svelte/src/ComboBox/ComboBox.svelte";
+	import {IbmDb2Warehouse as Warehouse} from 'carbon-icons-svelte';
 
   export let employees: iRelationProp[] = [];
 
@@ -77,6 +78,7 @@
 
   const fetchDeleteData = async (e: number) => {
     const url = `${baseURL}/gudangs/${e}`;
+	  //	console.log(url);
     const request = new Request(url, {
       method: "DELETE",
       credentials: credential_include,
@@ -110,7 +112,7 @@
             isError = true;
             err_msg = data.message;
           }
-        }, 250);
+        }, 1000);
         //await client.invalidateQueries(["category", "list"]);
         //client.setQueryData<iCategory[]>(["category", "list"], [...context, data.data]);
       }
@@ -155,7 +157,7 @@
             isError = true;
             err_msg = data.message;
           }
-        }, 1500);
+        }, 1000);
         //        await client.invalidateQueries(["category", "list"]);
         //client.setQueryData<iCategory[]>(["category", "list"], [...context, data.data]);
       }
@@ -199,7 +201,7 @@
     onSuccess: async () => {
       setTimeout(() => {
         isUpdating = false;
-      }, 1500);
+      }, 1000);
 
       gudang = {
         id: 0,
@@ -406,7 +408,6 @@
   useStaticWidth={client_width > 640}
   zebra
   size="short"
-  title="Gudang Barang"
   description="Tabel daftar gudang"
   {headers}
   rows={gudangs}
@@ -444,6 +445,9 @@
       <Button on:click={new_gudang} icon={NewTab}>Buat baru</Button>
     </ToolbarContent>
   </Toolbar>
+
+	<strong slot="title"><Warehouse size={24} /> Gudang Barang</strong>
+
 </DataTable>
 
 {#if showNotification}

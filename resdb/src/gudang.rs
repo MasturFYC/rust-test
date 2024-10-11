@@ -82,9 +82,9 @@ pub mod model {
 
 pub mod db {
 	use super::model::{Gudang, Gudangs, GudangProduct, GudangWithProduct};
-	use crate::db::DBClient;
+	use crate::{db::DBClient, product::model::ProductIds};
 	use async_trait::async_trait;
-	use sqlx::{self, types::Json};
+	use sqlx::{self, types::Json, Acquire};
 
 	#[async_trait]
 	pub trait GudangExt {
@@ -150,7 +150,15 @@ pub mod db {
 		where
 			T: Into<Gudang> + Send,
 		{
+			let mut cnn = self.pool.acquire().await?;
+			let mut tx = cnn.begin().await?;
 			let g: Gudang = data.try_into().unwrap();
+			let products = sqlx::query_as!(
+				ProductIds,
+				"SELECT id FROM products ORDER BY id;"
+			)
+			.fetch_all(&mut *tx)
+			.await?;
 			let query_result = sqlx::query_file_as!(
 				Gudangs,
 				"sql/gudang-insert.sql",
@@ -158,10 +166,36 @@ pub mod db {
 				g.employee_id,
 				g.locate,
 			)
-			.fetch_optional(&self.pool)
+			.fetch_optional(&mut *tx)
 			.await?;
-
-			Ok(query_result)
+			let gudang = query_result.unwrap();
+			let ids_length = products.len();
+			if ids_length > 0 {
+				let new_gudang_id = gudang.id;
+				let mut i: usize = 0;
+				loop {
+					if let Some(x) = products.get(i) {
+						let _ = sqlx::query!(
+							r#"
+                    INSERT INTO stocks
+                        (gudang_id, product_id, qty)
+                    VALUES
+                        ($1, $2, 0)
+                    "#,
+							new_gudang_id,
+							x.id
+						)
+						.execute(&mut *tx)
+						.await?;
+					}
+					i = i.checked_add(1).unwrap();
+					if i == ids_length {
+						break;
+					}
+				}
+			}
+			tx.commit().await?;
+			Ok(Some(gudang))
 		}
 
 		async fn gudang_update<T>(
@@ -191,6 +225,7 @@ pub mod db {
 			&self,
 			id: i16,
 		) -> Result<Option<u64>, sqlx::Error> {
+			//print!("GUDANG TO BE DELETED: {}", id);
 			let rows_affected = sqlx::query_file!("sql/gudang-delete.sql", id)
 				.execute(&self.pool)
 				.await?

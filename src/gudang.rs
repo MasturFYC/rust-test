@@ -158,7 +158,7 @@ async fn update(
 	}
 }
 
-#[delete("")]
+#[delete("/{id}")]
 async fn delete(
 	path: web::Path<i16>,
 	// path: web::Path<Vec<i32>>,
