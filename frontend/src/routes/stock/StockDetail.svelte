@@ -4,6 +4,7 @@
   import {
     baseURL,
     credential_include,
+    type iGudang,
     type iStockDetail,
   } from "$lib/interfaces";
   import {
@@ -13,8 +14,8 @@
     ToastNotification,
     Toolbar,
     ToolbarContent,
+		ComboBox
   } from "carbon-components-svelte";
-  import type { DataTableRow } from "carbon-components-svelte/types/DataTable/DataTable.svelte";
   import { onDestroy, onMount, tick } from "svelte";
   import { createEventDispatcher } from "svelte";
   import ExpandedRow from "./ExpandedRow.svelte";
@@ -31,6 +32,7 @@
   import { toNumber } from "./handler";
   import { stock, details } from "./store";
 	import { isStockUpdating } from "./store";
+	import type { DataTableRow } from "carbon-components-svelte/src/DataTable/DataTable.svelte";
 
   const dispatch = createEventDispatcher();
 
@@ -45,7 +47,8 @@
   let headers = [
     { key: "barcode", value: "Barcode", width: "15%" },
     { key: "name", value: "Nama barang", width: "auto" },
-    { key: "qty", value: "Qty", width: "70px" },
+ 		{ key: "gudangId", value: "Gudang", width: "auto"},
+		{ key: "qty", value: "Qty", width: "70px" },
     { key: "unit", value: "Unit", width: "40px" },
     { key: "price", value: "Harga", width: "100px" },
     { key: "discount", value: "Disc", width: "80px" },
@@ -54,6 +57,11 @@
   ];
 
   export let barcodes: { barcode: string }[] = [];
+	export let gudangs: iGudang[] = [];
+
+	const get_gudang = () => {
+		return gudangs.map(m => ({id: m.id, text: m.name}));
+	}
 
   let items = 0;
   let currentId = 0;
@@ -77,6 +85,7 @@
     discount: 0,
     subtotal: 0,
     oldStock: 0,
+		gudangId: 0,
   };
 
   function onRowClick(e: CustomEvent<DataTableRow>) {
@@ -268,7 +277,7 @@
     if (i >= 0) {
       const slices = [...$details];
       slices.splice(i, 1, e);
-      details.update((o) => [...slices]);
+      details.update(() => [...slices]);
       updateStock();
     }
   }
@@ -384,6 +393,22 @@
       // }, 100);
     }
   }
+
+	async function gudangChange(gudId: number, rowId: number) {
+
+		console.log(gudId, rowId);
+		const i = $details.findIndex((f => f.id === rowId));
+		if(i >= 0) {
+			const d = $details[i];
+			const c = {
+				...d,
+				gudangId: gudId
+			};
+			updateCurrentDetail(c);
+			isDirty = true;
+		}
+	}
+
 
   function qtyOnChange(e: CustomEvent<string | number | null>, id: number) {
     if (typeof e.detail === "string") {
@@ -629,9 +654,22 @@
             id="barcode-id"
             on:input={() => (isBarcodeDirty = true)}
             on:change={(e) => barcodeOnChange(e, row.id)}
-            on:focus={(e) => (currentKey = cell.key)}
+            on:focus={() => (currentKey = cell.key)}
             on:keydown={(e) => barcodeOnKeyDown(e, row.id)}
           />
+ 				{:else if cell.key === "gudangId"}
+					<ComboBox
+						id="gudang-id"
+						size={"sm"}
+						placeholder="Pilih gudang"
+						selectedId={row["gudangId"]}
+						items={get_gudang()}
+						on:select={(e) => {
+							if(e.detail.selectedId > 0) {
+								gudangChange(e.detail.selectedId, row.id);
+							}
+						}}
+					/>
         {:else if cell.key === "qty"}
           <NumberInput
             value={formatNumber(cell.value)}
@@ -679,7 +717,7 @@
           >
             {formatNumber(toNumber(row["price"]) - toNumber(row["discount"]))}
           </div>
-        {:else}
+      {:else}
           <div
             role="button"
             tabindex={-1}
@@ -764,3 +802,19 @@
 </datalist>
 
 <!-- <div>{JSON.stringify(selectedRowIds, null,  4)}</div> -->
+<style lang="css">
+:global(#combo-gudang-id.bx--combo-box) {
+	height: auto;
+	border: 0;
+	max-height: 16px;
+	padding: 0;
+	margin:	0;
+
+}
+:global(#combo-gudang-id.bx--list-box--sm) {
+	border: 0;
+	max-height: 16px;
+	padding: 0;
+	margin:	0;
+}
+</style>

@@ -490,7 +490,8 @@ pub mod db {
 						d.discount,
 						d.hpp,
 						subtotal,
-						(i + 1) as i16
+						(i + 1) as i16,
+						d.gudang_id
 					)
 					.execute(&mut *tx)
 					.await?;
@@ -708,7 +709,7 @@ pub mod db {
 			loop {
 				if let Some(d) = details.get(i) {
 					let subtotal = (&d.price - &d.discount) * &d.qty;
-					let _ = sqlx::query!(
+					let test = sqlx::query!(
 						r#"
 					UPDATE
 					    stocks
@@ -724,6 +725,8 @@ pub mod db {
 					.execute(&mut *tx)
 					.await?;
 
+					let xx = test.rows_affected();
+
 					let _ = sqlx::query_file!(
 						"sql/order-detail-insert.sql",
 						pid,
@@ -735,7 +738,8 @@ pub mod db {
 						d.discount,
 						d.hpp,
 						subtotal,
-						(i + 1) as i16
+						(i + 1) as i16,
+						d.gudang_id
 					)
 					.execute(&mut *tx)
 					.await?;

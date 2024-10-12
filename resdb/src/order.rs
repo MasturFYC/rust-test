@@ -224,7 +224,8 @@ pub mod db {
 						d.discount,
 						d.hpp,
 						subtotal,
-						(i + 1) as i16
+						(i + 1) as i16,
+						d.gudang_id
 					)
 					.execute(&mut *tx)
 					.await?;
@@ -518,7 +519,8 @@ pub mod db {
 								d.discount,
 								d.hpp,
 								subtotal,
-								(i + 1) as i16
+								(i + 1) as i16,
+								d.gudang_id
 							)
 							.execute(&mut *tx)
 							.await?;
