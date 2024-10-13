@@ -2,7 +2,14 @@
   import { browser } from "$app/environment";
   import { formatNumber } from "$lib/components/NumberFormat";
   import { getBarcodes, getRelationProp } from "$lib/fetchers";
-  import { baseURL, credential_include, type iCurrentUser, type iGudang, type iStock, type iStockDetail } from "$lib/interfaces";
+  import {
+		baseURL,
+		credential_include,
+		type iCurrentUser,
+		type iGudang,
+		type iStock,
+		type iStockDetail
+	} from "$lib/interfaces";
   import { numberToText } from "$lib/number-to-string";
   import { useQuery, useQueryClient } from "@sveltestack/svelte-query";
   import {
@@ -74,7 +81,7 @@
   }
 
   const supplierQuery = useQuery(
-    "supProp",
+    ["relation", "supplier"],
     async () => await getRelationProp(["Supplier"]),
     {
       enabled: browser,
@@ -82,7 +89,7 @@
   );
 
   const employeeQuery = useQuery(
-    "emplProp",
+    ["relation", "employee"],
     async () => await getRelationProp(["Employee"]),
     {
       enabled: browser,
@@ -188,7 +195,7 @@
     changeStockSession(0, false);
   }
 
-  function createNewStock(e: CustomEvent<number>): void {
+  function createNewStock(_e: CustomEvent<number>): void {
     isEdit = false;
     changeStockSession(0, true);
   }
@@ -286,6 +293,7 @@
             // }, 250);
           }
         } else {
+//					console.log(e.detail);
           const result = await postUpdateStock(stockId, savedStock, e.detail);
           if (result) {
             await client.invalidateQueries([qKey, { id: stockId }]);
@@ -342,6 +350,7 @@
   $: {
     supplierQuery.setEnabled(browser);
     employeeQuery.setEnabled(browser);
+		gudangQuery.setEnabled(browser);
     queryStocks.setEnabled(browser);
     queryStock.setEnabled(browser);
   }
@@ -436,7 +445,7 @@
     fullWidth
     {timeout}
     kind="warning-alt"
-    on:close={(e) => {
+    on:close={(_e) => {
       timeout = undefined;
     }}
   >

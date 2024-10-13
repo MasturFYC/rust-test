@@ -14,7 +14,7 @@ import { createEventDispatcher } from "svelte";
 
 export let gudangs: iGudang[] = [];
 const dispatch = createEventDispatcher();
-let selectedRowIds = [gudangs.length > 0 ? gudangs[0].id : 0];
+// let selectedRowIds = [gudangs.length > 0 ? gudangs[0].id : 0];
 let client_width = 0;
 
 function edit_gudang(id: number) {
@@ -46,7 +46,6 @@ function new_gudang() {
   zebra
   {headers}
   rows={gudangs}
-  bind:selectedRowIds
 >
   <svelte:fragment slot="cell" let:row let:cell>
     {#if cell.key === "cmd"}

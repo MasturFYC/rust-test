@@ -11,11 +11,11 @@
     Row,
     TextInput,
   } from "carbon-components-svelte";
-  import type { ComboBoxItem } from "carbon-components-svelte/types/ComboBox/ComboBox.svelte";
   import dayjs from "dayjs";
   import { formatNumber, getNumber } from "$lib/components/NumberFormat";
   import { stock } from "./store";
   import { toNumber } from "./handler";
+	import type { ComboBoxItem } from "carbon-components-svelte/src/ComboBox/ComboBox.svelte";
 
   // const dispatch = createEventDispatcher();
   export let suppliers: iRelationProp[] = [];

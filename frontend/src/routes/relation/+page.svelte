@@ -149,7 +149,7 @@
   };
 
   const createData = useMutation(fetchCreateData, {
-    onMutate: async (e: iRelation) => {
+    onMutate: async (_e: iRelation) => {
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
       await client.cancelQueries();
 
@@ -163,7 +163,7 @@
 
       return previousData;
     },
-    onSuccess: async (data: any, variable: iRelation, context) => {
+    onSuccess: async (data: any, _variable: iRelation, context) => {
       if (context) {
         // setTimeout(() => {
         isUpdating = false;
@@ -178,7 +178,7 @@
       }
     },
     // If the mutation fails, use the context returned from onMutate to roll back
-    onError: (err: any, variables: any, context: any) => {
+    onError: (err: any, _variables: any, context: any) => {
       console.log(err);
       if (context?.previousData) {
         client.setQueryData<iResult>(q_key, context.previousData);
@@ -188,18 +188,14 @@
     onSettled: async () => {
       await client.invalidateQueries(q_key);
       await client.invalidateQueries({
-        queryKey: "supProp",
-        refetchInactive: true,
-      });
-      await client.invalidateQueries({
-        queryKey: "empProp",
+        queryKey: ["relation"],
         refetchInactive: true,
       });
     },
   });
 
   const updateData = useMutation(fetchUpdateData, {
-    onMutate: async (e: iRelation) => {
+    onMutate: async (_e: iRelation) => {
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
       await client.cancelQueries();
 
@@ -213,7 +209,7 @@
 
       return previousRelation;
     },
-    onSuccess: async (data: any, variable: iRelation, context) => {
+    onSuccess: async (data: any, _variable: iRelation, context) => {
       if (context) {
         //		setTimeout(() => {
         isUpdating = false;
@@ -228,7 +224,7 @@
       }
     },
     // If the mutation fails, use the context returned from onMutate to roll back
-    onError: (err: any, variables: any, context: any) => {
+    onError: (_err: any, _variables: any, context: any) => {
       if (context?.previousRelation) {
         client.setQueryData<iResult>(q_key, context.previousRelation);
       }
@@ -236,18 +232,14 @@
     onSettled: async () => {
       await client.invalidateQueries(q_key);
       await client.invalidateQueries({
-        queryKey: "supProp",
-        refetchInactive: true,
-      });
-      await client.invalidateQueries({
-        queryKey: "empProp",
+        queryKey: ["relation"],
         refetchInactive: true,
       });
     },
   });
 
   const deleteData = useMutation(fetchDeleteData, {
-    onMutate: async (e: string) => {
+    onMutate: async (_e: string) => {
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
       await client.cancelQueries();
 
@@ -267,7 +259,7 @@
       //}, 1500);
     },
     // If the mutation fails, use the context returned from onMutate to roll back
-    onError: (err: any, variables: any, context: any) => {
+    onError: (_err: any, _variables: any, context: any) => {
       if (context?.previousRelation) {
         client.setQueryData<iResult>(q_key, context.previousRelation);
       }
@@ -285,11 +277,7 @@
       }
       await client.invalidateQueries(q_key);
       await client.invalidateQueries({
-        queryKey: "supProp",
-        refetchInactive: true,
-      });
-      await client.invalidateQueries({
-        queryKey: "empProp",
+        queryKey: ["relation"],
         refetchInactive: true,
       });
       isUpdating = false;
@@ -374,6 +362,7 @@
   const queryTypes = useQuery("relTypes", getRelationTypes, {
     enabled: browser,
   });
+
   $: q_key = [qKey, page, pageSize, current_type, txt];
 
   // $: query.setEnabled(true);

@@ -127,7 +127,7 @@
 				/>
 				<InputNumber
 					value={formatNumber($stock.dp)}
-					labelText="Jml bayar"
+					labelText="Jumlah bayar"
 					id="stock-dp"
 					size="sm"
 					classes={"align-left"}

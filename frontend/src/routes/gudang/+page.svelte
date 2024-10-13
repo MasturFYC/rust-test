@@ -14,11 +14,8 @@ type iResult = {
 	data: iGudang[];
 	status: string;
 };
-
-
 const client = useQueryClient();
 const url = `${baseURL}/gudangs`;
-
 let open = false;
 let isError = false;
 let gudang: iGudang = {
@@ -249,28 +246,28 @@ const fetchUpdateData = async (e: iGudang): Promise<iGudang> => {
     return (await result.json()) as iResult;
   }
 
-  const queryGudangOptions = () => ({
-    queryKey: ["gudang", "list"],
-    queryFn: async () => await fetchGudangs(),
-    enabled: browser,
-  });
+const gudangQueryOptions = () => ({
+  queryKey: ["gudang", "list"],
+  queryFn: async () => await fetchGudangs(),
+  enabled: browser,
+});
 
-  const query = useQuery<iResult, Error>(queryGudangOptions());
+const employeeQueryOptions = () => ({
+	queryKey: ["relation", "employee"],
+	queryFn: async () => await getRelationProp(["Employee"]),
+	enabled: browser,
+})
 
-  function showErrorMessage() {
-    if ($query.error instanceof Error) {
-      return $query.error.message;
-    }
-    return "Cannot load gudang.";
+const query = useQuery<iResult, Error>(gudangQueryOptions());
+const employeeQuery = useQuery(employeeQueryOptions());
+
+function showErrorMessage() {
+  if ($query.error instanceof Error) {
+    return $query.error.message;
   }
+  return "Cannot load gudang.";
+}
 
-  const employeeQuery = useQuery(
-    "empProp",
-    async () => await getRelationProp(["Employee"]),
-    {
-      enabled: browser,
-    },
-  );
 
 function submit(e: CustomEvent<iGudang>) {
 	isError = false;
@@ -309,13 +306,12 @@ function editGudang(e: CustomEvent<number>) {
 	}
 }
 
+
 $: showNotification = timeout !== undefined;
 $: {
-	query.setEnabled(browser);
 	employeeQuery.setEnabled(browser);
+	query.setEnabled(browser);
 }
-
-
 </script>
 
 <svelte:head>
@@ -351,6 +347,7 @@ $: {
   />
 {/if}
 
+{#if $employeeQuery.isSuccess}
 <FormGudang
 	on:submit={submit}
 	bind:open={open}
@@ -360,6 +357,7 @@ $: {
 	bind:errorMessage={errorMessage}
   employees={$employeeQuery.data?.data}
 />
+{/if}
 
 <style lang="scss">
   p {

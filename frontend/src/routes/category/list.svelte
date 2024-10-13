@@ -312,7 +312,7 @@
 
   // 	$: reset(3);
 
-  let selectedRowIds = [categories.length > 0 ? categories[0].id : 0];
+//  let selectedRowIds = [categories.length > 0 ? categories[0].id : 0];
 
   let client_width = 0;
   let timeout: undefined | number = undefined;
@@ -362,7 +362,6 @@
   description="Tabel daftar katagori barang"
   {headers}
   rows={categories}
-  bind:selectedRowIds
 >
   <svelte:fragment slot="cell" let:row let:cell>
     {#if cell.key === "cmd"}

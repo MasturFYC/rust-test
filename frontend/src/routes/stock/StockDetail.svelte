@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { formatNumber, getNumber } from "$lib/components/NumberFormat";
+  import { formatNumber, getNumber, getPercent } from "$lib/components/NumberFormat";
   import NumberInput from "$lib/components/NumberInput.svelte";
+	import NumberPercent from "$lib/components/NumberPercent.svelte";
   import {
     baseURL,
     credential_include,
@@ -35,7 +36,6 @@
 	import type { DataTableRow } from "carbon-components-svelte/src/DataTable/DataTable.svelte";
 
   const dispatch = createEventDispatcher();
-
   let reform: HTMLDivElement;
   let isDirty = false;
   let isBarcodeDirty = false;
@@ -45,16 +45,16 @@
   let notifySubtitle = "";
 
   let headers = [
-    { key: "barcode", value: "Barcode", width: "15%" },
+    { key: "barcode", value: "Barcode", width: "12%" },
     { key: "name", value: "Nama barang", width: "auto" },
- 		{ key: "gudangId", value: "Gudang", width: "auto"},
 		{ key: "qty", value: "Qty", width: "70px" },
     { key: "unit", value: "Unit", width: "40px" },
     { key: "price", value: "Harga", width: "100px" },
     { key: "discount", value: "Disc", width: "80px" },
     { key: "pot", value: "Hrg-Pot", width: "90px" },
     { key: "subtotal", value: "Subtotal", width: "100px" },
-  ];
+  	{ key: "gudangId", value: "Simpan di Gudang", width: "auto"},
+];
 
   export let barcodes: { barcode: string }[] = [];
 	export let gudangs: iGudang[] = [];
@@ -85,7 +85,8 @@
     discount: 0,
     subtotal: 0,
     oldStock: 0,
-		gudangId: 0,
+		gudangId: 1,
+		gudangName: "",
   };
 
   function onRowClick(e: CustomEvent<DataTableRow>) {
@@ -98,7 +99,8 @@
     const i = $details.findIndex((f) => f.id === 0);
 
     if (i < 0) {
-      details.update((o) => [...o, { ...initDetail }]);
+      details.update((o) => [...o, { ...initDetail, gudangName:
+				getDefaultGudangName() }]);
     }
 
     // setStringValue(currentDetail.qty, currentDetail.discount);
@@ -147,7 +149,7 @@
       if (i >= 0) {
         const slices = [...$details];
         slices.splice(i, 1);
-        details.update((o) => slices);
+        details.update(() => slices);
       }
     }
   }
@@ -170,7 +172,8 @@
 
       if (i === $details.length) {
         if (id > 0 && isDirty) {
-          details.update((o) => [...o, { ...initDetail }]);
+          details.update((o) => [...o, { ...initDetail, gudangName:
+						getDefaultGudangName() }]);
         } else {
           i = 0;
         }
@@ -190,7 +193,7 @@
     }
   }
 
-  function qtyOnKeyDown(e: KeyboardEvent, id: number) {
+  function qtyOnKeyDown(e: KeyboardEvent, _id: number) {
     if (e.key === "Enter" || e.key === "Tab") {
       currentKey = "discount";
       if (e.key === "Enter") {
@@ -203,11 +206,12 @@
     }
   }
 
-  async function onTablePointerEnter(e: Event) {
+  async function onTablePointerEnter(_e: Event) {
     const i = $details.findIndex((f) => f.id === 0);
 
     if (i < 0) {
-      details.update((o) => [...o, { ...initDetail }]);
+      details.update((o) => [...o, { ...initDetail, gudangName:
+				getDefaultGudangName() }]);
     }
 
     if (currentId === 0) {
@@ -226,6 +230,9 @@
   ) {
     // console.log(e.key)
     if (
+			e.key !== "+" &&
+			e.key !== "=" &&
+			e.key !== "-" &&
       e.key !== "ArrowUp" &&
       e.key !== "ArrowDown" &&
       e.key !== "Escape" &&
@@ -240,14 +247,34 @@
       if (i >= 0) {
         const slices = [...$details];
         slices.splice(i, 1);
-        details.update((o) => [...slices]);
+        details.update(() => [...slices]);
       }
       return true;
     }
 
     const i = $details.findIndex((f) => f.id === currentId);
 
-    let x = 0;
+		if((e.key === "=" || e.key === "+") && !e.ctrlKey) {
+			const d = $details[i];
+			const qty = toNumber(d.qty);
+			d.qty = qty + 1;
+			const slices = [...$details];
+			slices.splice(i, 1, d);
+			details.update(() => [...slices]);
+			return true;
+		}
+
+  	if(e.key === "-" && !e.ctrlKey) {
+			const d = $details[i];
+			const qty = toNumber(d.qty) - 1;
+			d.qty = qty <= 1 ? 1 : qty;
+			const slices = [...$details];
+			slices.splice(i, 1, d);
+			details.update(() => [...slices]);
+			return true;
+		}
+
+  let x = 0;
     if (e.key === "ArrowDown") {
       x = i === $details.length - 1 ? 0 : i + 1;
     } else if (e.key === "ArrowUp") {
@@ -259,7 +286,7 @@
       if (i < 0) {
         const slices = [...$details];
         slices.splice(i, 1);
-        details.update((o) => [...slices]);
+        details.update(() => [...slices]);
       }
       x = $details.length - 1;
     }
@@ -329,9 +356,9 @@
           d.price = toNumber(p.price);
 
           if (found) {
-            d.qty += 1;
+            d.qty = toNumber(d.qty) + 1;
           } else {
-            if (d.qty === 0) {
+            if (toNumber(d.qty) === 0) {
               d.qty = 1;
             }
             d.id = createNewId();
@@ -394,14 +421,15 @@
     }
   }
 
-	async function gudangChange(gudId: number, rowId: number) {
+	async function gudangChange(gudId: number, rowId: number, name: string) {
 
-		console.log(gudId, rowId);
+//		console.log(gudId, rowId);
 		const i = $details.findIndex((f => f.id === rowId));
 		if(i >= 0) {
 			const d = $details[i];
 			const c = {
 				...d,
+				gudangName: name,
 				gudangId: gudId
 			};
 			updateCurrentDetail(c);
@@ -414,7 +442,8 @@
     if (typeof e.detail === "string") {
       const i = $details.findIndex((f) => f.id === id);
       if (i >= 0) {
-        const qty = getNumber(e.detail);
+        const qty = getPercent(e.detail);
+			//	console.log(qty);
 
         const d = $details[i];
 
@@ -525,9 +554,9 @@
     );
   }
 
-  async function deleteItems(e: MouseEvent) {
+  async function deleteItems(_e: MouseEvent) {
     const slices = $details.filter((f) => !selectedRowIds.includes(f.id));
-    details.update((o) => [...slices]);
+    details.update(() => [...slices]);
 
     updateStock();
 
@@ -547,6 +576,16 @@
     );
   }
 
+	const getDefaultGudangName = () => {
+		const i = gudangs.findIndex(f => f.id === 1);
+
+		if(i >= 0) {
+			const d = gudangs[i]
+			return d.name;
+		}
+		return "-";
+	}
+
   $: isStockValid =
     $stock.supplierId > 0 &&
     $stock.warehouseId > 0 &&
@@ -560,7 +599,7 @@
     on:click={() => (timeout = 12_000)}
     {timeout}
     kind="warning-alt"
-    on:close={(e) => {
+    on:close={() => {
       timeout = undefined;
     }}
   >
@@ -663,18 +702,19 @@
 						size={"sm"}
 						placeholder="Pilih gudang"
 						selectedId={row["gudangId"]}
+						style={"margin: 0;padding:0"}
 						items={get_gudang()}
 						on:select={(e) => {
 							if(e.detail.selectedId > 0) {
-								gudangChange(e.detail.selectedId, row.id);
+								gudangChange(e.detail.selectedId, row.id, e.detail.selectedItem.text);
 							}
 						}}
 					/>
         {:else if cell.key === "qty"}
-          <NumberInput
-            value={formatNumber(cell.value)}
+          <NumberPercent
+            value={formatNumber(cell.value, 2)}
             size="sm"
-            classes="cell-edit input-number"
+            clasess="cell-edit input-number"
             id="qty-id"
             on:change={(e) => qtyOnChange(e, row.id)}
             on:focus={() => (currentKey = cell.key)}
@@ -705,7 +745,7 @@
           >
             {formatNumber(cell.value)}
           </div>
-        {:else if cell.key === "pot"}
+       {:else if cell.key === "pot"}
           <div
             role="button"
             tabindex={-1}
@@ -729,7 +769,6 @@
             {cell.value}
           </div>
         {/if}
-        <!-- normal mode -->
         <!-- {:else if row.id === 0}
 				{#if cell.key === "barcode"}
 					Total item: {data.length}
@@ -738,7 +777,8 @@
 				{:else}
 				<span></span>
 				{/if} -->
-      {:else if cell.key === "price" || cell.key === "hpp" || cell.key === "qty" || cell.key === "discount" || cell.key === "subtotal"}
+     <!-- normal mode -->
+     {:else if cell.key === "price" || cell.key === "hpp" || cell.key === "discount" || cell.key === "subtotal"}
         <div
           role="button"
           tabindex={-1}
@@ -746,12 +786,26 @@
           aria-labelledby="btn-103"
           on:click={() => (currentKey = cell.key)}
           class="cell-right"
-          class:qty={cell.key === "qty"}
           class:subtotal={cell.key === "subtotal"}
           class:qty-alert={toNumber(row["qty"]) === 0}
         >
           {formatNumber(cell.value)}
         </div>
+      {:else if cell.key === "qty"}
+        <div
+          role="button"
+          tabindex={-1}
+          on:keyup
+          aria-labelledby="btn-107"
+          on:click={() => (currentKey = cell.key)}
+          class="cell-right"
+          class:qty={cell.key === "qty"}
+          class:qty-alert={toNumber(row["qty"]) <= 0}
+        >
+          {formatNumber(cell.value,2)}
+        </div>
+ 			{:else if cell.key === "gudangId"}
+					{row["gudangName"]??""}
       {:else if cell.key === "pot"}
         <div
           role="button"

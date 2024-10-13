@@ -9,10 +9,12 @@
 	export let size: "sm" | "xl" = "sm";
 	export let placeholder = "";
 	export let hideLabel = false;
+	export let clasess = "input-number";
+	export let id = "";
 	let ref_input: HTMLInputElement;
 
 
-	function updateValue(e: Event) {
+	function updateValue(_e: Event) {
 		// e.preventDefault();
 		if (ref_input) {
 			// str_value = cardPercent(ref_input.value);
@@ -35,14 +37,17 @@
 </script>
 
 <TextInput
-	class="input-number"
+	autocomplete="off"
+	class={clasess}
 	{inline}
 	bind:ref={ref_input}
 	bind:value
+	{id}
 	{labelText}
 	{placeholder}
 	{size}
 	on:change
 	on:input
+	on:keydown
 	{hideLabel}
 />

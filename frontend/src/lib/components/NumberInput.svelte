@@ -20,7 +20,7 @@
 
   let ref_input: HTMLInputElement;
 
-  function updateValue(e: Event) {
+  function updateValue(_e: Event) {
     //e.preventDefault();
     if (ref_input) {
       ref_input.value = cardNumber(ref_input.value);
