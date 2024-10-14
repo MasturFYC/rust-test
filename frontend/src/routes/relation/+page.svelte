@@ -14,6 +14,9 @@
   } from "@sveltestack/svelte-query";
   import { Pagination } from "carbon-components-svelte";
   import RelationList from "./RelationList.svelte";
+  import { GroupAccount } from "carbon-icons-svelte";
+
+  const title = "Relasi";
 
   const url = `${baseURL}/relations`;
   let qKey = "relations";
@@ -374,10 +377,11 @@
 </script>
 
 <svelte:head>
-  <title>Relasi</title>
+  <title>{title}</title>
   <meta name="description" content="Relation this app" />
 </svelte:head>
 
+<h2><GroupAccount size={24} /> {title}</h2>
 {#if isEdit}
   <FormRelation
     {data}

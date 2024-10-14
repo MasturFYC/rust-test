@@ -3,13 +3,14 @@
   import { formatNumber } from "$lib/components/NumberFormat";
   import { getBarcodes, getRelationProp } from "$lib/fetchers";
   import {
-		baseURL,
-		credential_include,
-		type iCurrentUser,
-		type iGudang,
-		type iStock,
-		type iStockDetail
-	} from "$lib/interfaces";
+    baseURL,
+    credential_include,
+    type iCurrentUser,
+    type iGudang,
+    type iStock,
+    type iStockDetail,
+  } from "$lib/interfaces";
+  import { SendToBack } from "carbon-icons-svelte";
   import { numberToText } from "$lib/number-to-string";
   import { useQuery, useQueryClient } from "@sveltestack/svelte-query";
   import {
@@ -44,6 +45,7 @@
     stock,
   } from "./store";
 
+  const title = "Stock";
   const client = useQueryClient();
 
   let txt = "";
@@ -96,36 +98,34 @@
     },
   );
 
-	type iGudangResult = {
-		count: number;
-		data: iGudang[];
-		status: string;
-	}
+  type iGudangResult = {
+    count: number;
+    data: iGudang[];
+    status: string;
+  };
 
-	const fetchGudangs = async (): Promise<iGudangResult> => {
-		const url = `${baseURL}/gudangs`;
-		const options = {
-			headers: {
-				"content-type": "application/json",
-			},
-			method: "GET",
-			credentials: credential_include,
-		};
+  const fetchGudangs = async (): Promise<iGudangResult> => {
+    const url = `${baseURL}/gudangs`;
+    const options = {
+      headers: {
+        "content-type": "application/json",
+      },
+      method: "GET",
+      credentials: credential_include,
+    };
     const request = new Request(url, options);
     let result = await fetch(request);
 
     return (await result.json()) as iGudangResult;
-  }
+  };
 
-	const queryGudangOptions = () => ({
+  const queryGudangOptions = () => ({
     queryKey: ["gudang", "list"],
     queryFn: async () => await fetchGudangs(),
     enabled: browser,
-  }
-);
+  });
 
-
-	const gudangQuery = useQuery<iGudangResult, Error>(queryGudangOptions());
+  const gudangQuery = useQuery<iGudangResult, Error>(queryGudangOptions());
 
   const queryBarcode = useQuery("barcodes", async () => await getBarcodes(), {
     enabled: browser,
@@ -293,7 +293,7 @@
             // }, 250);
           }
         } else {
-//					console.log(e.detail);
+          //					console.log(e.detail);
           const result = await postUpdateStock(stockId, savedStock, e.detail);
           if (result) {
             await client.invalidateQueries([qKey, { id: stockId }]);
@@ -350,7 +350,7 @@
   $: {
     supplierQuery.setEnabled(browser);
     employeeQuery.setEnabled(browser);
-		gudangQuery.setEnabled(browser);
+    gudangQuery.setEnabled(browser);
     queryStocks.setEnabled(browser);
     queryStock.setEnabled(browser);
   }
@@ -361,16 +361,15 @@
 <svelte:window bind:innerWidth />
 
 <svelte:head>
-  <title>Stock</title>
+  <title>{title}</title>
   <meta name="description" content="Stock this app" />
 </svelte:head>
 
 <LocalStorage key="__user_info" bind:value={profile} />
-
+<h2><SendToBack size={24} /> {title}</h2>
 <FormStockPayment bind:open />
 
-{#if $supplierQuery.isLoading || $employeeQuery.isLoading ||
-	$queryBarcode.isLoading || $queryStocks.isLoading || $gudangQuery.isLoading}
+{#if $supplierQuery.isLoading || $employeeQuery.isLoading || $queryBarcode.isLoading || $queryStocks.isLoading || $gudangQuery.isLoading}
   <Loading withOverlay small />
 {:else if isEdit}
   <Grid noGutter={innerWidth > 720}>
@@ -393,7 +392,7 @@
   />
   <StockDetail
     barcodes={$queryBarcode.data?.data}
-		gudangs={$gudangQuery.data?.data}
+    gudangs={$gudangQuery.data?.data}
     on:productNotFound={onProductNotFound}
     on:createNewStock={createNewStock}
     on:close={stockClose}

@@ -7,6 +7,7 @@ SELECT
                     FROM stocks s
                     INNER JOIN gudangs g ON g.id = s.gudang_id
                     WHERE s.product_id = p.id
+                    ORDER BY g.name
         ) AS x), '[]') AS "stocks!: Json<Vec<ProductStock>>"
 FROM
     products AS p

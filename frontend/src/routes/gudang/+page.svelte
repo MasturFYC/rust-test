@@ -1,36 +1,40 @@
 <script lang="ts">
-import { browser } from "$app/environment";
-import { baseURL, credential_include, type iGudang } from "$lib/interfaces";
-import { useQuery } from "@sveltestack/svelte-query";
-import ListCategory from "./list.svelte";
-import { getRelationProp } from "$lib/fetchers";
-import {IbmDb2Warehouse as Warehouse} from 'carbon-icons-svelte';
-import { useMutation, useQueryClient } from "@sveltestack/svelte-query";
-import FormGudang from './form.svelte';
-import { ToastNotification } from "carbon-components-svelte";
+  import { browser } from "$app/environment";
+  import { baseURL, credential_include, type iGudang } from "$lib/interfaces";
+  import { useQuery } from "@sveltestack/svelte-query";
+  import ListCategory from "./list.svelte";
+  import { getRelationProp } from "$lib/fetchers";
+  import { Category, IbmDb2Warehouse as Warehouse } from "carbon-icons-svelte";
+  import { useMutation, useQueryClient } from "@sveltestack/svelte-query";
+  import FormGudang from "./form.svelte";
+  import { ToastNotification } from "carbon-components-svelte";
 
-type iResult = {
-	count: number;
-	data: iGudang[];
-	status: string;
-};
-const client = useQueryClient();
-const url = `${baseURL}/gudangs`;
-let open = false;
-let isError = false;
-let gudang: iGudang = {
-	id: 0,
-	name: "",
-	employeeId: 0,
-	employeeName: "",
-	locate: "",
-};
-let timeout: undefined | number = undefined;
-let showNotification = false;
-let isUpdating = false;
-let errorMessage = "";
+  type iResult = {
+    count: number;
+    data: iGudang[];
+    status: string;
+  };
 
-/*
+  const title = "Gudang";
+  const client = useQueryClient();
+  const url = `${baseURL}/gudangs`;
+  const qaKey = ["gudang", "list"];
+
+  let open = false;
+  let isError = false;
+  let gudang: iGudang = {
+    id: 0,
+    name: "",
+    employeeId: 0,
+    employeeName: "",
+    locate: "",
+  };
+  let timeout: undefined | number = undefined;
+  let showNotification = false;
+  let isUpdating = false;
+  let errorMessage = "";
+
+  /*
 const initResult: iResult = {
   count: 0,
   data: [],
@@ -38,7 +42,7 @@ const initResult: iResult = {
 };
 */
 
-const fetchUpdateData = async (e: iGudang): Promise<iGudang> => {
+  const fetchUpdateData = async (e: iGudang): Promise<iGudang> => {
     const url = `${baseURL}/gudangs/${e.id}`;
     const request = new Request(url, {
       headers: {
@@ -57,7 +61,7 @@ const fetchUpdateData = async (e: iGudang): Promise<iGudang> => {
     const url = `${baseURL}/gudangs`;
     const request = new Request(url, {
       headers: {
-"content-type": "application/json",
+        "content-type": "application/json",
       },
       body: JSON.stringify(e),
       method: "POST",
@@ -78,12 +82,12 @@ const fetchUpdateData = async (e: iGudang): Promise<iGudang> => {
   };
 
   const createData = useMutation(fetchCreateData, {
-    onMutate: async(_: iGudang) => {
+    onMutate: async (_: iGudang) => {
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
       await client.cancelQueries();
 
       // Snapshot the previous value
-      const previousData = client.getQueryData<iResult>(["gudang", "list"]);
+      const previousData = client.getQueryData<iResult>(qaKey);
 
       // Optimistically update to the new value
       if (previousData) {
@@ -108,46 +112,36 @@ const fetchUpdateData = async (e: iGudang): Promise<iGudang> => {
       }
     },
     // If the mutation fails, use the context returned from onMutate to roll back
-    onError: (
-			err: any,
-			_variables: any,
-			context: any
-		) => {
+    onError: (err: any, _variables: any, context: any) => {
       console.log(err);
       if (context?.previousData) {
-        client.setQueryData<iResult>(["gudang", "list"], context.previousData);
+        client.setQueryData<iResult>(qaKey, context.previousData);
       }
       //      selectedCategoryId.set($category.id)
       // errorMesage.set(`Nama kategori '${$category.name}'' sudah ada!`);
     },
     // Always refetch after error or success:
     onSettled: async () => {
-      await client.invalidateQueries(["gudang", "list"]);
+      await client.invalidateQueries(qaKey);
     },
   });
 
   const updateData = useMutation(fetchUpdateData, {
-    onMutate: async (
-		 _: iGudang
-		) => {
+    onMutate: async (_: iGudang) => {
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
       await client.cancelQueries();
 
       // Snapshot the previous value
-      const previousGudang = client.getQueryData<iResult>(["gudang", "list"]);
+      const previousGudang = client.getQueryData<iResult>(qaKey);
 
       // Optimistically update to the new value
       if (previousGudang) {
-        client.setQueryData<iResult>(["gudang", "list"], previousGudang);
+        client.setQueryData<iResult>(qaKey, previousGudang);
       }
 
       return previousGudang;
     },
-    onSuccess: async (
-			data: any,
-			_variables: iGudang,
-			context
-		) => {
+    onSuccess: async (data: any, _variables: iGudang, context) => {
       if (context) {
         setTimeout(() => {
           isUpdating = false;
@@ -165,17 +159,18 @@ const fetchUpdateData = async (e: iGudang): Promise<iGudang> => {
     // If the mutation fails, use the context returned from onMutate to roll back
     onError: (_err: any, _variables: any, context: any) => {
       if (context?.previousGudang) {
-        client.setQueryData<iResult>(
-          ["Gudang", "list"],
-          context.previousGudang,
-        );
+        client.setQueryData<iResult>(qaKey, context.previousGudang);
         //        selectedCategoryId.set($category.id)
       }
       // errorMesage.set(`Nama kategori '${$category.name}' sudah ada!`);
     },
-    onSettled: async (_data: any, _error: any, _variables: iGudang, _context: iResult | undefined,
+    onSettled: async (
+      _data: any,
+      _error: any,
+      _variables: iGudang,
+      _context: iResult | undefined,
     ) => {
-      await client.invalidateQueries(["gudang", "list"]);
+      await client.invalidateQueries(qaKey);
     },
   });
 
@@ -185,11 +180,11 @@ const fetchUpdateData = async (e: iGudang): Promise<iGudang> => {
       await client.cancelQueries();
 
       // Snapshot the previous value
-      const previousGudang = client.getQueryData<iResult>(["gudang", "list"]);
+      const previousGudang = client.getQueryData<iResult>(qaKey);
 
       // Optimistically update to the new value
       if (previousGudang) {
-        client.setQueryData<iResult>(["gudang", "list"], previousGudang);
+        client.setQueryData<iResult>(qaKey, previousGudang);
       }
 
       return previousGudang;
@@ -207,26 +202,23 @@ const fetchUpdateData = async (e: iGudang): Promise<iGudang> => {
       };
     },
     // If the mutation fails, use the context returned from onMutate to roll back
-    onError: (
-			_err: any,
-			_variables: any,
-			context: any
-		) => {
+    onError: (_err: any, _variables: any, context: any) => {
       if (context?.previousGudang) {
-        client.setQueryData<iResult>(
-          ["gudang", "list"],
-          context.previousGudang,
-        );
+        client.setQueryData<iResult>(qaKey, context.previousGudang);
       }
     },
-    onSettled: async (data: any, _error: any, _variables: number, _context: iResult | undefined,
+    onSettled: async (
+      data: any,
+      _error: any,
+      _variables: number,
+      _context: iResult | undefined,
     ) => {
       if (data.status === "fail") {
         showNotification = true;
         errorMessage = data.message;
         timeout = 3_000;
       }
-      await client.invalidateQueries(["gudang", "list"]);
+      await client.invalidateQueries(qaKey);
       isUpdating = false;
     },
   });
@@ -246,80 +238,78 @@ const fetchUpdateData = async (e: iGudang): Promise<iGudang> => {
     return (await result.json()) as iResult;
   }
 
-const gudangQueryOptions = () => ({
-  queryKey: ["gudang", "list"],
-  queryFn: async () => await fetchGudangs(),
-  enabled: browser,
-});
+  const gudangQueryOptions = () => ({
+    queryKey: qaKey,
+    queryFn: async () => await fetchGudangs(),
+    enabled: browser,
+  });
 
-const employeeQueryOptions = () => ({
-	queryKey: ["relation", "employee"],
-	queryFn: async () => await getRelationProp(["Employee"]),
-	enabled: browser,
-})
+  const employeeQueryOptions = () => ({
+    queryKey: ["relation", "employee"],
+    queryFn: async () => await getRelationProp(["Employee"]),
+    enabled: browser,
+  });
 
-const query = useQuery<iResult, Error>(gudangQueryOptions());
-const employeeQuery = useQuery(employeeQueryOptions());
+  const query = useQuery<iResult, Error>(gudangQueryOptions());
+  const employeeQuery = useQuery(employeeQueryOptions());
 
-function showErrorMessage() {
-  if ($query.error instanceof Error) {
-    return $query.error.message;
+  function showErrorMessage() {
+    if ($query.error instanceof Error) {
+      return $query.error.message;
+    }
+    return "Cannot load gudang.";
   }
-  return "Cannot load gudang.";
-}
 
+  function submit(e: CustomEvent<iGudang>) {
+    isError = false;
+    isUpdating = true;
+    if (e.detail.id > 0) {
+      $updateData.mutate(e.detail);
+    } else {
+      $createData.mutate(e.detail);
+    }
+  }
 
-function submit(e: CustomEvent<iGudang>) {
-	isError = false;
-	isUpdating = true;
-	if (e.detail.id > 0) {
-		$updateData.mutate(e.detail);
-	} else {
-		$createData.mutate(e.detail);
-	}
-}
+  function deleteGudang(e: CustomEvent<number>) {
+    isUpdating = true;
+    $deleteData.mutate(e.detail);
+  }
 
-function deleteGudang(e: CustomEvent<number>) {
-	isUpdating = true;
-	$deleteData.mutate(e.detail);
-}
+  function newGudang(e: CustomEvent<iGudang>) {
+    isError = false;
+    errorMessage = "";
+    gudang = { ...e.detail };
+    open = true;
+  }
 
-function newGudang(e: CustomEvent<iGudang>) {
-	isError = false;
-	errorMessage = "";
-	gudang = {...e.detail};
-	open = true;
-}
+  function editGudang(e: CustomEvent<number>) {
+    isError = false;
+    errorMessage = "";
+    const id = e.detail;
+    // timeout = undefined;
 
-function editGudang(e: CustomEvent<number>) {
-	isError = false;
-	errorMessage = "";
-	const id = e.detail;
-	// timeout = undefined;
+    if ($query.data) {
+      let test = $query.data.data.filter((f) => f.id === id);
+      if (test.length > 0) {
+        gudang = { ...test[0] };
+        open = true;
+      }
+    }
+  }
 
-	if ($query.data) {
-		let test = $query.data.data.filter(f => f.id === id);
-		if (test.length > 0) {
-			gudang = { ...test[0] };
-			open = true;
-		}
-	}
-}
-
-
-$: showNotification = timeout !== undefined;
-$: {
-	employeeQuery.setEnabled(browser);
-	query.setEnabled(browser);
-}
+  $: showNotification = timeout !== undefined;
+  $: {
+    employeeQuery.setEnabled(browser);
+    query.setEnabled(browser);
+  }
 </script>
 
 <svelte:head>
-  <title>Gudang</title>
+  <title>{title}</title>
   <meta name="description" content="Gudang this app" />
 </svelte:head>
 
-<h2><Warehouse size={24} /> Gudang Barang</h2>
+<h2><Warehouse size={24} /> {title}</h2>
 
 {#if $query.isLoading || $employeeQuery.isLoading}
   <p>Loading...</p>
@@ -328,9 +318,9 @@ $: {
 {:else if $query.isSuccess}
   <ListCategory
     gudangs={$query.data.data}
-		on:edit={editGudang}
-		on:newGudang={newGudang}
-		on:deleteGudang={deleteGudang}
+    on:edit={editGudang}
+    on:newGudang={newGudang}
+    on:deleteGudang={deleteGudang}
   />
   <p>Total: {$query.data.count} item{$query.data.count > 1 ? "s" : ""}</p>
 {/if}
@@ -348,15 +338,15 @@ $: {
 {/if}
 
 {#if $employeeQuery.isSuccess}
-<FormGudang
-	on:submit={submit}
-	bind:open={open}
-	gudang={gudang}
-	bind:isUpdating={isUpdating}
-	bind:isError={isError}
-	bind:errorMessage={errorMessage}
-  employees={$employeeQuery.data?.data}
-/>
+  <FormGudang
+    on:submit={submit}
+    bind:open
+    {gudang}
+    bind:isUpdating
+    bind:isError
+    bind:errorMessage
+    employees={$employeeQuery.data?.data}
+  />
 {/if}
 
 <style lang="scss">

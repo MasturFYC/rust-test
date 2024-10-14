@@ -312,7 +312,7 @@
 
   // 	$: reset(3);
 
-//  let selectedRowIds = [categories.length > 0 ? categories[0].id : 0];
+  //  let selectedRowIds = [categories.length > 0 ? categories[0].id : 0];
 
   let client_width = 0;
   let timeout: undefined | number = undefined;
@@ -358,8 +358,6 @@
   useStaticWidth={client_width > 640}
   zebra
   size="short"
-  title="Kategori Barang"
-  description="Tabel daftar katagori barang"
   {headers}
   rows={categories}
 >

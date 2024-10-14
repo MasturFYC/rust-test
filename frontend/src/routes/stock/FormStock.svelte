@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { iRelationProp, iStock } from "$lib/interfaces";
+  import type { iRelationProp } from "$lib/interfaces";
   import {
     Button,
     Column,
@@ -15,7 +15,7 @@
   import { formatNumber, getNumber } from "$lib/components/NumberFormat";
   import { stock } from "./store";
   import { toNumber } from "./handler";
-	import type { ComboBoxItem } from "carbon-components-svelte/src/ComboBox/ComboBox.svelte";
+  import type { ComboBoxItem } from "carbon-components-svelte/src/ComboBox/ComboBox.svelte";
 
   // const dispatch = createEventDispatcher();
   export let suppliers: iRelationProp[] = [];
@@ -209,9 +209,9 @@
         <ComboBox
           accesskey="g"
           id="warehouse-id"
-          titleText="Penjaga gudang"
+          titleText="Checker"
           selectedId={$stock.warehouseId}
-          placeholder="Pilih penjaga gudang"
+          placeholder="Nama pengechek"
           items={get_employees()}
           {shouldFilterItem}
           on:select={on_employee_changed}

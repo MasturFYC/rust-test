@@ -140,6 +140,8 @@ pub mod model {
 		pub product_id: i16,
 		#[serde(rename = "gudangId")]
 		pub gudang_id: i16,
+		#[serde(rename = "gudangName")]
+		pub gudang_name: String,
 		pub qty: BigDecimal,
 		pub direction: i16,
 		pub unit: String,
@@ -706,10 +708,12 @@ pub mod db {
 			let mut i = 0;
 			let detail_len = details.len();
 
+			// print!("\n\nTOTAL NEW DETAILS: {}\n\n", detail_len);
+
 			loop {
 				if let Some(d) = details.get(i) {
 					let subtotal = (&d.price - &d.discount) * &d.qty;
-					let test = sqlx::query!(
+					let _ = sqlx::query!(
 						r#"
 					UPDATE
 					    stocks
@@ -725,7 +729,7 @@ pub mod db {
 					.execute(&mut *tx)
 					.await?;
 
-					let xx = test.rows_affected();
+					// let xx = test.rows_affected();
 
 					let _ = sqlx::query_file!(
 						"sql/order-detail-insert.sql",
@@ -746,7 +750,7 @@ pub mod db {
 
 					i = i.checked_add(1).unwrap();
 
-					if i == len {
+					if i == detail_len {
 						break;
 					}
 				}

@@ -3,7 +3,9 @@
   import { baseURL, credential_include, type iCategory } from "$lib/interfaces";
   import { useQuery } from "@sveltestack/svelte-query";
   import ListCategory from "./list.svelte";
+  import { Category } from "carbon-icons-svelte";
 
+  const title = "Kategori Barang";
   const url = `${baseURL}/categories`;
 
   type iResult = {
@@ -56,9 +58,11 @@
 </script>
 
 <svelte:head>
-  <title>Kategori</title>
+  <title>{title}</title>
   <meta name="description" content="Category this app" />
 </svelte:head>
+
+<h2><Category size={24} /> {title}</h2>
 
 {#if $query.isLoading}
   <p>Loading...</p>

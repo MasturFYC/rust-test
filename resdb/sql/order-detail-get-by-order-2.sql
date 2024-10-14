@@ -3,6 +3,7 @@ SELECT
    d.detail_id,
    d.product_id,
    d.gudang_id,
+   g.name AS gudang_name,
    d.qty,
    d.direction,
    d.unit,
@@ -19,6 +20,8 @@ FROM
     order_details d
 INNER JOIN
     products p ON p.id = d.product_id
+INNER JOIN
+    gudangs g ON g.id = d.gudang_id
 WHERE
     d.order_id = $1
 ORDER BY

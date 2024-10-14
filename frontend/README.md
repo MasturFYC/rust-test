@@ -84,3 +84,6 @@ ssh-copy-id <user>@<host>
 ```
 ssh <user>@<host>
 ```
+
+facebook problem with shared link
+https://stackoverflow.com/questions/70030269/reactjs-image-preview-problem-of-the-shared-post-on-facebook

@@ -1,3 +1,7 @@
+h2 {
+  margin-bottom: 12px;
+}
+
 table.bx--data-table th:nth-child(3),
 table.bx--data-table td:nth-child(3) {
   padding-left: 0;

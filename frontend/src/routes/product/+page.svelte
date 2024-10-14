@@ -2,7 +2,7 @@
   import { browser } from "$app/environment";
   import FormProduct from "$lib/components/FormProduct.svelte";
   import { baseURL, credential_include, type iProduct } from "$lib/interfaces";
-
+  import { Product } from "carbon-icons-svelte";
   import {
     getCategoryProp,
     getRelationProp,
@@ -32,6 +32,8 @@
     status: string;
     data: iProduct;
   };
+
+  const title = "Data Barang";
 
   const client = useQueryClient();
   const url = `${baseURL}/products`;
@@ -388,12 +390,14 @@
 </script>
 
 <svelte:head>
-  <title>Datang Barang</title>
+  <title>{title}</title>
   <meta name="description" content="Product this app" />
 </svelte:head>
 
 <svelte:window bind:innerWidth />
 
+<h2><Product size={24} /> {title}</h2>
+<!-- <subtitle>Tabel data barang / produk</subtitle> -->
 {#if $categoryQuery.isLoading || $supplierQuery.isLoading || $query.isLoading || isLoading}
   <Loading withOverlay={false} />
 {/if}

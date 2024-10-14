@@ -1,6 +1,11 @@
 <script lang="ts">
   import { formatNumber } from "$lib/components/NumberFormat";
-  import type { iProduct, iProductStock, iPropertyID, iRelationProp } from "$lib/interfaces";
+  import type {
+    iProduct,
+    iProductStock,
+    iPropertyID,
+    iRelationProp,
+  } from "$lib/interfaces";
   import {
     Button,
     ComboBox,
@@ -59,30 +64,22 @@
   // function get_suppliers() {
   // 	return suppliers.map((m) => ({ id: m.id, text: m.text }));
   // }
-	const defaultStock = (stocks: iProductStock[]) => {
-		const d = stocks.filter(f => f.gudangId === 1)[0];
-		if (d) {
-			return d.qty;
-		}
-		return 0;
-	}
+  const defaultStock = (stocks: iProductStock[]) => {
+    const d = stocks.filter((f) => f.gudangId === 1)[0];
+    if (d) {
+      return d.qty;
+    }
+    return 0;
+  };
 
   let sup_light = false;
   let cat_light = false;
   // $: 	console.log(suppliers)
 </script>
 
-<DataTable
-  expandable
-  size="medium"
-  title="Data Barang"
-  description="Tabel data barang / produk"
-  headers={get_headers()}
-  rows={data}
->
+<DataTable expandable size="medium" headers={get_headers()} rows={data}>
   <svelte:fragment slot="cell-header" let:header>
-    {#if header.key === "price" || header.key === "hpp" || header.key ===
-			"stocks"|| header.key === "margin"}
+    {#if header.key === "price" || header.key === "hpp" || header.key === "stocks" || header.key === "margin"}
       <div class="cell-right">{header.value}</div>
     {:else}
       {header.value}
@@ -100,7 +97,7 @@
         icon={Edit}
         on:click={() => edit_product(row.id)}
       />
-			<!-- <div></div> -->
+      <!-- <div></div> -->
     {:else if cell.key === "relationType"}
       <div style="cell-right">{cell.value.join(", ")}</div>
     {:else if cell.key === "hpp" || cell.key === "price"}
@@ -108,7 +105,10 @@
     {:else if cell.key === "margin"}
       <div class="cell-right">{formatNumber(cell.value, 2)}%</div>
     {:else if cell.key === "stocks"}
-      <div class="cell-right">{formatNumber(defaultStock(cell.value))} {row["unit"]}</div>
+      <div class="cell-right">
+        {formatNumber(defaultStock(cell.value))}
+        {row["unit"]}
+      </div>
     {:else}
       {cell.value}
     {/if}
@@ -128,7 +128,7 @@
         type="inline"
         light={cat_light}
         size="sm"
-				style="border-bottom: none"
+        style="border-bottom: none"
         class={"supplier"}
         placeholder="filter by category"
         items={categories}
@@ -144,7 +144,7 @@
       <ComboBox
         type="inline"
         light={sup_light}
-				style="border-bottom: none"
+        style="border-bottom: none"
         class={"supplier"}
         size="sm"
         placeholder="filter by supplier"
