@@ -3,16 +3,18 @@
   import { useQuery, useQueryClient } from "@sveltestack/svelte-query";
   import { baseURL, credential_include, type iProduct } from "$lib/interfaces";
   import { InlineLoading } from "carbon-components-svelte";
-  import { formatNumber } from "$lib/components/NumberFormat";
+  // import { formatNumber } from "$lib/components/NumberFormat";
   import ProductInfo from "./ProductInfo.svelte";
 
   type iResult = {
     status: string;
     data: iProduct;
   };
-  export let productId = 0;
+	export let productId = 0;
 	export let oldQty: number = 0;
 	export let newQty: number = 0;
+	export let selectedGudangId = 0;
+	export let oldGudangId = 0;
 
   async function fetchProduct() {
     const url = `${baseURL}/products/${productId}`;
@@ -31,7 +33,6 @@
   let query = useQuery<iResult, Error>(["product", productId], fetchProduct, {
     enabled: false,
   });
-  let client = useQueryClient();
 
   $: {
     query.setEnabled(browser);
@@ -44,5 +45,5 @@
 {:else if $query.isError}
   <code><pre>{$query.error.message}</pre></code>
 {:else if $query.isSuccess && $query.data.data}
-  <ProductInfo product={$query.data.data} {oldQty} {newQty} />
+  <ProductInfo product={$query.data.data} {oldQty} {newQty} {selectedGudangId} {oldGudangId} />
 {/if}

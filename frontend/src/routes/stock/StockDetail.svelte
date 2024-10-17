@@ -84,7 +84,8 @@
     price: 0,
     discount: 0,
     subtotal: 0,
-    oldStock: 0,
+    oldQty: 0,
+		oldGudangId: 0,
 		gudangId: 1,
 		gudangName: "",
   };
@@ -368,7 +369,7 @@
             d.name = p.name;
             d.barcode = p.barcode;
             d.hpp = toNumber(p.hpp);
-            d.oldStock = p.oldStock ? 0 : toNumber(p.oldStock);
+            d.oldQty = p.oldQty ? 0 : toNumber(p.oldQty);
             // console.log(p.oldStock);
           }
           d.subtotal =
@@ -835,7 +836,9 @@
       <ExpandedRow
         productId={row["productId"]}
         newQty={toNumber(row["qty"])}
-        oldQty={toNumber(row["oldStock"])}
+        oldQty={toNumber(row["oldQty"])}
+				selectedGudangId={row["gudangId"]}
+				oldGudangId={row["oldGudangId"]}
       />
     </svelte:fragment>
   </DataTable>

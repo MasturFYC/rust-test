@@ -7,5 +7,5 @@ export let unit: string;
 
 {#each stocks as s}
 <span>{#if s.gudangId === 1}<strong>{s.name}</strong>{:else}{s.name}{/if}:
-		<strong>{formatNumber(s.qty)}</strong> {unit}</span><br />
+		<strong>{formatNumber(s.qty,2)}</strong> {unit}</span><br />
 {/each}

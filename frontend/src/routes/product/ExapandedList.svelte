@@ -1,9 +1,9 @@
 <script lang="ts">
   import { formatNumber } from "$lib/components/NumberFormat";
   import { Column, Grid, Row } from "carbon-components-svelte";
-  import type { DataTableRow } from "carbon-components-svelte/types/DataTable/DataTable.svelte";
   import DeleteProduct from "./DeleteProduct.svelte";
   import Stocks from "./stock.svelte";
+	import type { DataTableRow } from "carbon-components-svelte/src/DataTable/DataTable.svelte";
 
   export let row: DataTableRow;
   export let innerWidth = 720;

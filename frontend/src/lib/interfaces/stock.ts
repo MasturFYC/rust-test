@@ -34,7 +34,8 @@ export type iStockDetail = {
   price: number;
   discount: number;
   subtotal: number;
-  oldStock: number;
+  oldQty: number;
 	gudangId: number;
 	gudangName: string;
+	oldGudangId: number;
 };

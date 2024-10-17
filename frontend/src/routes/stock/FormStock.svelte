@@ -1,7 +1,6 @@
 <script lang="ts">
   import type { iRelationProp } from "$lib/interfaces";
   import {
-    Button,
     Column,
     ComboBox,
     DatePicker,

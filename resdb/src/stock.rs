@@ -155,8 +155,10 @@ pub mod model {
 		pub subtotal: BigDecimal,
 		pub name: String,
 		pub barcode: String,
-		#[serde(rename = "oldStock")]
-		pub unit_in_stock: BigDecimal,
+		#[serde(rename = "oldQty")]
+		pub old_qty: BigDecimal,
+		#[serde(rename = "oldGudangId")]
+		pub old_gudang_id: i16
 	}
 
 	#[derive(Serialize, Deserialize, Validate, Clone)]
@@ -475,8 +477,8 @@ pub mod db {
 				))
 				.build();
 			//self.create_ledger(o).await;
-			let detail_len = details.len();
-			let mut i = 0;
+			let detail_len: usize = details.len();
+			let mut i: usize = 0;
 
 			loop {
 				if let Some(d) = details.get(i) {

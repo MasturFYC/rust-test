@@ -15,7 +15,8 @@ SELECT
    d.subtotal,
    p.name,
    p.barcode,
-   d.qty as unit_in_stock
+   d.qty AS old_qty,
+   d.gudang_id AS old_gudang_id
 FROM
     order_details d
 INNER JOIN
