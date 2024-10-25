@@ -76,15 +76,12 @@ async fn get_stock_with_details(
 		.get_stock_with_details(stock_id)
 		.await
 		.map_err(|e| HttpError::server_error(e.to_string()))?;
-
 	let (stock, details) = result;
-
 	let response = json!(
 		{"status": "success",
 		"stock": stock,
 		"details": details
 	});
-
 	Ok(HttpResponse::Ok().json(response))
 }
 
@@ -122,7 +119,6 @@ async fn get_stocks(
 		"currentPage": page,
 		"totalItems": length, // all item stocks in database
 	});
-
 	HttpResponse::Ok().json(json_response)
 }
 
@@ -155,9 +151,6 @@ async fn create(
 				"id" : o.0,
 				"length" : o.1
 			});
-
-			// println!("{:?}", v);
-
 			Ok(HttpResponse::Created().json(response))
 		}
 		// Err(e) => {
@@ -216,7 +209,6 @@ async fn update(
 			"id": result.0,
 			"length": result.1
 			});
-
 			HttpResponse::Ok().json(stock_response)
 		}
 		Err(err) => {
@@ -264,7 +256,6 @@ async fn update_only_stock(
 			"status": "success",
 			"id": result,
 			});
-
 			HttpResponse::Ok().json(stock_response)
 		}
 		Err(err) => {
@@ -292,7 +283,6 @@ async fn delete(
 		Ok(rows_affected) => {
 			if rows_affected == 0 {
 				let message = "Stock with ID: those ids  not found".to_string();
-
 				return HttpResponse::NotFound().json(json!({
 					"status": "fail",
 					"message": message

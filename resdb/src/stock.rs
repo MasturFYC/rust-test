@@ -158,7 +158,7 @@ pub mod model {
 		#[serde(rename = "oldQty")]
 		pub old_qty: BigDecimal,
 		#[serde(rename = "oldGudangId")]
-		pub old_gudang_id: i16
+		pub old_gudang_id: i16,
 	}
 
 	#[derive(Serialize, Deserialize, Validate, Clone)]
@@ -280,19 +280,14 @@ pub mod db {
 		) -> Result<(Vec<Stocks>, i64), sqlx::Error> {
 			let limit = opts.limit.unwrap_or(10);
 			let page = opts.page.unwrap_or(1);
-
 			let offset = (page - 1) * limit;
-
 			// acquire pg connection from current pool
 			let mut conn = self.pool.acquire().await?;
-
 			// get transaction pool from pg connection
 			let mut tx = conn.begin().await?;
-
 			// start transaction
 			// get orders data from database
 			let opt = opts.opt.unwrap_or(0);
-
 			let stocks = match opt {
 				1 => {
 					let txt = opts.txt.unwrap_or("".to_string()).to_lowercase();
@@ -306,18 +301,11 @@ pub mod db {
 					.fetch_all(&mut *tx)
 					.await?;
 					let row = sqlx::query_scalar!(
-					r#"
-					SELECT
-						COUNT(*)
-					FROM
-						orders AS o
-					INNER JOIN
-						relations AS c ON c.id = o.customer_id
-   					INNER JOIN
-						relations AS s ON s.id = o.sales_id
-   					WHERE
-						o.order_type = 'stock'::order_enum
-						AND POSITION($1 IN (o.id::TEXT||' '||LOWER(c.name||' '||s.name||' '||COALESCE(o.invoice_id,' ')))) > 0
+					r#"SELECT COUNT(*) FROM	orders AS o 
+                    INNER JOIN relations AS c ON c.id = o.customer_id
+   					INNER JOIN relations AS s ON s.id = o.sales_id
+   					WHERE o.order_type = 'stock'::order_enum
+                    AND POSITION($1 IN (o.id::TEXT||' '||LOWER(c.name||' '||s.name||' '||COALESCE(o.invoice_id,' ')))) > 0
 						"#, txt)
 						.fetch_one(&mut *tx)
 						.await?;
@@ -415,10 +403,6 @@ pub mod db {
 		{
 			let details: Vec<StockDetail> = details.try_into().unwrap();
 			let dto: Stock = data.try_into().unwrap();
-
-			// println!("Welcome to the jungle");
-			// println!("{:?}", dto);
-
 			let o = OrderBuilder::new(
 				OrderType::Stock,
 				dto.updated_by,
@@ -433,17 +417,14 @@ pub mod db {
 			.with_dp(dto.dp)
 			.with_due_range(dto.due_range.unwrap_or(0))
 			.build();
-
 			let pass = BigDecimal::from_i32(0).unwrap();
 			let total = details.iter().fold(pass.to_owned(), |d, t| {
 				d + ((&t.price - &t.discount) * &t.qty)
 			});
-
 			let mut conn: sqlx::pool::PoolConnection<sqlx::Postgres> =
 				self.pool.acquire().await?;
 			let mut tx: sqlx::Transaction<sqlx::Postgres> =
 				conn.begin().await?;
-
 			let new_stock = sqlx::query_file_as!(
 				StockInsertedId,
 				"sql/stock-insert.sql",
@@ -461,7 +442,6 @@ pub mod db {
 			)
 			.fetch_optional(&mut *tx)
 			.await?;
-
 			let stock = new_stock.unwrap();
 			let pid = stock.id;
 
@@ -479,7 +459,6 @@ pub mod db {
 			//self.create_ledger(o).await;
 			let detail_len: usize = details.len();
 			let mut i: usize = 0;
-
 			loop {
 				if let Some(d) = details.get(i) {
 					let subtotal = (&d.price - &d.discount) * &d.qty;
