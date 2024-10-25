@@ -445,13 +445,14 @@ pub struct RelationProperty {
 	pub photo: Option<String>,
 }
 
-/*
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Categories {
-	pub id: i16,
-	pub name: String,
-}
-*/
+/**
+* @var bool
+* #[derive(Serialize, Deserialize, Debug)]
+* pub struct Categories {
+*	pub id: i16,
+*	pub name: String,
+*}
+**/
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct PropertyWithId {
@@ -731,7 +732,7 @@ pub struct LedgerWithDetails {
 	pub created_at: Option<DateTime<Utc>>,
 	#[serde(rename = "updatedAt")]
 	pub updated_at: Option<DateTime<Utc>>,
-	// #[serde(skip_serializing_if = "Option::is_none")]
+	/// #[serde(skip_serializing_if = "Option::is_none")]
 	pub details: sqlx::types::Json<Vec<LedgerDetail>>,
 }
 
@@ -752,8 +753,7 @@ impl<'r> sqlx::FromRow<'r, sqlx::postgres::PgRow> for LedgerWithDetails {
 			.try_get::<Json<Vec<LedgerDetail>>, _>("details")
 			.unwrap();
 		//.map(|x| if x.is_empty() {None} else { Some (x) })
-		// .unwrap_or(None);
-
+		//.unwrap_or(None);
 		Ok(Self {
 			id,
 			relation_id,

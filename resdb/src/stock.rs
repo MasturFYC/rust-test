@@ -942,8 +942,7 @@ pub mod db {
 
 				let _ = sqlx::query!(
 					r#"
-                INSERT INTO
-                    ledger_details (
+                    INSERT INTO ledger_details (
                         ledger_id,
                         detail_id,
                         account_id,
@@ -951,10 +950,10 @@ pub mod db {
                         amount,
                         direction,
                         ref_id
-                     )
-                VALUES
+                    )
+                    VALUES
                     ($1, $2, $3, $4, $5, $6, $7)
-                "#,
+                    "#,
 					d.ledger_id,
 					d.detail_id,
 					d.account_id,
