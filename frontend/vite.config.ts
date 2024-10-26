@@ -16,11 +16,12 @@ export default defineConfig({
 		  "carbon-pictograms-svelte",
 		],
 	 },
-	// css: {
-	//   preprocessorOptions: {
-	//     scss: {
-	//       additionalData: "@use \"src/variables.scss\" as *;"
-	//     }
-	//   }
-	// }
+	css: {
+	   preprocessorOptions: {
+	     scss: {
+	       // additionalData: "@use \"src/variables.scss\" as *;"
+             api: 'modern-compiler' // or 'modern'
+	     }
+	   }
+	 }
 });

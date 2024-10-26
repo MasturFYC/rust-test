@@ -1,5 +1,5 @@
 <script lang="ts">
-	let selected = "0";
+	// let selected = "0";
 </script>
 
 <svelte:head>
