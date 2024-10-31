@@ -4,7 +4,7 @@
   import { useQuery } from "@sveltestack/svelte-query";
   import ListCategory from "./list.svelte";
   import { getRelationProp } from "$lib/fetchers";
-  import { Category, IbmDb2Warehouse as Warehouse } from "carbon-icons-svelte";
+  import { IbmDb2Warehouse as Warehouse } from "carbon-icons-svelte";
   import { useMutation, useQueryClient } from "@sveltestack/svelte-query";
   import FormGudang from "./form.svelte";
   import { ToastNotification } from "carbon-components-svelte";

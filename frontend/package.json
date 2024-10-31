@@ -43,7 +43,6 @@
   "dependencies": {
     "@sveltejs/vite-plugin-svelte": "^4.0.0",
     "cosmiconfig": "^9.0.0",
-    "globals": "^15.11.0",
-    "typescript-eslint": "^8.11.0"
+    "globals": "^15.11.0"
   }
 }
