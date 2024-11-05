@@ -1,32 +1,32 @@
 <script lang="ts">
-  import { browser } from "$app/environment";
-  import FormProduct from "$lib/components/FormProduct.svelte";
-  import { baseURL, credential_include, type iProduct } from "$lib/interfaces";
-  import { Product } from "carbon-icons-svelte";
-  import {
+import { browser } from "$app/environment";
+import FormProduct from "$lib/components/FormProduct.svelte";
+import { baseURL, credential_include, type iProduct } from "$lib/interfaces";
+import { Product } from "carbon-icons-svelte";
+import {
     getCategoryProp,
     getRelationProp,
     type iPropertyWithID,
   } from "$lib/fetchers";
-  import {
+import {
     useMutation,
     useQuery,
     useQueryClient,
-  } from "@sveltestack/svelte-query";
-  import { Loading, Pagination } from "carbon-components-svelte";
-  import dayjs from "dayjs";
-  import ProductList from "./ProductList.svelte";
+} from "@sveltestack/svelte-query";
+import { Loading, Pagination } from "carbon-components-svelte";
+import dayjs from "dayjs";
+import ProductList from "./ProductList.svelte";
 
-  type ResultBase = {
+type ResultBase = {
     status: string;
     count: number;
     totalPages: number;
     totalItems: number;
-  };
+};
 
-  type iResult = ResultBase & {
+type iResult = ResultBase & {
     data: iProduct[];
-  };
+};
 
   type iResponse = {
     status: string;
@@ -94,15 +94,14 @@
 
   async function fetchData(p: number): Promise<iResult> {
     //console.log(q_key);
-
-    if (browser) {
-      const options = {
-        headers: {
-          "content-type": "application/json",
-        },
-        method: "GET",
-        credentials: credential_include,
-      };
+      if (browser) {
+          const options = {
+              headers: {
+                  "content-type": "application/json",
+              },
+              method: "GET",
+              credentials: credential_include,
+          };
 
       const request = new Request(
         `${url}?opt=${opt}&page=${p}&limit=${pageSize}${opt === 1 ? `&txt=${txt}` : ""}${opt === 2 ? `&relid=${rel_id}` : ""}${opt === 3 ? `&catid=${cat_id}` : ""}`,
@@ -126,12 +125,12 @@
 
   let data: iProduct = { ...initData };
 
-  const query = useQuery<iResult, Error>({
-    queryKey: [qKey, page, pageSize],
-    queryFn: async () => await fetchData(page),
-    onSuccess: prefetchNextPage,
-    keepPreviousData: true,
-    enabled: browser,
+const query = useQuery<iResult, Error>({
+      queryKey: [qKey, page, pageSize],
+      queryFn: async () => await fetchData(page),
+      onSuccess: prefetchNextPage,
+      keepPreviousData: true,
+      enabled: browser,
   });
 
   function setQueryOption(
@@ -177,6 +176,7 @@
     });
 
     const result = await fetch(request);
+      // console.log(result);
     return await result.json();
   };
 
@@ -204,21 +204,20 @@
 
       return previousData;
     },
-    onSuccess: async (data: any, variable: iProduct, context) => {
-      if (context) {
+    onSuccess: async (data: any, _variable: iProduct, _context) => {
         // setTimeout(() => {
-        isUpdating = false;
-        if (data.status !== "fail") {
+        if (data.status === "success") {
           open = false;
+          isUpdating = false;
+          isError = false;
         } else {
           isError = true;
           errorMessage = data.message;
         }
         //}, 250);
-      }
     },
     // If the mutation fails, use the context returned from onMutate to roll back
-    onError: (err: any, variables, context: any) => {
+    onError: (_err: any, _variables, context: any) => {
       // console.log(err);
       isUpdating = false;
       if (context?.previousData) {
@@ -227,12 +226,12 @@
     },
     // Always refetch after error or success:
     onSettled: async () => {
-      await client.invalidateQueries(q_key);
+      await client.invalidateQueries([qKey]);
     },
   });
 
   const updateData = useMutation(fetchUpdateData, {
-    onMutate: async (e: iProduct) => {
+    onMutate: async (_e: iProduct) => {
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
       await client.cancelQueries();
 
@@ -246,33 +245,34 @@
 
       return previousData;
     },
-    onSuccess: async (data: any, variable: iProduct, context) => {
-      if (context) {
-        //		setTimeout(() => {
-        isUpdating = false;
-        if (data.status !== "fail") {
-          open = false;
-        } else {
+    onSuccess: async (data: any, _variable: iProduct, _context) => {
+      if (data.status === 'failed') {
           isError = true;
           errorMessage = data.message;
         }
-        //}, 1500);
-      }
     },
     // If the mutation fails, use the context returned from onMutate to roll back
-    onError: (err: any, variables: any, context: any) => {
+    onError: (_err: any, _variables: any, context: any) => {
       isUpdating = false;
       if (context?.previousData) {
         client.setQueryData<iResult>(q_key, context.previousData);
       }
     },
-    onSettled: async () => {
-      await client.invalidateQueries(q_key);
+      onSettled: async (data: any) => {
+          if(data.status === "success") {
+              // console.log("SUCCESS")
+              setTimeout(() => {
+                  isUpdating = false;
+                  open = false;
+                  errorMessage = "";
+              }, 500);
+          }
+      await client.invalidateQueries([qKey]);
     },
   });
 
   const deleteData = useMutation(fetchDeleteData, {
-    onMutate: async (e: string) => {
+    onMutate: async (_e: string) => {
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
       await client.cancelQueries();
 
@@ -308,8 +308,7 @@
         errorMessage = raw.message;
         // timeout = 3_000;
       }
-      await client.invalidateQueries(q_key);
-      isUpdating = false;
+      await client.invalidateQueries([qKey]);
     },
   });
 
@@ -408,8 +407,8 @@
     categories={$categoryQuery.data?.data}
     {data}
     bind:open
-    {isError}
-    {errorMessage}
+    bind:isError
+    bind:errorMessage
     bind:isUpdating
     on:submit={submit}
     bind:innerWidth
