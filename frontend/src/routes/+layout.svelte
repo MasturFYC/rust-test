@@ -3,7 +3,6 @@
   //import "../index.scss";
   import { Toggle } from "carbon-components-svelte";
   import { QueryClient, QueryClientProvider } from "@sveltestack/svelte-query";
-
   import { page } from "$app/stores";
   import ToggleTheme from "$lib/components/ToggleTheme.svelte";
   import TogleLogin from "$lib/components/TogleLogin.svelte";

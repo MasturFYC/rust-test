@@ -34,26 +34,27 @@ async fn get_stock(
 		.get_stock(stock_id)
 		.await;
 	match query_result {
-		Ok(stock) => match stock {
-			None => {
-				let message = format!(
-					//
-					"Stock with ID: {} not found",
-					stock_id
-				);
-				HttpResponse::NotFound().json(json!({
-					"status": "fail",
-					"message": message
-				}))
+		Ok(stock) =>
+		{
+			match stock {
+				#![allow(non_snake_case)]
+				None => {
+					let message =
+						format!("Stock with ID: {} not found", stock_id);
+					HttpResponse::NotFound().json(json!({
+						"status": "fail",
+						"message": message
+					}))
+				}
+				Some(x) => {
+					let stock_response = json!({
+						"status": "success",
+						"data": x
+					});
+					HttpResponse::Ok().json(stock_response)
+				}
 			}
-			Some(x) => {
-				let stock_response = json!({
-					"status": "success",
-					"data": x
-				});
-				HttpResponse::Ok().json(stock_response)
-			}
-		},
+		}
 		Err(e) => {
 			let message = format!("Error {:?}", e);
 			let response = serde_json::json!({
@@ -295,10 +296,11 @@ async fn delete(
 		}
 		Err(err) => {
 			let message = format!("Error: {:?}", err);
-			HttpResponse::InternalServerError().json(json!({
+			let response = json!({
 				"status": "error",
 				"message": message
-			}))
+			});
+			HttpResponse::InternalServerError().json(response)
 		}
 	}
 }
