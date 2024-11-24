@@ -94,10 +94,7 @@ async fn get_stocks(
 	let query_params = opts.into_inner();
 	let page = query_params.page.unwrap_or(1);
 	let limit = query_params.page.unwrap_or(10);
-	let query_result = app_state
-		.db_client //
-		.get_stocks(query_params)
-		.await;
+	let query_result = app_state.db_client.get_stocks(query_params).await;
 	if query_result.is_err() {
 		let message = "Something bad happened while fetching all stock items";
 		return HttpResponse::InternalServerError().json(json!({

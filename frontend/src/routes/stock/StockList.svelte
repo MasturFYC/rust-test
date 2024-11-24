@@ -1,74 +1,74 @@
 <script lang="ts">
-  import { formatNumber } from "$lib/components/NumberFormat";
-  import type { iRelationProp, iStock } from "$lib/interfaces";
-  import {
-    Button,
-    ComboBox,
-    DataTable,
-    Toolbar,
-    ToolbarContent,
-    ToolbarSearch,
-  } from "carbon-components-svelte";
-  import { Delete, Edit, NewTab } from "carbon-icons-svelte";
-  import dayjs from "dayjs";
-  import { createEventDispatcher, tick } from "svelte";
-  import StockInfo from "./StockInfo.svelte";
-  import { isStockLoading, isStockUpdating } from "./store";
+import { formatNumber } from "$lib/components/NumberFormat";
+import type { iRelationProp, iStock } from "$lib/interfaces";
+import {
+  Button,
+  ComboBox,
+  DataTable,
+  Toolbar,
+  ToolbarContent,
+  ToolbarSearch,
+} from "carbon-components-svelte";
+import { Delete, Edit, NewTab } from "carbon-icons-svelte";
+import dayjs from "dayjs";
+import { createEventDispatcher, tick } from "svelte";
+import StockInfo from "./StockInfo.svelte";
+import { isStockLoading, isStockUpdating } from "./store";
 
-  export let data: iStock[] = [];
-  // export let innerWidth = 720;
-  export let suppliers: iRelationProp[] = [];
-  export let employees: iRelationProp[] = [];
+export let data: iStock[] = [];
+// export let innerWidth = 720;
+export let suppliers: iRelationProp[] = [];
+export let employees: iRelationProp[] = [];
 
-  export let txt = "";
-  export let selectedSupplierId = 0;
-  export let selectedWarehouseId = 0;
-  let sup_light = false;
-  let ware_light = false;
-  let selectedRowIds: number[] = [];
+export let txt = "";
+export let selectedSupplierId = 0;
+export let selectedWarehouseId = 0;
+let sup_light = false;
+let ware_light = false;
+let selectedRowIds: number[] = [];
 
-  const dispatch = createEventDispatcher();
-  const headers = [
-    { key: "id", value: "ID#", width: "12%" },
-    { key: "createdAt", value: "Tanggal", width: "120px" },
-    { key: "invoiceId", value: "No. Faktur", width: "auto" },
-    { key: "supplierName", value: "Supplier", width: "auto" },
-    { key: "warehouseName", value: "Checker", width: "auto" },
-    { key: "total", value: "Total", width: "110px" },
-    { key: "cmd", value: "", width: "60px" },
-  ];
+const dispatch = createEventDispatcher();
+const headers = [
+  { key: "id", value: "ID#", width: "12%" },
+  { key: "createdAt", value: "Tanggal", width: "120px" },
+  { key: "invoiceId", value: "No. Faktur", width: "auto" },
+  { key: "supplierName", value: "Supplier", width: "auto" },
+  { key: "warehouseName", value: "Checker", width: "auto" },
+  { key: "total", value: "Total", width: "110px" },
+  { key: "cmd", value: "", width: "60px" },
+];
 
-  async function editStock(id: number) {
-    isStockLoading.set(true);
-    await tick();
+async function editStock(id: number) {
+  isStockLoading.set(true);
+  await tick();
 
-    dispatch("edit", id);
-  }
+  dispatch("edit", id);
+}
 
-  function searchStock(e: Event): void {
-    dispatch("search", txt);
-  }
+function searchStock(e: Event): void {
+  dispatch("search", txt);
+}
 
-  function searchClear(e: any): void {
-    dispatch("search", undefined);
-  }
+function searchClear(e: any): void {
+  dispatch("search", undefined);
+}
 
-  async function deleteItems(e: MouseEvent) {
-    isStockUpdating.set(true);
-    // await tick();
-    dispatch("deleteStocks", selectedRowIds);
-    await tick();
-    selectedRowIds = [];
-  }
+async function deleteItems(e: MouseEvent) {
+  isStockUpdating.set(true);
+  // await tick();
+  dispatch("deleteStocks", selectedRowIds);
+  await tick();
+  selectedRowIds = [];
+}
 </script>
 
 <DataTable
   batchSelection
   batchExpansion
   size="medium"
-  {headers}
+  headers={headers}
   rows={data}
-  bind:selectedRowIds
+  bind:selectedRowIds={selectedRowIds}
 >
   <svelte:fragment slot="cell-header" let:header>
     {#if header.key === "total"}

@@ -1,48 +1,63 @@
 <script lang="ts">
-  import type { iRelation, RelationTypeWIthID } from "$lib/interfaces";
-  import {
-    Checkbox,
-    Column,
-    FluidForm,
-    Grid,
-    InlineLoading,
-    Modal,
-    Row,
-    TextInput,
-  } from "carbon-components-svelte";
-  import { Save } from "carbon-icons-svelte";
-  import { createEventDispatcher } from "svelte";
+import type { iRelation, RelationTypeWIthID } from "$lib/interfaces";
+import {
+  Checkbox,
+  Column,
+  FluidForm,
+  Grid,
+  InlineLoading,
+  Modal,
+  Row,
+  TextInput,
+} from "carbon-components-svelte";
+import { Save } from "carbon-icons-svelte";
 
-  export let open = false;
-  export let data: iRelation;
-  export let isError = false;
-  export let isUpdating = false;
-  export let errorMessage = "";
-  export let relationTypes: RelationTypeWIthID[] = [];
+let {
+  open = $bindable(false),
+  initdata,
+  isError = false,
+  isUpdating = false,
+  errorMessage = "",
+  relationTypes = [],
+  saveRelation
+} : {
+  open: boolean,
+  initdata: iRelation,
+  isError?: boolean,
+  isUpdating?: boolean,
+  errorMessage: string,
+  relationTypes: RelationTypeWIthID[] | undefined,
+  saveRelation: (data: iRelation) => void
+} = $props();
 
-  const dispatch = createEventDispatcher();
 
-  $: isMember = data.relationType.filter((f) => f === "Customer").length > 0;
+let data = $state(initdata);
+let isMember = $derived(data.relationType.filter((f) => f === "Customer").length > 0);
 
-  function submit() {
-    dispatch("submit", {
-      ...data,
-      region: isMember ? data.region : undefined,
-      isSpecial: isMember ? data.isSpecial : false,
-    });
-  }
+function submit() {
+  const newData = {
+    ...data,
+    relationType: [...data.relationType],
+    region: isMember ? data.region : undefined,
+    isSpecial: isMember ? data.isSpecial : false,
+  };
+  console.log(newData);
+  saveRelation(newData);
+}
 
-  $: isDataValid =
-    data.name.trim().length > 0 &&
-    data.city.trim().length > 0 &&
-    data.relationType.length > 0 &&
-    (isMember ? data.region?.trim().length !== 0 : true);
-  // $: console.log(relationTypes)
+let isDataValid = $derived(
+  data.name.trim().length > 0 &&
+  data.city.trim().length > 0 &&
+  data.relationType.length > 0 &&
+  (isMember ? data.region?.trim().length !== 0 : true));
+// $: console.log(relationTypes
+// $inspect(data);
+
 </script>
 
 <Modal
   id="rel-mod"
-  bind:open
+  bind:open={open}
   hasForm
   preventCloseOnClickOutside
   modalHeading={"Relasi"}
@@ -80,20 +95,21 @@
       placeholder="08999998347"
       size="sm"
     />
-    <div class="divider" />
+    <div class="divider"></div>
     <div style="margin-bottom: 3px;">Tipe relasi:</div>
     <Grid>
       <Row noGutter>
-        {#each relationTypes as t}
+        {#each relationTypes as t (t.id)}
           <Column md>
             <Checkbox
               labelText={t.text}
               checked={data.relationType.filter((f) => f === t.id).length > 0}
               on:check={(e) => {
                 if (e.detail) {
+                  const types = data.relationType.filter(f => f !== t.id);
                   data = {
                     ...data,
-                    relationType: [...data.relationType, t.id],
+                    relationType: [...types, t.id],
                   };
                 } else {
                   const test = data.relationType.filter((f) => f !== t.id);
@@ -105,7 +121,7 @@
         {/each}
       </Row>
     </Grid>
-    <div class="divider" />
+    <div class="divider"></div>
     <TextInput
       disabled={!isMember}
       bind:value={data.region}
@@ -113,7 +129,7 @@
       placeholder="e.g. Bangkir"
       size="sm"
     />
-    <div class="divider" />
+    <div class="divider"></div>
     <Grid>
       <Row noGutter>
         <Column>
@@ -146,13 +162,14 @@
 </Modal>
 
 <style lang="css">
-  .divider {
-    margin-top: 6px;
-    /* // border-top: 1px solid;
+.divider {
+  margin-top: 6px;
+  /* // border-top: 1px solid;
     // border-color: #999; */
-  }
-  :global(#rel-mod .bx--modal-container.bx--modal-container--sm) {
-    max-height: 100%;
-    /* height: 640px; */
-  }
+}
+:global(#rel-mod .bx--modal-container.bx--modal-container--sm) {
+  max-height: 100%;
+  /* height: 640px; */
+}
 </style>
+

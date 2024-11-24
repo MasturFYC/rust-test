@@ -1,7 +1,7 @@
 {
   "extends": "./.svelte-kit/tsconfig.json",
   "compilerOptions": {
-    "baseUrl": "./",
+    // "baseUrl": "./",
     "allowJs": true,
     "checkJs": true,
     "esModuleInterop": true,
@@ -18,12 +18,12 @@
       {
         "name": "typescript-svelte-plugin"
       }
-    ],
-    "paths": {
-      "*": ["src/lib/@uctom_types/*"],
-      "$lib": ["./src/lib"],
-      "$lib/*": ["./src/lib/*"]
-    }
+    ]
+    // "paths": {
+    // "*": ["src/lib/@uctom_types/*"],
+    // "$lib": ["./src/lib"],
+    // "$lib/*": ["./src/lib/*"]
+    // }
   },
   "exclude": [
     "node_modules",

@@ -1,331 +1,329 @@
 <script lang="ts">
-  import { baseURL, credential_include, type iCategory } from "$lib/interfaces";
-  import { useMutation, useQueryClient } from "@sveltestack/svelte-query";
-  import {
-    Button,
-    DataTable,
-    FluidForm,
-    InlineLoading,
-    Modal,
-    TextInput,
-    ToastNotification,
-    Toolbar,
-    ToolbarContent,
-    ToolbarMenu,
-    ToolbarMenuItem,
-  } from "carbon-components-svelte";
-  import { Edit, NewTab, Save } from "carbon-icons-svelte";
-  import DeleteGudang from "./DeleteCategory.svelte";
+import { baseURL, credential_include, type iCategory } from "$lib/interfaces";
+import { useMutation, useQueryClient } from "@sveltestack/svelte-query";
+import {
+  Button,
+  DataTable,
+  FluidForm,
+  InlineLoading,
+  Modal,
+  TextInput,
+  ToastNotification,
+  Toolbar,
+  ToolbarContent,
+  ToolbarMenu,
+  ToolbarMenuItem,
+} from "carbon-components-svelte";
+import { Edit, NewTab, Save } from "carbon-icons-svelte";
+import DeleteCategory from "./DeleteCategory.svelte";
+import type { DataTableHeader } from "carbon-components-svelte/src/DataTable/DataTable.svelte";
 
-  const client = useQueryClient();
-  let isUpdating = false;
-  let isError = false;
-  let err_msg = "";
+const client = useQueryClient();
+let isUpdating = false;
+let isError = false;
+let err_msg = "";
 
-  export let categories: iCategory[] = [];
+export let categories: iCategory[] = [];
 
-  type iResult = {
-    count: number;
-    data: iCategory[];
-    status: string;
-  };
+type iResult = {
+  count: number;
+  data: iCategory[];
+  status: string;
+};
 
-  // let data: iResult = {
-  // 	count: 0,
-  // 	data: [],
-  // 	status: ""
-  // };
+// let data: iResult = {
+// 	count: 0,
+// 	data: [],
+// 	status: ""
+// };
 
-  const fetchUpdateData = async (e: iCategory): Promise<iCategory> => {
-    const url = `${baseURL}/categories/${category.id}`;
-    const request = new Request(url, {
-      headers: {
-        "content-type": "application/json",
-      },
-      body: JSON.stringify(category),
-      method: "PUT",
-      credentials: credential_include,
-    });
-
-    const result = await fetch(request);
-    return await result.json();
-  };
-
-  const fetchCreateData = async (e: iCategory): Promise<iCategory> => {
-    const url = `${baseURL}/categories`;
-    const request = new Request(url, {
-      headers: {
-        "content-type": "application/json",
-      },
-      body: JSON.stringify(category),
-      method: "POST",
-      credentials: credential_include,
-    });
-
-    return await (await fetch(request)).json();
-  };
-
-  const fetchDeleteData = async (e: number) => {
-    const url = `${baseURL}/categories/${e}`;
-    const request = new Request(url, {
-      method: "DELETE",
-      credentials: credential_include,
-    });
-
-    return await (await fetch(request)).json();
-  };
-
-  const createData = useMutation(fetchCreateData, {
-    onMutate: async (e: iCategory) => {
-      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-      await client.cancelQueries();
-
-      // Snapshot the previous value
-      const previousData = client.getQueryData<iResult>(["category", "list"]);
-
-      // Optimistically update to the new value
-      if (previousData) {
-        client.setQueryData<iResult>(["category", "list"], previousData);
-      }
-
-      return previousData;
+const fetchUpdateData = async (_e: iCategory): Promise<iCategory> => {
+  const url = `${baseURL}/categories/${category.id}`;
+  const request = new Request(url, {
+    headers: {
+      "content-type": "application/json",
     },
-    onSuccess: async (data: any, variable: iCategory, context) => {
-      if (context) {
-        setTimeout(() => {
-          isUpdating = false;
-          if (data.status !== "fail") {
-            open = false;
-          } else {
-            isError = true;
-            err_msg = data.message;
-          }
-        }, 250);
-        //await client.invalidateQueries(["category", "list"]);
-        //client.setQueryData<iCategory[]>(["category", "list"], [...context, data.data]);
-      }
-    },
-    // If the mutation fails, use the context returned from onMutate to roll back
-    onError: (err: any, variables: any, context: any) => {
-      console.log(err);
-      if (context?.previousData) {
-        client.setQueryData<iResult>(
-          ["category", "list"],
-          context.previousData,
-        );
-      }
-      //      selectedCategoryId.set($category.id)
-      // errorMesage.set(`Nama kategori '${$category.name}'' sudah ada!`);
-    },
-    // Always refetch after error or success:
-    onSettled: async () => {
-      await client.invalidateQueries(["category", "list"]);
-    },
+    body: JSON.stringify(category),
+    method: "PUT",
+    credentials: credential_include,
   });
 
-  const updateData = useMutation(fetchUpdateData, {
-    onMutate: async (e: iCategory) => {
-      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-      await client.cancelQueries();
+  const result = await fetch(request);
+  return await result.json();
+};
 
-      // Snapshot the previous value
-      const previousCategories = client.getQueryData<iResult>([
-        "category",
-        "list",
-      ]);
-
-      // Optimistically update to the new value
-      if (previousCategories) {
-        client.setQueryData<iResult>(["category", "list"], previousCategories);
-      }
-
-      return previousCategories;
+const fetchCreateData = async (_e: iCategory): Promise<iCategory> => {
+  const url = `${baseURL}/categories`;
+  const request = new Request(url, {
+    headers: {
+      "content-type": "application/json",
     },
-    onSuccess: async (data: any, variable: iCategory, context) => {
-      if (context) {
-        setTimeout(() => {
-          isUpdating = false;
-          if (data.status !== "fail") {
-            open = false;
-          } else {
-            isError = true;
-            err_msg = data.message;
-          }
-        }, 1500);
-        //        await client.invalidateQueries(["category", "list"]);
-        //client.setQueryData<iCategory[]>(["category", "list"], [...context, data.data]);
-      }
-    },
-    // If the mutation fails, use the context returned from onMutate to roll back
-    onError: (err: any, variables: any, context: any) => {
-      if (context?.previousCategories) {
-        client.setQueryData<iResult>(
-          ["category", "list"],
-          context.previousCategories,
-        );
-        //        selectedCategoryId.set($category.id)
-      }
-      // errorMesage.set(`Nama kategori '${$category.name}' sudah ada!`);
-    },
-    onSettled: async (
-      data: any,
-      error: any,
-      variables: iCategory,
-      context: iResult | undefined,
-    ) => {
-      await client.invalidateQueries(["category", "list"]);
-    },
+    body: JSON.stringify(category),
+    method: "POST",
+    credentials: credential_include,
   });
 
-  const deleteData = useMutation(fetchDeleteData, {
-    onMutate: async (e: number) => {
-      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-      await client.cancelQueries();
+  return await (await fetch(request)).json();
+};
 
-      // Snapshot the previous value
-      const previousCategories = client.getQueryData<iResult>([
-        "category",
-        "list",
-      ]);
+const fetchDeleteData = async (e: number) => {
+  const url = `${baseURL}/categories/${e}`;
+  const request = new Request(url, {
+    method: "DELETE",
+    credentials: credential_include,
+  });
 
-      // Optimistically update to the new value
-      if (previousCategories) {
-        client.setQueryData<iResult>(["category", "list"], previousCategories);
-      }
+  return await (await fetch(request)).json();
+};
 
-      return previousCategories;
-    },
-    onSuccess: async () => {
+const createData = useMutation(fetchCreateData, {
+  onMutate: async (_e: iCategory) => {
+    // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+    await client.cancelQueries();
+
+    // Snapshot the previous value
+    const previousData = client.getQueryData<iResult>(["category", "list"]);
+
+    // Optimistically update to the new value
+    if (previousData) {
+      client.setQueryData<iResult>(["category", "list"], previousData);
+    }
+
+    return previousData;
+  },
+  onSuccess: async (data: any, _variable: iCategory, context) => {
+    if (context) {
       setTimeout(() => {
         isUpdating = false;
+        if (data.status !== "fail") {
+          open = false;
+        } else {
+          isError = true;
+          err_msg = data.message;
+        }
+      }, 250);
+      //await client.invalidateQueries(["category", "list"]);
+      //client.setQueryData<iCategory[]>(["category", "list"], [...context, data.data]);
+    }
+  },
+  // If the mutation fails, use the context returned from onMutate to roll back
+  onError: (err: any, _variables: any, context: any) => {
+    console.log(err);
+    if (context?.previousData) {
+      client.setQueryData<iResult>(["category", "list"], context.previousData);
+    }
+    //      selectedCategoryId.set($category.id)
+    // errorMesage.set(`Nama kategori '${$category.name}'' sudah ada!`);
+  },
+  // Always refetch after error or success:
+  onSettled: async () => {
+    await client.invalidateQueries(["category", "list"]);
+  },
+});
+
+const updateData = useMutation(fetchUpdateData, {
+  onMutate: async (_e: iCategory) => {
+    // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+    await client.cancelQueries();
+
+    // Snapshot the previous value
+    const previousCategories = client.getQueryData<iResult>([
+      "category",
+      "list",
+    ]);
+
+    // Optimistically update to the new value
+    if (previousCategories) {
+      client.setQueryData<iResult>(["category", "list"], previousCategories);
+    }
+
+    return previousCategories;
+  },
+  onSuccess: async (data: any, _variable: iCategory, context) => {
+    if (context) {
+      setTimeout(() => {
+        isUpdating = false;
+        if (data.status !== "fail") {
+          open = false;
+        } else {
+          isError = true;
+          err_msg = data.message;
+        }
       }, 1500);
+      //        await client.invalidateQueries(["category", "list"]);
+      //client.setQueryData<iCategory[]>(["category", "list"], [...context, data.data]);
+    }
+  },
+  // If the mutation fails, use the context returned from onMutate to roll back
+  onError: (_err: any, _variables: any, context: any) => {
+    if (context?.previousCategories) {
+      client.setQueryData<iResult>(
+        ["category", "list"],
+        context.previousCategories,
+      );
+      //        selectedCategoryId.set($category.id)
+    }
+    // errorMesage.set(`Nama kategori '${$category.name}' sudah ada!`);
+  },
+  onSettled: async (
+    _data: any,
+    _error: any,
+    _variables: iCategory,
+    _context: iResult | undefined,
+  ) => {
+    await client.invalidateQueries(["category", "list"]);
+  },
+});
 
-      category = {
-        id: 0,
-        name: "",
-      };
-    },
-    // If the mutation fails, use the context returned from onMutate to roll back
-    onError: (err: any, variables: any, context: any) => {
-      if (context?.previousCategories) {
-        client.setQueryData<iResult>(
-          ["category", "list"],
-          context.previousCategories,
-        );
-      }
-    },
-    onSettled: async (
-      data: any,
-      error: any,
-      variables: number,
-      context: iResult | undefined,
-    ) => {
-      if (data.status === "fail") {
-        showNotification = true;
-        err_msg = data.message;
-        timeout = 3_000;
-      }
-      await client.invalidateQueries(["category", "list"]);
+const deleteData = useMutation(fetchDeleteData, {
+  onMutate: async (_e: number) => {
+    // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+    await client.cancelQueries();
+
+    // Snapshot the previous value
+    const previousCategories = client.getQueryData<iResult>([
+      "category",
+      "list",
+    ]);
+
+    // Optimistically update to the new value
+    if (previousCategories) {
+      client.setQueryData<iResult>(["category", "list"], previousCategories);
+    }
+
+    return previousCategories;
+  },
+  onSuccess: async () => {
+    setTimeout(() => {
       isUpdating = false;
-    },
-  });
-
-  function delete_category(e: CustomEvent<number>) {
-    isUpdating = true;
-    $deleteData.mutate(e.detail);
-  }
-
-  let open = false;
-  let category: iCategory = {
-    id: 0,
-    name: "",
-  };
-
-  function edit_category(id: number) {
-    isError = false;
-    err_msg = "";
-    // timeout = undefined;
-
-    let test = categories.filter((f) => f.id == id);
-    if (test.length > 0) {
-      category = test[0];
-      open = true;
-    }
-  }
-
-  let headers = [
-    { key: "id", value: "#ID", width: "10%" },
-    { key: "name", value: "Nama", width: "auto" },
-    { key: "cmd", value: "", width: "150px" },
-  ];
-
-  function submit() {
-    isError = false;
-    isUpdating = true;
-    if (category.id > 0) {
-      $updateData.mutate(category);
-    } else {
-      $createData.mutate(category);
-    }
-  }
-
-  function new_category() {
-    isError = false;
-    err_msg = "";
-    // timeout = undefined;
+    }, 1500);
 
     category = {
       id: 0,
       name: "",
     };
+  },
+  // If the mutation fails, use the context returned from onMutate to roll back
+  onError: (_err: any, _variables: any, context: any) => {
+    if (context?.previousCategories) {
+      client.setQueryData<iResult>(
+        ["category", "list"],
+        context.previousCategories,
+      );
+    }
+  },
+  onSettled: async (
+    data: any,
+    _error: any,
+    _variables: number,
+    _context: iResult | undefined,
+  ) => {
+    if (data.status === "fail") {
+      showNotification = true;
+      err_msg = data.message;
+      timeout = 3_000;
+    }
+    await client.invalidateQueries(["category", "list"]);
+    isUpdating = false;
+  },
+});
+
+function delete_category(e: number) {
+  isUpdating = true;
+  $deleteData.mutate(e);
+}
+
+let open = false;
+let category: iCategory = {
+  id: 0,
+  name: "",
+};
+
+function edit_category(id: number) {
+  isError = false;
+  err_msg = "";
+  // timeout = undefined;
+
+  let test = categories.filter((f) => f.id == id);
+  if (test.length > 0) {
+    category = test[0];
     open = true;
   }
+}
 
-  // 	const descriptionMap = [
-  // 		"Submitting...",
-  // 		"Success",
-  // 		"Cancelling...",
-  // ]	;
+let headers: DataTableHeader[] = [
+  { key: "id", value: "#ID", width: "10%" },
+  { key: "name", value: "Nama", width: "auto" },
+  { key: "cmd", value: "", width: "150px" },
+];
 
-  // 	const stateMap = [
-  // 		"finished",
-  // 		"dormant",
-  // 		"dormant",
-  // 	];
+function submit() {
+  isError = false;
+  isUpdating = true;
+  if (category.id > 0) {
+    $updateData.mutate(category);
+  } else {
+    $createData.mutate(category);
+  }
+}
 
-  // 	let timeout: NodeJS.Timeout;
-  // 	let state = 1;
+function new_category() {
+  isError = false;
+  err_msg = "";
+  // timeout = undefined;
 
-  // 	function reset(incomingState: number) {
-  // 		if (incomingState > 2) {
-  // 			clearTimeout(timeout);
-  // 		}
+  category = {
+    id: 0,
+    name: "",
+  };
+  open = true;
+}
 
-  // 		if (incomingState) {
-  // 			timeout = setTimeout(() => {
-  // 				state = incomingState;
-  // 			}, 2000);
-  // 		}
-  // 	}
+// 	const descriptionMap = [
+// 		"Submitting...",
+// 		"Success",
+// 		"Cancelling...",
+// ]	;
 
-  // 	onDestroy(() => reset(4));
+// 	const stateMap = [
+// 		"finished",
+// 		"dormant",
+// 		"dormant",
+// 	];
 
-  // 	$: reset(3);
+// 	let timeout: NodeJS.Timeout;
+// 	let state = 1;
 
-  //  let selectedRowIds = [categories.length > 0 ? categories[0].id : 0];
+// 	function reset(incomingState: number) {
+// 		if (incomingState > 2) {
+// 			clearTimeout(timeout);
+// 		}
 
-  let client_width = 0;
-  let timeout: undefined | number = undefined;
-  let showNotification = false;
-  $: showNotification = timeout !== undefined;
+// 		if (incomingState) {
+// 			timeout = setTimeout(() => {
+// 				state = incomingState;
+// 			}, 2000);
+// 		}
+// 	}
 
-  // $: console.log("selectedRowIds", selectedRowIds);
+// 	onDestroy(() => reset(4));
+
+// 	$: reset(3);
+
+//  let selectedRowIds = [categories.length > 0 ? categories[0].id : 0];
+
+let client_width = 0;
+let timeout: undefined | number = undefined;
+let showNotification = false;
+$: showNotification = timeout !== undefined;
+
+// $: console.log("selectedRowIds", selectedRowIds);
 </script>
 
 <svelte:window bind:innerWidth={client_width} />
 
 <Modal
-  bind:open
+  bind:open={open}
   hasForm
   preventCloseOnClickOutside
   modalHeading="Kategori"
@@ -358,7 +356,7 @@
   useStaticWidth={client_width > 640}
   zebra
   size="short"
-  {headers}
+  headers={headers}
   rows={categories}
 >
   <svelte:fragment slot="cell" let:row let:cell>
@@ -372,7 +370,7 @@
         icon={Edit}
         on:click={() => edit_category(row.id)}
       />
-      <DeleteGudang gudangId={row.id} on:deleteGudang={delete_category} />
+      <DeleteCategory categoryId={row.id} deleteData={delete_category} />
     {:else}
       {cell.value}
     {/if}
@@ -395,11 +393,11 @@
 
 {#if showNotification}
   <ToastNotification
-    {timeout}
+    timeout={timeout}
     title="Error"
     subtitle={err_msg}
     caption={new Date().toLocaleString()}
-    on:close={(e) => {
+    on:close={(_e) => {
       timeout = undefined;
     }}
   />

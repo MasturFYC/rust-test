@@ -1,29 +1,34 @@
 <script lang="ts">
-	import { Button } from "carbon-components-svelte";
-	import { Delete } from "carbon-icons-svelte";
-	import { createEventDispatcher } from "svelte";
+import { Button } from "carbon-components-svelte";
+import { Delete } from "carbon-icons-svelte";
 
-	const dispatch = createEventDispatcher();
-	export let idData: number = 0;
+let {
+  idData = 0,
+  isDeleting = $bindable(false),
+  deleteData
+} : {
+  idData: number,
+  isDeleting: boolean,
+  deleteData: (id: number) => void
+} = $props();
 
-	export let isDeleting = false;
+async function delete_data() {
+  isDeleting = true;
 
-	function delete_data() {
-		isDeleting = true;
-      setTimeout(() => {
-         dispatch("deleteData", idData);
-      }, 250);
-		
-	}
+  setTimeout(() => {
+    deleteData(idData);
+    }, 500);
+}
+
 </script>
 
 <Button
-	skeleton={isDeleting}
-	tooltipPosition="top"
-	tooltipAlignment="end"
-	size="small"
-	kind="danger-ghost"
-	icon={Delete}
-	iconDescription={"Delete"}
-	on:click={() => delete_data()}
+  skeleton={isDeleting}
+  tooltipPosition="top"
+  tooltipAlignment="end"
+  size="small"
+  kind="danger-ghost"
+  icon={Delete}
+  iconDescription={"Delete"}
+  on:click={delete_data}
 />

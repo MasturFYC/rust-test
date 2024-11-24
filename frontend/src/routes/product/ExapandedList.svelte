@@ -1,12 +1,18 @@
-<script lang="ts">
-  import { formatNumber } from "$lib/components/NumberFormat";
-  import { Column, Grid, Row } from "carbon-components-svelte";
-  import DeleteProduct from "./DeleteProduct.svelte";
-  import Stocks from "./stock.svelte";
-	import type { DataTableRow } from "carbon-components-svelte/src/DataTable/DataTable.svelte";
+<style lang="scss">
+.code-pre {
+  font-size: small;
+}
+</style>
 
-  export let row: DataTableRow;
-  export let innerWidth = 720;
+<script lang="ts">
+import { formatNumber } from "$lib/components/NumberFormat";
+import { Column, Grid, Row } from "carbon-components-svelte";
+import DeleteProduct from "./DeleteProduct.svelte";
+import Stocks from "./stock.svelte";
+import type { DataTableRow } from "carbon-components-svelte/src/DataTable/DataTable.svelte";
+
+export let row: DataTableRow;
+export let innerWidth = 720;
 </script>
 
 <Grid noGutter>
@@ -32,19 +38,14 @@ Supplier:   {row["supplierName"]}
 Deskripsi:  {row["descriptions"]}</pre></code
       ></Column
     >
-		<Column><code class="code-pre">
-			Stock Gudang:<br />
-			<Stocks stocks={row["stocks"]} unit={row["unit"]} />
-			</code>
-		</Column>
+    <Column
+      ><code class="code-pre">
+        Stock Gudang:<br />
+        <Stocks stocks={row["stocks"]} unit={row["unit"]} />
+      </code>
+    </Column>
     <Column>
       <DeleteProduct productId={row.id} on:deleteData />
     </Column>
   </Row>
 </Grid>
-
-<style lang="scss">
-  .code-pre {
-    font-size: small;
-  }
-</style>

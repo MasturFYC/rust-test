@@ -1,6 +1,6 @@
 import { SvelteComponent } from "svelte";
 
-declare module 'svelte-qrcode' {
+declare module "svelte-qrcode" {
   // Define the types for svelte-qrcode here
   // For example:
   export interface QRCodeProps {
@@ -8,8 +8,8 @@ declare module 'svelte-qrcode' {
     size?: number;
     background?: string;
     color?: string;
-		errorCorrection?: string;
-		padding?: number;
+    errorCorrection?: string;
+    padding?: number;
   }
 
   export default class QRCode extends SvelteComponent<QRCodeProps> {}

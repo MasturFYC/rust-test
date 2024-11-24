@@ -1,12 +1,26 @@
+<style lang="css">
+:global(#menu-gud-ware.bx--list-box__menu) {
+  position: fixed;
+  z-index: 1;
+  margin-left: 17px;
+  margin-right: 17px;
+  width: auto;
+}
+:global(#gud-ware) {
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+</style>
+
 <script lang="ts">
-import {type iGudang } from "$lib/interfaces";
+import { type iGudang } from "$lib/interfaces";
 import {
-	Button,
-	DataTable,
-	Toolbar,
-	ToolbarContent,
-	ToolbarMenu,
-	ToolbarMenuItem,
+  Button,
+  DataTable,
+  Toolbar,
+  ToolbarContent,
+  ToolbarMenu,
+  ToolbarMenuItem,
 } from "carbon-components-svelte";
 import { Edit, NewTab } from "carbon-icons-svelte";
 import DeleteGudang from "./DeleteGudang.svelte";
@@ -18,11 +32,11 @@ const dispatch = createEventDispatcher();
 let client_width = 0;
 
 function edit_gudang(id: number) {
-	dispatch("edit", id);
+  dispatch("edit", id);
 }
 
 let headers = [
-	{ key: "id", value: "#ID", width: "10%" },
+  { key: "id", value: "#ID", width: "10%" },
   { key: "name", value: "Nama", width: "auto" },
   { key: "employeeName", value: "Penjaga Gudang", width: "auto" },
   { key: "locate", value: "Lokasi Gudang", width: "auto" },
@@ -30,23 +44,18 @@ let headers = [
 ];
 
 function new_gudang() {
-	const newData: iGudang = {
-		id: 0,
-		name:"",
-		employeeId: 0,
-		employeeName: "",
-	}
-	dispatch("newGudang", newData);
+  const newData: iGudang = {
+    id: 0,
+    name: "",
+    employeeId: 0,
+    employeeName: "",
+  };
+  dispatch("newGudang", newData);
 }
-
 </script>
 
 <svelte:window bind:innerWidth={client_width} />
-<DataTable
-  zebra
-  {headers}
-  rows={gudangs}
->
+<DataTable zebra headers={headers} rows={gudangs}>
   <svelte:fragment slot="cell" let:row let:cell>
     {#if cell.key === "cmd"}
       <Button
@@ -79,19 +88,4 @@ function new_gudang() {
       <Button on:click={new_gudang} icon={NewTab}>Buat baru</Button>
     </ToolbarContent>
   </Toolbar>
-
 </DataTable>
-
-<style lang="css">
-  :global(#menu-gud-ware.bx--list-box__menu) {
-    position: fixed;
-    z-index: 1;
-    margin-left: 17px;
-    margin-right: 17px;
-    width: auto;
-  }
-  :global(#gud-ware) {
-    margin-top: 6px;
-    margin-bottom: 6px;
-  }
-</style>

@@ -2,12 +2,17 @@ pub mod db {
 	use async_trait::async_trait;
 	use sqlx::{self, Acquire};
 
-	use crate::model::{CreateRelationSchema, RelationProperty, Relation, RelationType};
+	use crate::model::{
+		CreateRelationSchema, RelationProperty, Relation, RelationType,
+	};
 	use crate::db::DBClient;
 
 	#[async_trait]
 	pub trait RelationExt {
-		async fn get_relation(&self, id: i16) -> Result<Option<Relation>, sqlx::Error>;
+		async fn get_relation(
+			&self,
+			id: i16,
+		) -> Result<Option<Relation>, sqlx::Error>;
 		async fn get_relations(
 			&self,
 			page: usize,
@@ -40,10 +45,17 @@ pub mod db {
 
 	#[async_trait]
 	impl RelationExt for DBClient {
-		async fn get_relation(&self, id: i16) -> Result<Option<Relation>, sqlx::Error> {
-			let relation = sqlx::query_file_as!(Relation, "sql/relation-get-by-id.sql", id)
-				.fetch_optional(&self.pool)
-				.await?;
+		async fn get_relation(
+			&self,
+			id: i16,
+		) -> Result<Option<Relation>, sqlx::Error> {
+			let relation = sqlx::query_file_as!(
+				Relation,
+				"sql/relation-get-by-id.sql",
+				id
+			)
+			.fetch_optional(&self.pool)
+			.await?;
 
 			Ok(relation)
 		}
@@ -98,7 +110,10 @@ pub mod db {
 					(relations, row)
 				}
 				2_i8 => {
-					let rel_type: [String; 1]  = [reltype.expect("No relation type was defined!").to_str().to_string()];
+					let rel_type: [String; 1] = [reltype
+						.expect("No relation type was defined!")
+						.to_str()
+						.to_string()];
 					let relations = sqlx::query_file_as!(
 						Relation,
 						"sql/relation-get-all-byone-type.sql",
@@ -286,7 +301,9 @@ pub mod db {
 				.into_iter()
 				.map(|item| item.to_str().to_string())
 				.collect();
-
+			//
+			// print!("\n\n{:?}\n\n", test);
+			//
 			let relation = sqlx::query_file_as!(
 				Relation,
 				"sql/relation-update.sql",
@@ -309,11 +326,12 @@ pub mod db {
 		}
 
 		async fn relation_delete(&self, id: i16) -> Result<u64, sqlx::Error> {
-			let rows_affected: u64 = sqlx::query_file!("sql/relation-delete.sql", id)
-				.execute(&self.pool)
-				.await
-				.unwrap()
-				.rows_affected();
+			let rows_affected: u64 =
+				sqlx::query_file!("sql/relation-delete.sql", id)
+					.execute(&self.pool)
+					.await
+					.unwrap()
+					.rows_affected();
 
 			Ok(rows_affected)
 		}

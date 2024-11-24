@@ -1,25 +1,25 @@
-import axios from '../axios-base';
-import type { iAccount } from '../interfaces';
+import axios from "../axios-base";
+import type { iAccount } from "../interfaces";
 
-const endpoint = '/coa/list';
+const endpoint = "/coa/list";
 
 async function fetchCoas() {
-	const { data } = await axios.get<iAccount[]>(endpoint);
-	return data;
+  const { data } = await axios.get<iAccount[]>(endpoint);
+  return data;
 }
 
 export const queryCoasOptions = () => ({
-	queryKey: ['coa', 'list'],
-	queryFn: async () => await fetchCoas()
+  queryKey: ["coa", "list"],
+  queryFn: async () => await fetchCoas(),
 });
 
-const paymentendpoint = '/coa/payment';
+const paymentendpoint = "/coa/payment";
 async function fetchCoaPayments() {
-	const { data } = await axios.get<iAccount[]>(paymentendpoint);
-	return data;
+  const { data } = await axios.get<iAccount[]>(paymentendpoint);
+  return data;
 }
 
 export const queryCoaPaymentOptions = () => ({
-	queryKey: ['coa', 'payment'],
-	queryFn: async () => await fetchCoaPayments()
+  queryKey: ["coa", "payment"],
+  queryFn: async () => await fetchCoaPayments(),
 });

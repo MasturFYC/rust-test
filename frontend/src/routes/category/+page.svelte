@@ -1,60 +1,66 @@
+<style lang="scss">
+p {
+  margin-top: 12px;
+}
+</style>
+
 <script lang="ts">
-  import { browser } from "$app/environment";
-  import { baseURL, credential_include, type iCategory } from "$lib/interfaces";
-  import { useQuery } from "@sveltestack/svelte-query";
-  import ListCategory from "./list.svelte";
-  import { Category } from "carbon-icons-svelte";
+import { browser } from "$app/environment";
+import { baseURL, credential_include, type iCategory } from "$lib/interfaces";
+import { useQuery } from "@sveltestack/svelte-query";
+import ListCategory from "./list.svelte";
+import { Category } from "carbon-icons-svelte";
 
-  const title = "Kategori Barang";
-  const url = `${baseURL}/categories`;
+const title = "Kategori Barang";
+const url = `${baseURL}/categories`;
 
-  type iResult = {
-    count: number;
-    data: iCategory[];
-    status: string;
+type iResult = {
+  count: number;
+  data: iCategory[];
+  status: string;
+};
+
+const initResult: iResult = {
+  count: 0,
+  data: [],
+  status: "page Loading",
+};
+
+// let ready = false;
+
+// let cred: RequestCredentials = "same-origin";
+
+async function fetchCategories(): Promise<iResult> {
+  const options = {
+    headers: {
+      "content-type": "application/json",
+    },
+    method: "GET",
+    credentials: credential_include,
   };
 
-  const initResult: iResult = {
-    count: 0,
-    data: [],
-    status: "page Loading",
-  };
+  const request = new Request(url, options);
+  let result = await fetch(request);
 
-  // let ready = false;
+  return (await result.json()) as iResult;
+}
 
-  // let cred: RequestCredentials = "same-origin";
+const queryCategoryOptions = () => ({
+  queryKey: ["category", "list"],
+  queryFn: async () => await fetchCategories(),
+  enabled: browser,
+});
 
-  async function fetchCategories(): Promise<iResult> {
-    const options = {
-      headers: {
-        "content-type": "application/json",
-      },
-      method: "GET",
-      credentials: credential_include,
-    };
+const query = useQuery<iResult, Error>(queryCategoryOptions());
 
-    const request = new Request(url, options);
-    let result = await fetch(request);
-
-    return (await result.json()) as iResult;
+function showErrorMessage() {
+  if ($query.error instanceof Error) {
+    return $query.error.message;
   }
+  return "Cannot load category list.";
+}
 
-  const queryCategoryOptions = () => ({
-    queryKey: ["category", "list"],
-    queryFn: async () => await fetchCategories(),
-    enabled: browser,
-  });
-
-  const query = useQuery<iResult, Error>(queryCategoryOptions());
-
-  function showErrorMessage() {
-    if ($query.error instanceof Error) {
-      return $query.error.message;
-    }
-    return "Cannot load category list.";
-  }
-
-  $: query.setEnabled(browser);
+$: query.setEnabled(browser);
 </script>
 
 <svelte:head>
@@ -72,9 +78,3 @@
   <ListCategory categories={$query.data.data} />
   <p>Total: {$query.data.count} item{$query.data.count > 1 ? "s" : ""}</p>
 {/if}
-
-<style lang="scss">
-  p {
-    margin-top: 12px;
-  }
-</style>

@@ -1,10 +1,16 @@
+<style lang="css">
+:global(#gud-modal .bx--modal-container.bx--modal-container--xs) {
+  max-height: 100%;
+}
+</style>
+
 <script lang="ts">
 import type { iGudang, iRelationProp } from "$lib/interfaces";
 import {
-	InlineLoading,
-	Modal,
-	TextInput,
-	ComboBox,
+  InlineLoading,
+  Modal,
+  TextInput,
+  ComboBox,
 } from "carbon-components-svelte";
 import { Save } from "carbon-icons-svelte";
 import { createEventDispatcher } from "svelte";
@@ -18,20 +24,19 @@ export let isError = false;
 export let errorMessage = "";
 
 function get_employees() {
-	return employees.map((m) => ({ id: m.id, text: m.text }));
+  return employees.map((m) => ({ id: m.id, text: m.text }));
 }
 
 function submit() {
-	isUpdating = true;
-	dispatch("submit", gudang);
+  isUpdating = true;
+  dispatch("submit", gudang);
 }
 
 $: employee_invalid = gudang.employeeId === 0;
-
 </script>
 
 <Modal
-  bind:open
+  bind:open={open}
   hasForm
   id="gud-modal"
   preventCloseOnClickOutside
@@ -85,9 +90,3 @@ $: employee_invalid = gudang.employeeId === 0;
     <InlineLoading description={errorMessage} status="error" />
   {/if}
 </Modal>
-
-<style lang="css">
-  :global(#gud-modal .bx--modal-container.bx--modal-container--xs) {
-    max-height: 100%;
-  }
-</style>

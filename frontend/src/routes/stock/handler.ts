@@ -20,7 +20,7 @@ export async function getStockById(
   const request = new Request(url, options);
   const result = await fetch(request);
   let json = await result.json();
-	// console.log(json);
+  // console.log(json);
 
   return json;
 }

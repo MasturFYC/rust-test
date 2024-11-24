@@ -1,80 +1,91 @@
+<style lang="scss">
+.cell-right {
+  text-align: right;
+}
+/*
+		 :global(table.bx--data-table th, table.bx--data-table--zebra) {
+		background-color: #000;
+		 }
+		 */
+</style>
+
 <script lang="ts">
-  import { formatNumber } from "$lib/components/NumberFormat";
-  import type {
-    iProduct,
-    iProductStock,
-    iPropertyID,
-    iRelationProp,
-  } from "$lib/interfaces";
-  import {
-    Button,
-    ComboBox,
-    DataTable,
-    Toolbar,
-    ToolbarContent,
-    ToolbarSearch,
-  } from "carbon-components-svelte";
-  import { Edit, NewTab } from "carbon-icons-svelte";
-  import { createEventDispatcher } from "svelte";
-  import ExapandedList from "./ExapandedList.svelte";
+import { formatNumber } from "$lib/components/NumberFormat";
+import type {
+  iProduct,
+  iProductStock,
+  iPropertyID,
+  iRelationProp,
+} from "$lib/interfaces";
+import {
+  Button,
+  ComboBox,
+  DataTable,
+  Toolbar,
+  ToolbarContent,
+  ToolbarSearch,
+} from "carbon-components-svelte";
+import { Edit, NewTab } from "carbon-icons-svelte";
+import { createEventDispatcher } from "svelte";
+import ExapandedList from "./ExapandedList.svelte";
 
-  export let data: iProduct[] = [];
-  export let innerWidth = 720;
-  export let suppliers: iRelationProp[] = [];
-  export let categories: iPropertyID[] = [];
+export let data: iProduct[] = [];
+export let innerWidth = 720;
+export let suppliers: iRelationProp[] = [];
+export let categories: iPropertyID[] = [];
 
-  const dispatch = createEventDispatcher();
-  const headers = [
-    { key: "name", value: "Nama Barang", width: "auto" },
-    { key: "barcode", value: "Barcode", width: "100px" },
-    { key: "stocks", value: "Stock", width: "90px" },
-    { key: "hpp", value: "HPP", width: "80px" },
-    { key: "margin", value: "Margin", width: "80px" },
-    { key: "price", value: "Harga", width: "90px" },
-    { key: "cmd", value: "", width: "60px" },
-  ];
-  const headers2 = [
-    { key: "name", value: "Nama Barang", width: "auto" },
-    { key: "stocks", value: "Stock", width: "90px" },
-    { key: "price", value: "Harga", width: "90px" },
-    { key: "cmd", value: "", width: "60px" },
-  ];
+const dispatch = createEventDispatcher();
+const headers = [
+  { key: "name", value: "Nama Barang", width: "auto" },
+  { key: "barcode", value: "Barcode", width: "100px" },
+  { key: "stocks", value: "Stock", width: "90px" },
+  { key: "hpp", value: "HPP", width: "80px" },
+  { key: "margin", value: "Margin", width: "80px" },
+  { key: "price", value: "Harga", width: "90px" },
+  { key: "cmd", value: "", width: "60px" },
+];
+const headers2 = [
+  { key: "name", value: "Nama Barang", width: "auto" },
+  { key: "stocks", value: "Stock", width: "90px" },
+  { key: "price", value: "Harga", width: "90px" },
+  { key: "cmd", value: "", width: "60px" },
+];
 
-  function get_headers() {
-    if (innerWidth < 720) {
-      return headers2;
-    }
-    return headers;
+function get_headers() {
+  if (innerWidth < 720) {
+    return headers2;
   }
+  return headers;
+}
 
-  function edit_product(id: number | undefined) {
-    dispatch("edit", id);
+function edit_product(id: number | undefined) {
+  dispatch("edit", id);
+}
+
+let txt = "";
+
+function submit_search(e: Event): void {
+  dispatch("search", txt);
+}
+
+function search_clear(e: any): void {
+  dispatch("search", undefined);
+}
+
+// function get_suppliers() {
+// 	return suppliers.map((m) => ({ id: m.id, text: m.text }));
+// }
+const defaultStock = (stocks: iProductStock[]) => {
+  const d = stocks.filter((f) => f.gudangId === 1)[0];
+  if (d) {
+    return d.qty;
   }
+  return 0;
+};
 
-  let txt = "";
-
-  function submit_search(e: Event): void {
-    dispatch("search", txt);
-  }
-
-  function search_clear(e: any): void {
-    dispatch("search", undefined);
-  }
-
-  // function get_suppliers() {
-  // 	return suppliers.map((m) => ({ id: m.id, text: m.text }));
-  // }
-  const defaultStock = (stocks: iProductStock[]) => {
-    const d = stocks.filter((f) => f.gudangId === 1)[0];
-    if (d) {
-      return d.qty;
-    }
-    return 0;
-  };
-
-  let sup_light = false;
-  let cat_light = false;
-  // $: 	console.log(suppliers)
+let sup_light = false;
+let cat_light = false;
+// $: 	console.log(suppliers)
 </script>
 
 <DataTable expandable size="medium" headers={get_headers()} rows={data}>
@@ -114,7 +125,7 @@
     {/if}
   </svelte:fragment>
   <svelte:fragment slot="expanded-row" let:row>
-    <ExapandedList {row} bind:innerWidth on:deleteData />
+    <ExapandedList row={row} bind:innerWidth={innerWidth} on:deleteData />
   </svelte:fragment>
 
   <Toolbar size="sm">
@@ -171,14 +182,3 @@
     </ToolbarContent>
   </Toolbar>
 </DataTable>
-
-<style lang="scss">
-  .cell-right {
-    text-align: right;
-  }
-  /*
-		 :global(table.bx--data-table th, table.bx--data-table--zebra) {
-		background-color: #000;
-		 }
-		 */
-</style>

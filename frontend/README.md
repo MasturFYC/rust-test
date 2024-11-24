@@ -1,6 +1,6 @@
 # create-svelte
 
-1) Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/master/packages/create-svelte).
+1. Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/master/packages/create-svelte).
 
 ## Creating a project
 
@@ -34,6 +34,7 @@ npm run build
 ```
 
 You can preview the production build with `npm run preview`.
+
 > To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
 
 > To run :
@@ -50,12 +51,14 @@ https://hartenfeller.dev/blog/sveltekit-with-sqlite
 ```
 
 ### ssh-copy-id
+
 <ol>
 <li> generate 4k key
 
 ```
 ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa4k
 ```
+
 <li> create ssh-agent-pid
 
 ```
@@ -63,22 +66,26 @@ ssh-agent -s > ~/mysshagent
 source ~/mysshagent
 rm ~/mysshagent
 ```
+
 <li> loading key
 
 ```
 ssh-add -l
 ssh-add -L
 ```
+
 <li> try login to host
 
 ```
 ssh <user>@<host>
 ```
+
 <li> copy ssh key
 
 ```
 ssh-copy-id <user>@<host>
 ```
+
 <li> try login again (success if no prompt for password)
 
 ```

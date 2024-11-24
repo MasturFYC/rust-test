@@ -1,20 +1,17 @@
 <script lang="ts">
-  import { Button } from "carbon-components-svelte";
-  import { Delete } from "carbon-icons-svelte";
-  import { createEventDispatcher } from "svelte";
+import { Button } from "carbon-components-svelte";
+import { Delete } from "carbon-icons-svelte";
 
-  const dispatch = createEventDispatcher();
-  export let gudangId = 0;
+let {categoryId, deleteData} : {categoryId: number, deleteData: (e: number) => void} = $props();
+let is_deleting = $state(false);
 
-  let is_deleting = false;
-
-  function delete_gudang(e: number) {
-    is_deleting = true;
-    setTimeout(() => {
-      dispatch("deleteGudang", e);
-      is_deleting = false;
-    }, 250);
-  }
+function delete_data(e: number) {
+  is_deleting = true;
+  setTimeout(() => {
+    deleteData(e);
+    // is_deleting = false;
+  }, 250);
+}
 </script>
 
 <Button
@@ -24,5 +21,5 @@
   kind="danger-ghost"
   icon={Delete}
   iconDescription={"Delete"}
-  on:click={() => delete_gudang(gudangId)}
+  on:click={() => delete_data(categoryId)}
 />

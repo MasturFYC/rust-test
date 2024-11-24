@@ -1,1 +1,13 @@
-<script lang="ts">const staticUrl = import.meta.env.VITE_API_STATICURL as string;export let iconName = "";export let title = "";export let size = 16;export let isLeft = false;</script><span class="icon" class:is-left={isLeft}><svg width="{size}" height="{size}" xmlns="http://www.w3.org/2000/svg"><image xlink:href="{staticUrl}/{iconName}.svg" height="{size}"/></svg></span>{#if title}<span>{title}</span>{/if}
+<script lang="ts">
+const staticUrl = import.meta.env.VITE_API_STATICURL as string;
+export let iconName = "";
+export let title = "";
+export let size = 16;
+export let isLeft = false;
+</script>
+
+<span class="icon" class:is-left={isLeft}
+  ><svg width={size} height={size} xmlns="http://www.w3.org/2000/svg"
+    ><image xlink:href="{staticUrl}/{iconName}.svg" height={size} /></svg
+  ></span
+>{#if title}<span>{title}</span>{/if}
