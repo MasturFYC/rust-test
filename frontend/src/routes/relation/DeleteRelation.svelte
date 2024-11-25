@@ -5,18 +5,18 @@ import { Delete } from "carbon-icons-svelte";
 let {
   idData = 0,
   isDeleting = $bindable(false),
-  deleteData
+  onDeleteData
 } : {
   idData: number,
   isDeleting: boolean,
-  deleteData: (id: number) => void
+  onDeleteData: (id: number) => void
 } = $props();
 
 async function delete_data() {
   isDeleting = true;
 
   setTimeout(() => {
-    deleteData(idData);
+    onDeleteData(idData);
     }, 500);
 }
 

@@ -4,6 +4,7 @@ import {
   Checkbox,
   Column,
   FluidForm,
+  // FluidForm,
   Grid,
   InlineLoading,
   Modal,
@@ -34,15 +35,23 @@ let {
 let data = $state(initdata);
 let isMember = $derived(data.relationType.filter((f) => f === "Customer").length > 0);
 
-function submit() {
+function save(e: CustomEvent<null>) {
+    isUpdating = true;
+    e.preventDefault();
+    e.stopPropagation();
+
+
+    // if (x === 2) return false;
+
   const newData = {
     ...data,
     relationType: [...data.relationType],
     region: isMember ? data.region : undefined,
     isSpecial: isMember ? data.isSpecial : false,
   };
-  console.log(newData);
+
   saveRelation(newData);
+    // return true;
 }
 
 let isDataValid = $derived(
@@ -58,19 +67,20 @@ let isDataValid = $derived(
 <Modal
   id="rel-mod"
   bind:open={open}
-  hasForm
   preventCloseOnClickOutside
   modalHeading={"Relasi"}
+  hasForm
   primaryButtonText="Simpan"
   primaryButtonIcon={Save}
   secondaryButtonText="Batal"
   selectorPrimaryFocus={"#rel-name"}
   on:click:button--secondary={() => (open = false)}
-  on:click:button--primary={submit}
+  on:submit={save}
+
   size="sm"
   primaryButtonDisabled={isUpdating || !isDataValid}
 >
-  <FluidForm>
+    <FluidForm>
     <TextInput
       id="rel-name"
       bind:value={data.name}
@@ -144,10 +154,10 @@ let isDataValid = $derived(
         </Column>
       </Row>
     </Grid>
+    </FluidForm>
     <!-- <code>
 			{JSON.stringify(data, null, 2)}
 		</code> -->
-  </FluidForm>
 
   {#if isUpdating}
     <InlineLoading

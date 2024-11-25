@@ -56,16 +56,17 @@ const initResult: iResult = {
 let pageSize = $state(5);
 let page = $state(1);
 let opt = $state(0);
-let current_type: string | undefined = $state(undefined);
+let relationId: string | undefined = $state(undefined);
 let txt: string | undefined = $state(undefined);
 let isUpdating = $state(false);
-let open = $state(false);
-let isError = $state(false);
+// let open = $state(false);
+// let isError = $state(false);
 let errorMessage = $state("");
 //    let allowFetch = false;
 let isEdit = $state(false);
 let data = $state<iRelation>({ ...initData });
-let q_key = $derived([qKey, page, pageSize, current_type, txt]);
+let q_key = $derived([qKey, page, pageSize, relationId, txt]);
+let q_next = $derived([qKey, page + 1, pageSize, relationId, txt]);
 
 async function getRelationTypes() {
   const options = {
@@ -89,7 +90,7 @@ async function fetchData(p: number): Promise<iResult> {
     };
 
     const request = new Request(
-      `${url}?page=${p}&limit=${pageSize}&opt=${opt}${opt === 1 ? `&txt=${txt}` : ""}${opt === 2 ? `&reltype=${current_type}` : ""}`,
+      `${url}?page=${p}&limit=${pageSize}&opt=${opt}${opt === 1 ? `&txt=${txt}` : ""}${opt === 2 ? `&reltype=${relationId}` : ""}`,
       options,
     );
     let result = await fetch(request);
@@ -101,7 +102,7 @@ async function fetchData(p: number): Promise<iResult> {
 const prefetchNextPage = (data: iResult) => {
   //console.log({"page": page, "page size": data.totalPages});
   if (page < data.totalPages) {
-    client.prefetchQuery([qKey, page + 1, pageSize], () => fetchData(page + 1));
+    client.prefetchQuery(q_next, () => fetchData(page + 1));
   }
 };
 
@@ -166,10 +167,10 @@ const createData = useMutation(fetchCreateData, {
       // setTimeout(() => {
       isUpdating = false;
       // if (data.status !== "fail") {
-        open = false;
+        // open = false;
         isEdit = false;
       } else {
-        isError = true;
+        // isError = true;
         errorMessage = data.message;
       }
       //}, 250);
@@ -212,10 +213,10 @@ const updateData = useMutation(fetchUpdateData, {
       //		setTimeout(() => {
       isUpdating = false;
       if (d.status !== "fail") {
-        open = false;
+        // open = false;
         isEdit = false;
       } else {
-        isError = true;
+        // isError = true;
         errorMessage = d.message;
       }
       //}, 1500);
@@ -266,7 +267,7 @@ const deleteData = useMutation(fetchDeleteData, {
   ) => {
 
    if (raw.status === "fail") {
-      isError = true;
+      // isError = true;
       errorMessage = raw.message;
       // timeout = 3_000;
     }
@@ -309,51 +310,52 @@ async function delete_data(e: number) {
   $deleteData.mutate(e);
 }
 
-const query = $derived(useQuery<iResult, Error>({
-  queryKey: [qKey, page, pageSize],
-  keepPreviousData: true,
-  enabled: browser,
-  queryFn: async () => await fetchData(page),
-  onSuccess: prefetchNextPage,
-}));
+let query = $derived.by(() => { return useQuery<iResult, Error>({
+        queryKey: q_key,
+        keepPreviousData: true,
+        enabled: browser,
+        queryFn: async () => await fetchData(page),
+        onSuccess: prefetchNextPage,
+    });
+});
 
-function setQueryOption(
-  p: number,
-  l: number,
-  c: string | undefined,
-  t: string | undefined,
-) {
-  query.setOptions({
-    queryKey: [qKey, p, l, c, t],
-    keepPreviousData: true,
-    queryFn: async () => await fetchData(page),
-    onSuccess: prefetchNextPage,
-    enabled: browser,
-  });
-  // {
-  // 	queryKey: [qKey, p, l],
-  // 	keepPreviousData: true,
-  // 	queryFn: async () => await fetchData(p),
-  // 	onSuccess: prefetchNextPage,
-  // });
-}
+// function setQueryOption(
+//   // p: number,
+//   // l: number,
+//   c: string | undefined,
+//   t: string | undefined,
+// ) {
+//     query.updateOptions( {
+//         queryKey: [qKey, page, pageSize, c, t],
+//     // keepPreviousData: true,
+//     // queryFn: async () => await fetchData(page),
+//     // onSuccess: prefetchNextPage,
+//     // enabled: true,
+//   });
+//   // {
+//   // 	queryKey: [qKey, p, l],
+//   // 	keepPreviousData: true,
+//   // 	queryFn: async () => await fetchData(p),
+//   // 	onSuccess: prefetchNextPage,
+//   // });
+// }
 
 function change_type(e: string | undefined): void {
-  current_type = e;
-  if (e) {
+ if (e) {
     opt = 2;
   } else {
     opt = 0;
   }
+  relationId = e;
 }
 
 function change_search(e: string | undefined): void {
-  txt = e;
   if (e) {
     opt = 1;
   } else {
     opt = 0;
   }
+  txt = e;
 }
 
 const queryTypes = useQuery("relTypes", getRelationTypes, {
@@ -361,17 +363,34 @@ const queryTypes = useQuery("relTypes", getRelationTypes, {
 });
 
 
-// $: query.setEnabled(true);
-$effect(() => {
-  queryTypes.setEnabled(browser);
-  query.setEnabled(browser);
+// // $: query.setEnabled(true);
+$effect.pre(() => {
+     if(browser) {
+         queryTypes.setEnabled(browser);
+//         query.setEnabled(browser);
+//         console.log("TEST");
+     }
 });
 
-$effect(() => {
-    setQueryOption(page, pageSize, current_type, txt);
-});
+// $effect.pre(() => {
+//     setQueryOption(current_type, txt);
+// });
 
-$inspect(open,isError);
+let queryData = $derived.by(() => {
+    if($query.isSuccess && $query.data) {
+        return $query.data.data;
+    }
+    return [];
+})
+
+let totalItems = $derived.by(() => {
+    if($query.isSuccess && $query.data) {
+        return $query.data.totalItems;
+    }
+    return 0;
+})
+
+$inspect($query);
 
 </script>
 
@@ -395,18 +414,22 @@ $inspect(open,isError);
   <span>Loading...</span>
 {:else if $query.isError}
   <span>Error: {$query.error.message}</span>
-{:else if $query.isSuccess}
+<!-- {:else if $query.isSuccess} -->
+{/if}
+
   <RelationList
-    data={$query.data.data}
+    selectedId={relationId}
+    searchText={txt}
+    data={queryData}
     edit={editRelation}
-    deleteData={delete_data}
+    onDeleteData={delete_data}
     bind:isUpdating={isUpdating}
     relationTypes={$queryTypes.data}
-    changeType={change_type}
-    changeSearch={change_search}
+    onChangeType={change_type}
+    onChangeSearch={change_search}
   />
   <Pagination
-    totalItems={$query.data.totalItems}
+    totalItems={totalItems}
     pageSizes={pages}
     pageSize={pageSize}
     page={page}
@@ -421,4 +444,4 @@ $inspect(open,isError);
       page = e.detail.page;
     }}
   />
-{/if}
+<!-- {/if} -->
