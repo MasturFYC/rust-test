@@ -331,11 +331,7 @@ $: {
 {:else if $query.isError}
 	<p>Error: {showErrorMessage()}</p>
 {:else if $query.isSuccess}
-	<ListCategory
-		{tools}
-		gudangs={$query.data.data}
-		onNew={newGudang}
-	/>
+	<ListCategory tools={tools} gudangs={$query.data.data} onNew={newGudang} />
 	<p>Total: {$query.data.count} item{$query.data.count > 1 ? 's' : ''}</p>
 {/if}
 
@@ -351,12 +347,12 @@ $: {
 	/>
 {/if}
 
-	<FormGudang
-		onSubmit={submit}
-		bind:open={open}
-		bind:gudang={gudang}
-		isUpdating={isUpdating}
-		isError={isError}
-		errorMessage={errorMessage}
-		employees={$employeeQuery.data?.data}
-	/>
+<FormGudang
+	onSubmit={submit}
+	bind:open={open}
+	bind:gudang={gudang}
+	isUpdating={isUpdating}
+	isError={isError}
+	errorMessage={errorMessage}
+	employees={$employeeQuery.data?.data}
+/>

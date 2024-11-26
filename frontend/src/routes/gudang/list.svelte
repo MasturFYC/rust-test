@@ -26,19 +26,18 @@ import { NewTab } from 'carbon-icons-svelte';
 import type { DataTableHeader } from 'carbon-components-svelte/src/DataTable/DataTable.svelte';
 
 let {
-	gudangs=[],
+	gudangs = [],
 	onNew,
 	tools
-} : {
-	gudangs: iGudang[],
-	onNew: (e: iGudang) => void,
-	tools: (id: number) => ReturnType<import("svelte").Snippet>
+}: {
+	gudangs: iGudang[];
+	onNew: (e: iGudang) => void;
+	tools: (id: number) => ReturnType<import('svelte').Snippet>;
 } = $props();
 
 let client_width = $state(0);
 
 function newGudang() {
-
 	const newData: iGudang = {
 		id: 0,
 		name: '',
@@ -55,7 +54,6 @@ let headers: DataTableHeader[] = [
 	{ key: 'locate', value: 'Lokasi Gudang', width: 'auto' },
 	{ key: 'cmd', value: '', width: '150px' }
 ];
-
 </script>
 
 <svelte:window bind:innerWidth={client_width} />

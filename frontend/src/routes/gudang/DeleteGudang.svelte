@@ -5,9 +5,9 @@ import { Delete } from 'carbon-icons-svelte';
 let {
 	idData = 0,
 	onDeleteData
-} : {
-	idData: number,
-	onDeleteData: (e: number) => void
+}: {
+	idData: number;
+	onDeleteData: (e: number) => void;
 } = $props();
 
 let is_deleting = $state(false);
@@ -19,7 +19,6 @@ function delete_data() {
 		// is_deleting = false;
 	}, 250);
 }
-
 </script>
 
 <Button

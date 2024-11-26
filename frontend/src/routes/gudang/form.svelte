@@ -17,14 +17,14 @@ let {
 	isError = false,
 	errorMessage = '',
 	onSubmit
-} : {
-	open: boolean,
-	gudang: iGudang,
-	isUpdating: boolean,
-	employees: iRelationProp[] | undefined,
-	isError: boolean,
-	errorMessage: string,
-	onSubmit: (e: iGudang) => void
+}: {
+	open: boolean;
+	gudang: iGudang;
+	isUpdating: boolean;
+	employees: iRelationProp[] | undefined;
+	isError: boolean;
+	errorMessage: string;
+	onSubmit: (e: iGudang) => void;
 } = $props();
 
 function get_employees() {
@@ -36,15 +36,16 @@ function submit() {
 	onSubmit(gudang);
 }
 
-let employee_invalid = $derived(gudang.employeeId === 0 );
+let employee_invalid = $derived(gudang.employeeId === 0);
 
 $inspect(gudang);
-
 </script>
 
 <Modal
 	bind:open={open}
-	on:close={() => { open = false }}
+	on:close={() => {
+		open = false;
+	}}
 	hasForm
 	id="gud-modal"
 	preventCloseOnClickOutside
