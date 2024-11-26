@@ -1,61 +1,61 @@
 <style lang="css">
 :global(label.bx--label) {
-  margin-bottom: 3px;
-  margin-top: 9px;
+	margin-bottom: 3px;
+	margin-top: 9px;
 }
 :global(.bx--checkbox-wrapper) {
-  margin-top: 12px;
+	margin-top: 12px;
 }
 :global(.bx--text-input.input-number) {
-  text-align: right;
+	text-align: right;
 }
 :global(.bx--label--inline--sm) {
-  min-width: 4.5rem;
-  padding-right: 0;
-  margin-right: 0;
+	min-width: 4.5rem;
+	padding-right: 0;
+	margin-right: 0;
 }
 :global(.bx--list-box__menu-item, .bx--list-box__menu-item__option) {
-  height: auto;
+	height: auto;
 }
 
 .supplier-info {
-  height: auto;
-  font-size: x-small;
-  margin-top: 3px;
-  margin-bottom: 0;
-  white-space: wrap;
+	height: auto;
+	font-size: x-small;
+	margin-top: 3px;
+	margin-bottom: 0;
+	white-space: wrap;
 }
 </style>
 
 <script lang="ts">
-import type { iProduct, iPropertyID, iRelationProp } from "$lib/interfaces";
+import type { iProduct, iPropertyID, iRelationProp } from '$lib/interfaces';
 import {
-  Checkbox,
-  Column,
-  ComboBox,
-  Form,
-  Grid,
-  InlineLoading,
-  Modal,
-  Row,
-  TextArea,
-  TextInput,
-} from "carbon-components-svelte";
-import { Save } from "carbon-icons-svelte";
-import { createEventDispatcher, onMount } from "svelte";
+	Checkbox,
+	Column,
+	ComboBox,
+	Form,
+	Grid,
+	InlineLoading,
+	Modal,
+	Row,
+	TextArea,
+	TextInput
+} from 'carbon-components-svelte';
+import { Save } from 'carbon-icons-svelte';
+import { createEventDispatcher, onMount } from 'svelte';
 
 // import type { ComboBoxItem } from "carbon-components-svelte/types/ComboBox/ComboBox.svelte";
-import { formatNumber, getNumber, getPercent } from "./NumberFormat";
-import InputNumber from "./NumberInput.svelte";
-import NumberPercent from "./NumberPercent.svelte";
-import type { ComboBoxItem } from "carbon-components-svelte/src/ComboBox/ComboBox.svelte";
+import { formatNumber, getNumber, getPercent } from './NumberFormat';
+import InputNumber from './NumberInput.svelte';
+import NumberPercent from './NumberPercent.svelte';
+import type { ComboBoxItem } from 'carbon-components-svelte/src/ComboBox/ComboBox.svelte';
 
 export let innerWidth = 720;
 export let open = false;
 export let data: iProduct;
 export let isError = false;
 export let isUpdating = false;
-export let errorMessage = "";
+export let errorMessage = '';
 export let suppliers: iRelationProp[] = [];
 export let categories: iPropertyID[] = [];
 
@@ -68,55 +68,55 @@ const dispatch = createEventDispatcher();
 //  }
 
 function submit() {
-  isUpdating = true;
-  // console.log(data)
-  dispatch("submit", data);
+	isUpdating = true;
+	// console.log(data)
+	dispatch('submit', data);
 }
 
 function on_hpp_change(_e: CustomEvent<string | number | null>): void {
-  data.price = data.hpp + (data.margin * data.hpp) / 100;
-  str_price = formatNumber(data.price);
+	data.price = data.hpp + (data.margin * data.hpp) / 100;
+	str_price = formatNumber(data.price);
 }
 
 function on_price_change(_e: CustomEvent<string | number | null>): void {
-  data.margin = ((data.price - data.hpp) / data.hpp) * 100;
-  str_percent = formatNumber(data.margin, 4);
+	data.margin = ((data.price - data.hpp) / data.hpp) * 100;
+	str_percent = formatNumber(data.margin, 4);
 }
 
 function on_percent_change(_e: CustomEvent<string | number | null>): void {
-  data.price = data.hpp + (data.margin * data.hpp) / 100;
-  str_price = formatNumber(data.price);
-  // console.log(cardNumber(data.price.toString()), data.price.toString());
+	data.price = data.hpp + (data.margin * data.hpp) / 100;
+	str_price = formatNumber(data.price);
+	// console.log(cardNumber(data.price.toString()), data.price.toString());
 }
 
 function shouldFilterItem(item: ComboBoxItem, value: string) {
-  if (!value) return true;
-  return item.text.toLowerCase().includes(value.toLowerCase());
+	if (!value) return true;
+	return item.text.toLowerCase().includes(value.toLowerCase());
 }
 
 function get_supplier_info(id: number): string {
-  let item = suppliers.filter((f) => f.id === id)[0];
+	let item = suppliers.filter((f) => f.id === id)[0];
 
-  if (item) {
-    let info: string;
+	if (item) {
+		let info: string;
 
-    if (item.street) {
-      info = item.street;
-      info = info + " - " + item.city;
-    } else {
-      info = item.city;
-    }
+		if (item.street) {
+			info = item.street;
+			info = info + ' - ' + item.city;
+		} else {
+			info = item.city;
+		}
 
-    if (item.phone) {
-      info = info + ", " + item.phone;
-    }
-    return info;
-  }
-  return "-";
+		if (item.phone) {
+			info = info + ', ' + item.phone;
+		}
+		return info;
+	}
+	return '-';
 }
 
 function get_suppliers() {
-  return suppliers.map((m) => ({ id: m.id, text: m.text }));
+	return suppliers.map((m) => ({ id: m.id, text: m.text }));
 }
 
 let str_price = formatNumber(data.price);
@@ -130,7 +130,7 @@ let str_heavy = formatNumber(data.heavy, 2);
 //$: data.categoryId = +cat_id;
 
 onMount(() => {
-  isError = false;
+	isError = false;
 });
 
 $: category_invalid = data.categoryId === 0;
@@ -152,149 +152,145 @@ $: price_invalid = data.price <= data.hpp;
 $: noGutter = innerWidth > 640;
 $: md = innerWidth < 640;
 $: isDataValid =
-  category_invalid ||
-  supplier_invalid ||
-  is_barcode_invalid ||
-  name_invalid ||
-  unit_invalid ||
-  price_invalid;
+	category_invalid ||
+	supplier_invalid ||
+	is_barcode_invalid ||
+	name_invalid ||
+	unit_invalid ||
+	price_invalid;
 </script>
 
 <Modal
-  bind:open={open}
-  hasForm
-  preventCloseOnClickOutside
-  modalHeading={"Data Barang"}
-  primaryButtonText="Simpan"
-  primaryButtonIcon={Save}
-  secondaryButtonText="Batal"
-  selectorPrimaryFocus={"#prod-name"}
-  on:click:button--secondary={() => (open = false)}
-  on:click:button--primary={submit}
-  size="sm"
-  primaryButtonDisabled={isUpdating || isDataValid}
+	bind:open={open}
+	hasForm
+	preventCloseOnClickOutside
+	modalHeading={'Data Barang'}
+	primaryButtonText="Simpan"
+	primaryButtonIcon={Save}
+	secondaryButtonText="Batal"
+	selectorPrimaryFocus={'#prod-name'}
+	on:click:button--secondary={() => (open = false)}
+	on:click:button--primary={submit}
+	size="sm"
+	primaryButtonDisabled={isUpdating || isDataValid}
 >
-  <Form>
-    <Grid bind:noGutter={noGutter}>
-      <Row>
-        <Column bind:md={md}>
-          <TextInput
-            inline={innerWidth < 720}
-            warn={name_invalid}
-            size="sm"
-            id="prod-name"
-            bind:value={data.name}
-            labelText={"Nama"}
-            placeholder="e.g. Djarum Super"
-            maxlength={50}
-            required
-          />
-          <TextInput
-            inline={innerWidth < 720}
-            warn={barcode_invalid}
-            size="sm"
-            bind:value={data.barcode}
-            labelText="Barcode"
-            placeholder="e.g. 0899984564698"
-            maxlength={25}
-          />
-          <TextInput
-            inline={innerWidth < 720}
-            warn={unit_invalid}
-            bind:value={data.unit}
-            labelText="Unit"
-            placeholder="e.g pcs"
-            size="sm"
-            maxlength={6}
-          />
-          {#if innerWidth > 720}
-            <br />
-          {/if}
-          <InputNumber
-            inline
-            bind:value={str_hpp}
-            labelText="Harga beli"
-            size="sm"
-            on:change={on_hpp_change}
-          />
-          <NumberPercent
-            inline
-            bind:value={str_percent}
-            labelText="Margin: (%)"
-            size="sm"
-            on:change={on_percent_change}
-          />
-          <InputNumber
-            inline
-            bind:value={str_price}
-            labelText="Harga jual"
-            size="sm"
-            on:change={on_price_change}
-            warn={price_invalid}
-            warnText="Harga jual harus lebih besar dari harga beli / hpp."
-          />
-        </Column>
-        <Column bind:md={md}>
-          <ComboBox
-            size="sm"
-            titleText="Kategori"
-            placeholder="Pilih kategori"
-            selectedId={data.categoryId}
-            warn={category_invalid}
-            items={categories}
-            shouldFilterItem={shouldFilterItem}
-            on:select={(e) => (data.categoryId = e.detail.selectedId)}
-            on:clear={() => (data.categoryId = 0)}
-          />
-          <ComboBox
-            titleText="Supplier"
-            selectedId={data.supplierId}
-            placeholder="Pilih supplier"
-            warn={supplier_invalid}
-            items={get_suppliers()}
-            shouldFilterItem={shouldFilterItem}
-            on:select={(e) => (data.supplierId = e.detail.selectedId)}
-            on:clear={() => (data.supplierId = 0)}
-            let:item
-          >
-            <div><strong>{item.text}</strong></div>
-            <div class="supplier-info">
-              {get_supplier_info(item.id)}
-            </div>
-          </ComboBox>
-          <NumberPercent
-            bind:value={str_heavy}
-            labelText="Berat: (kg)"
-            size="sm"
-          />
-          <TextInput
-            bind:value={data.variantName}
-            labelText="Variant"
-            placeholder="e.g. isi 12 batang"
-            size="sm"
-            maxlength={50}
-          />
-          <TextArea
-            rows={2}
-            bind:value={data.descriptions}
-            labelText="Deskripsi"
-            placeholder="e.g. diproduksi oleh PT. Djarum Super Kudus"
-            maxlength={128}
-          />
-          <Checkbox labelText="? Aktif" bind:checked={data.isActive} />
-        </Column>
-      </Row>
-    </Grid>
-  </Form>
+	<Form>
+		<Grid bind:noGutter={noGutter}>
+			<Row>
+				<Column bind:md={md}>
+					<TextInput
+						inline={innerWidth < 720}
+						warn={name_invalid}
+						size="sm"
+						id="prod-name"
+						bind:value={data.name}
+						labelText={'Nama'}
+						placeholder="e.g. Djarum Super"
+						maxlength={50}
+						required
+					/>
+					<TextInput
+						inline={innerWidth < 720}
+						warn={barcode_invalid}
+						size="sm"
+						bind:value={data.barcode}
+						labelText="Barcode"
+						placeholder="e.g. 0899984564698"
+						maxlength={25}
+					/>
+					<TextInput
+						inline={innerWidth < 720}
+						warn={unit_invalid}
+						bind:value={data.unit}
+						labelText="Unit"
+						placeholder="e.g pcs"
+						size="sm"
+						maxlength={6}
+					/>
+					{#if innerWidth > 720}
+						<br />
+					{/if}
+					<InputNumber
+						inline
+						bind:value={str_hpp}
+						labelText="Harga beli"
+						size="sm"
+						on:change={on_hpp_change}
+					/>
+					<NumberPercent
+						inline
+						bind:value={str_percent}
+						labelText="Margin: (%)"
+						size="sm"
+						on:change={on_percent_change}
+					/>
+					<InputNumber
+						inline
+						bind:value={str_price}
+						labelText="Harga jual"
+						size="sm"
+						on:change={on_price_change}
+						warn={price_invalid}
+						warnText="Harga jual harus lebih besar dari harga beli / hpp."
+					/>
+				</Column>
+				<Column bind:md={md}>
+					<ComboBox
+						size="sm"
+						titleText="Kategori"
+						placeholder="Pilih kategori"
+						selectedId={data.categoryId}
+						warn={category_invalid}
+						items={categories}
+						shouldFilterItem={shouldFilterItem}
+						on:select={(e) => (data.categoryId = e.detail.selectedId)}
+						on:clear={() => (data.categoryId = 0)}
+					/>
+					<ComboBox
+						titleText="Supplier"
+						selectedId={data.supplierId}
+						placeholder="Pilih supplier"
+						warn={supplier_invalid}
+						items={get_suppliers()}
+						shouldFilterItem={shouldFilterItem}
+						on:select={(e) => (data.supplierId = e.detail.selectedId)}
+						on:clear={() => (data.supplierId = 0)}
+						let:item
+					>
+						<div><strong>{item.text}</strong></div>
+						<div class="supplier-info">
+							{get_supplier_info(item.id)}
+						</div>
+					</ComboBox>
+					<NumberPercent bind:value={str_heavy} labelText="Berat: (kg)" size="sm" />
+					<TextInput
+						bind:value={data.variantName}
+						labelText="Variant"
+						placeholder="e.g. isi 12 batang"
+						size="sm"
+						maxlength={50}
+					/>
+					<TextArea
+						rows={2}
+						bind:value={data.descriptions}
+						labelText="Deskripsi"
+						placeholder="e.g. diproduksi oleh PT. Djarum Super Kudus"
+						maxlength={128}
+					/>
+					<Checkbox labelText="? Aktif" bind:checked={data.isActive} />
+				</Column>
+			</Row>
+		</Grid>
+	</Form>
 
-  {#if isUpdating}
-    <InlineLoading
-      status="active"
-      description={data.id === 0 ? "Posting data..." : "Updating data..."}
-    />
-  {/if}
+	{#if isUpdating}
+		<InlineLoading
+			status="active"
+			description={data.id === 0 ? 'Posting data...' : 'Updating data...'}
+		/>
+	{/if}
 
-  {#if isError}
-    <InlineLoading description={errorMessage} status="error" />
-  {/if}
+	{#if isError}
+		<InlineLoading description={errorMessage} status="error" />
+	{/if}
 </Modal>

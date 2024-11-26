@@ -1,44 +1,44 @@
 <style lang="scss">
 div {
-  margin-top: 12px;
-  line-height: 1.5;
+	margin-top: 12px;
+	line-height: 1.5;
 }
 pre {
-  padding: 12px;
-  background-color: #dedede;
-  line-height: 1.5;
-  overflow-x: scroll;
+	padding: 12px;
+	background-color: #dedede;
+	line-height: 1.5;
+	overflow-x: scroll;
 }
 </style>
 
 <script lang="ts">
-const title = "Facebook Crawler";
+const title = 'Facebook Crawler';
 </script>
 
 <svelte:head>
-  <title>{title}</title>
-  <meta name="description" content="Crawler this app" />
+	<title>{title}</title>
+	<meta name="description" content="Crawler this app" />
 </svelte:head>
 
 <h2>{title}</h2>
 
 <div>
-  Apa itu <strong>crawler</strong>, <code>crawler</code> adalah perayap yang digunakan
-  untuk mengumpulkan, menyimpan cache, dan menampilkan informasi tentang aplikasi
-  atau situs web seperti judul, deskripsi, dan gambar mini.
+	Apa itu <strong>crawler</strong>, <code>crawler</code> adalah perayap yang digunakan untuk mengumpulkan,
+	menyimpan cache, dan menampilkan informasi tentang aplikasi atau situs web seperti judul, deskripsi,
+	dan gambar mini.
 </div>
 <div>
-  Cara kerja Perayap ini merayapi sebuah halaman web. Kemudian menyimpan URL
-  kanonis yang telah disimpan metadatanya dalam cache saat pertama kali
-  seseorang membagikan atau menyukai suatu URL atau sebuah halaman web.
+	Cara kerja Perayap ini merayapi sebuah halaman web. Kemudian menyimpan URL kanonis yang telah
+	disimpan metadatanya dalam cache saat pertama kali seseorang membagikan atau menyukai suatu URL
+	atau sebuah halaman web.
 </div>
 <div>
-  Berikut ini adalah setingan yang digunakan pada server yang menggunakan
-  <code>nginx</code> sebagai mesin web server:
+	Berikut ini adalah setingan yang digunakan pada server yang menggunakan
+	<code>nginx</code> sebagai mesin web server:
 </div>
 <div>
-  <code
-    ><pre>
+	<code
+		><pre>
 # back-end service aktif lainnya
 # upstream other-server &#123;
     # server YOUR_ADDRESS_01;
@@ -100,5 +100,5 @@ server &#123;
     &#125;
 &#125;
 </pre>
-  </code>
+	</code>
 </div>

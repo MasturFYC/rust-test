@@ -38,54 +38,54 @@
 <script lang="ts">
 let currentMenu = 0;
 const generalMenu = [
-  // {id: 1, name: "Undangan Tahlil", href: "/undangan-tahlil", isActive: 'true'},
-  { id: 2, name: "Bilangan", href: "/bilangan", isActive: "" },
-  // {id: 3, name: "Ketua DPRD Indramayu", href: "/ketua-dprd", isActive: ''},
-  // {id: 4, name: "Pixel Logo", href: "/logo", isActive: ''},
-  { id: 5, name: "Label-103", href: "/label103", isActive: "" },
-  { id: 6, name: "MDATA", href: "/mdta", isActive: "" },
-  { id: 16, name: "Rekap MDTA", href: "/rekap-mdta", isActive: "" },
+	// {id: 1, name: "Undangan Tahlil", href: "/undangan-tahlil", isActive: 'true'},
+	{ id: 2, name: 'Bilangan', href: '/bilangan', isActive: '' },
+	// {id: 3, name: "Ketua DPRD Indramayu", href: "/ketua-dprd", isActive: ''},
+	// {id: 4, name: "Pixel Logo", href: "/logo", isActive: ''},
+	{ id: 5, name: 'Label-103', href: '/label103', isActive: '' },
+	{ id: 6, name: 'MDATA', href: '/mdta', isActive: '' },
+	{ id: 16, name: 'Rekap MDTA', href: '/rekap-mdta', isActive: '' }
 ];
 const cardMenu = [
-  { id: 11, name: "PDAM", href: "/pdam", isActive: "" },
-  { id: 7, name: "CGR", href: "/cgr", isActive: "true" },
-  { id: 8, name: "Toko Cipto", href: "/cipto", isActive: "" },
-  { id: 10, name: "CPO Fitness", href: "/cpo", isActive: "" },
-  { id: 9, name: "Musa Tani", href: "/musatani", isActive: "" },
-  //	{id: 12, name: "OSIS SMA Tukdana", href: "/osis", isActive: ''},
-  { id: 15, name: "Toko Sumiyati", href: "/toko-sumiyati", isActive: "" },
-  { id: 14, name: "Toko Luna Jaya", href: "/toko-luna", isActive: "" },
-  { id: 17, name: "RS Bhayangkara", href: "/rumkit", isActive: "" },
-  { id: 13, name: "Raos", href: "/raos", isActive: "" },
+	{ id: 11, name: 'PDAM', href: '/pdam', isActive: '' },
+	{ id: 7, name: 'CGR', href: '/cgr', isActive: 'true' },
+	{ id: 8, name: 'Toko Cipto', href: '/cipto', isActive: '' },
+	{ id: 10, name: 'CPO Fitness', href: '/cpo', isActive: '' },
+	{ id: 9, name: 'Musa Tani', href: '/musatani', isActive: '' },
+	//	{id: 12, name: "OSIS SMA Tukdana", href: "/osis", isActive: ''},
+	{ id: 15, name: 'Toko Sumiyati', href: '/toko-sumiyati', isActive: '' },
+	{ id: 14, name: 'Toko Luna Jaya', href: '/toko-luna', isActive: '' },
+	{ id: 17, name: 'RS Bhayangkara', href: '/rumkit', isActive: '' },
+	{ id: 13, name: 'Raos', href: '/raos', isActive: '' }
 ];
 </script>
 
 <aside class="menu mx-5">
-  <p class="menu-label mt-5">General</p>
-  <ul class="menu-list">
-    {#each generalMenu as m}
-      <li>
-        <a
-          href={m.href}
-          class={m.id === currentMenu ? "is-active" : ""}
-          on:click={() => (currentMenu = m.id)}>{m.name}</a
-        >
-      </li>
-    {/each}
-  </ul>
-  <p class="menu-label">ID Card</p>
-  <ul class="menu-list">
-    {#each cardMenu as m}
-      <li>
-        <a
-          href={m.href}
-          class={m.id === currentMenu ? "is-active" : ""}
-          on:click={() => (currentMenu = m.id)}>{m.name}</a
-        >
-      </li>
-    {/each}
-  </ul>
-  <!-- <ul class="menu-list">
+	<p class="menu-label mt-5">General</p>
+	<ul class="menu-list">
+		{#each generalMenu as m}
+			<li>
+				<a
+					href={m.href}
+					class={m.id === currentMenu ? 'is-active' : ''}
+					on:click={() => (currentMenu = m.id)}>{m.name}</a
+				>
+			</li>
+		{/each}
+	</ul>
+	<p class="menu-label">ID Card</p>
+	<ul class="menu-list">
+		{#each cardMenu as m}
+			<li>
+				<a
+					href={m.href}
+					class={m.id === currentMenu ? 'is-active' : ''}
+					on:click={() => (currentMenu = m.id)}>{m.name}</a
+				>
+			</li>
+		{/each}
+	</ul>
+	<!-- <ul class="menu-list">
 		<li><a>Team Settings</a></li>
 		<li>
 			<a class="">Manage Your Team</a>
@@ -99,7 +99,7 @@ const cardMenu = [
 		<li><a>Cloud Storage Environment Settings</a></li>
 		<li><a>Authentication</a></li>
 	</ul> -->
-  <!-- <p class="menu-label">Transactions</p>
+	<!-- <p class="menu-label">Transactions</p>
 	<ul class="menu-list">
 		<li><a>Payments</a></li>
 		<li><a>Transfers</a></li>

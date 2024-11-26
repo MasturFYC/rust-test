@@ -1,26 +1,26 @@
 export type iRelationBase = {
-  id: number;
-  city: string;
-  region?: string;
-  street?: string;
-  phone?: string;
-  isSpecial: boolean;
-  photo?: string;
+	id: number;
+	city: string;
+	region?: string;
+	street?: string;
+	phone?: string;
+	isSpecial: boolean;
+	photo?: string;
 };
 
 export type iRelationProp = iRelationBase & {
-  text: string;
+	text: string;
 };
 
 export type iRelation = iRelationBase & {
-  name: string;
-  isActive: boolean;
-  relationType: string[];
-  createdAt: string;
-  updatedAt: string;
+	name: string;
+	isActive: boolean;
+	relationType: string[];
+	createdAt: string;
+	updatedAt: string;
 };
 
 export type RelationTypeWIthID = {
-  id: string;
-  text: string;
+	id: string;
+	text: string;
 };

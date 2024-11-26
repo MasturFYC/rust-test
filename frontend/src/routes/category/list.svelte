@@ -1,35 +1,32 @@
 <script lang="ts">
-import { baseURL, credential_include, type iCategory } from "$lib/interfaces";
-import { useMutation, useQueryClient } from "@sveltestack/svelte-query";
+import { type iCategory } from '$lib/interfaces';
 import {
-  Button,
-  DataTable,
-  FluidForm,
-  InlineLoading,
-  Modal,
-  TextInput,
-  ToastNotification,
-  Toolbar,
-  ToolbarContent,
-  ToolbarMenu,
-  ToolbarMenuItem,
-} from "carbon-components-svelte";
-import { Edit, NewTab, Save } from "carbon-icons-svelte";
-import DeleteCategory from "./DeleteCategory.svelte";
-import type { DataTableHeader } from "carbon-components-svelte/src/DataTable/DataTable.svelte";
+	Button,
+	DataTable,
+	Toolbar,
+	ToolbarContent,
+	ToolbarMenu,
+	ToolbarMenuItem
+} from 'carbon-components-svelte';
+import { NewTab } from 'carbon-icons-svelte';
+import type {
+	DataTableHeader,
+	DataTableCell,
+	DataTableRow
+} from 'carbon-components-svelte/src/DataTable/DataTable.svelte';
 
-const client = useQueryClient();
-let isUpdating = false;
-let isError = false;
-let err_msg = "";
-
-export let categories: iCategory[] = [];
-
-type iResult = {
-  count: number;
-  data: iCategory[];
-  status: string;
-};
+let {
+	categories = [],
+	cellSnippet,
+	onNewCategory
+}: {
+	categories: iCategory[];
+	cellSnippet: (
+		cell: DataTableCell<DataTableRow>,
+		row: DataTableRow
+	) => ReturnType<import('svelte').Snippet>;
+	onNewCategory: () => void;
+} = $props();
 
 // let data: iResult = {
 // 	count: 0,
@@ -37,247 +34,16 @@ type iResult = {
 // 	status: ""
 // };
 
-const fetchUpdateData = async (_e: iCategory): Promise<iCategory> => {
-  const url = `${baseURL}/categories/${category.id}`;
-  const request = new Request(url, {
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify(category),
-    method: "PUT",
-    credentials: credential_include,
-  });
-
-  const result = await fetch(request);
-  return await result.json();
-};
-
-const fetchCreateData = async (_e: iCategory): Promise<iCategory> => {
-  const url = `${baseURL}/categories`;
-  const request = new Request(url, {
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify(category),
-    method: "POST",
-    credentials: credential_include,
-  });
-
-  return await (await fetch(request)).json();
-};
-
-const fetchDeleteData = async (e: number) => {
-  const url = `${baseURL}/categories/${e}`;
-  const request = new Request(url, {
-    method: "DELETE",
-    credentials: credential_include,
-  });
-
-  return await (await fetch(request)).json();
-};
-
-const createData = useMutation(fetchCreateData, {
-  onMutate: async (_e: iCategory) => {
-    // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-    await client.cancelQueries();
-
-    // Snapshot the previous value
-    const previousData = client.getQueryData<iResult>(["category", "list"]);
-
-    // Optimistically update to the new value
-    if (previousData) {
-      client.setQueryData<iResult>(["category", "list"], previousData);
-    }
-
-    return previousData;
-  },
-  onSuccess: async (data: any, _variable: iCategory, context) => {
-    if (context) {
-      setTimeout(() => {
-        isUpdating = false;
-        if (data.status !== "fail") {
-          open = false;
-        } else {
-          isError = true;
-          err_msg = data.message;
-        }
-      }, 250);
-      //await client.invalidateQueries(["category", "list"]);
-      //client.setQueryData<iCategory[]>(["category", "list"], [...context, data.data]);
-    }
-  },
-  // If the mutation fails, use the context returned from onMutate to roll back
-  onError: (err: any, _variables: any, context: any) => {
-    console.log(err);
-    if (context?.previousData) {
-      client.setQueryData<iResult>(["category", "list"], context.previousData);
-    }
-    //      selectedCategoryId.set($category.id)
-    // errorMesage.set(`Nama kategori '${$category.name}'' sudah ada!`);
-  },
-  // Always refetch after error or success:
-  onSettled: async () => {
-    await client.invalidateQueries(["category", "list"]);
-  },
-});
-
-const updateData = useMutation(fetchUpdateData, {
-  onMutate: async (_e: iCategory) => {
-    // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-    await client.cancelQueries();
-
-    // Snapshot the previous value
-    const previousCategories = client.getQueryData<iResult>([
-      "category",
-      "list",
-    ]);
-
-    // Optimistically update to the new value
-    if (previousCategories) {
-      client.setQueryData<iResult>(["category", "list"], previousCategories);
-    }
-
-    return previousCategories;
-  },
-  onSuccess: async (data: any, _variable: iCategory, context) => {
-    if (context) {
-      setTimeout(() => {
-        isUpdating = false;
-        if (data.status !== "fail") {
-          open = false;
-        } else {
-          isError = true;
-          err_msg = data.message;
-        }
-      }, 1500);
-      //        await client.invalidateQueries(["category", "list"]);
-      //client.setQueryData<iCategory[]>(["category", "list"], [...context, data.data]);
-    }
-  },
-  // If the mutation fails, use the context returned from onMutate to roll back
-  onError: (_err: any, _variables: any, context: any) => {
-    if (context?.previousCategories) {
-      client.setQueryData<iResult>(
-        ["category", "list"],
-        context.previousCategories,
-      );
-      //        selectedCategoryId.set($category.id)
-    }
-    // errorMesage.set(`Nama kategori '${$category.name}' sudah ada!`);
-  },
-  onSettled: async (
-    _data: any,
-    _error: any,
-    _variables: iCategory,
-    _context: iResult | undefined,
-  ) => {
-    await client.invalidateQueries(["category", "list"]);
-  },
-});
-
-const deleteData = useMutation(fetchDeleteData, {
-  onMutate: async (_e: number) => {
-    // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-    await client.cancelQueries();
-
-    // Snapshot the previous value
-    const previousCategories = client.getQueryData<iResult>([
-      "category",
-      "list",
-    ]);
-
-    // Optimistically update to the new value
-    if (previousCategories) {
-      client.setQueryData<iResult>(["category", "list"], previousCategories);
-    }
-
-    return previousCategories;
-  },
-  onSuccess: async () => {
-    setTimeout(() => {
-      isUpdating = false;
-    }, 1500);
-
-    category = {
-      id: 0,
-      name: "",
-    };
-  },
-  // If the mutation fails, use the context returned from onMutate to roll back
-  onError: (_err: any, _variables: any, context: any) => {
-    if (context?.previousCategories) {
-      client.setQueryData<iResult>(
-        ["category", "list"],
-        context.previousCategories,
-      );
-    }
-  },
-  onSettled: async (
-    data: any,
-    _error: any,
-    _variables: number,
-    _context: iResult | undefined,
-  ) => {
-    if (data.status === "fail") {
-      showNotification = true;
-      err_msg = data.message;
-      timeout = 3_000;
-    }
-    await client.invalidateQueries(["category", "list"]);
-    isUpdating = false;
-  },
-});
-
-function delete_category(e: number) {
-  isUpdating = true;
-  $deleteData.mutate(e);
-}
-
-let open = false;
-let category: iCategory = {
-  id: 0,
-  name: "",
-};
-
-function edit_category(id: number) {
-  isError = false;
-  err_msg = "";
-  // timeout = undefined;
-
-  let test = categories.filter((f) => f.id == id);
-  if (test.length > 0) {
-    category = test[0];
-    open = true;
-  }
-}
+// function delete_category(e: number) {
+// 	isUpdating = true;
+// 	$deleteData.mutate(e);
+// }
 
 let headers: DataTableHeader[] = [
-  { key: "id", value: "#ID", width: "10%" },
-  { key: "name", value: "Nama", width: "auto" },
-  { key: "cmd", value: "", width: "150px" },
+	{ key: 'id', value: '#ID', width: '10%' },
+	{ key: 'name', value: 'Nama', width: 'auto' },
+	{ key: 'cmd', value: '', width: '150px' }
 ];
-
-function submit() {
-  isError = false;
-  isUpdating = true;
-  if (category.id > 0) {
-    $updateData.mutate(category);
-  } else {
-    $createData.mutate(category);
-  }
-}
-
-function new_category() {
-  isError = false;
-  err_msg = "";
-  // timeout = undefined;
-
-  category = {
-    id: 0,
-    name: "",
-  };
-  open = true;
-}
 
 // 	const descriptionMap = [
 // 		"Submitting...",
@@ -312,93 +78,35 @@ function new_category() {
 
 //  let selectedRowIds = [categories.length > 0 ? categories[0].id : 0];
 
-let client_width = 0;
-let timeout: undefined | number = undefined;
-let showNotification = false;
-$: showNotification = timeout !== undefined;
+let client_width = $state(0);
 
 // $: console.log("selectedRowIds", selectedRowIds);
 </script>
 
 <svelte:window bind:innerWidth={client_width} />
 
-<Modal
-  bind:open={open}
-  hasForm
-  preventCloseOnClickOutside
-  modalHeading="Kategori"
-  primaryButtonText="Simpan"
-  primaryButtonIcon={Save}
-  secondaryButtonText="Batal"
-  selectorPrimaryFocus={"#cat-name"}
-  on:click:button--secondary={() => (open = false)}
-  on:click:button--primary={submit}
-  size="xs"
-  primaryButtonDisabled={isUpdating}
->
-  <FluidForm>
-    <TextInput id="cat-name" bind:value={category.name} labelText="Nama" />
-  </FluidForm>
-
-  {#if isUpdating}
-    <InlineLoading
-      status="active"
-      description={category.id === 0 ? "Posting data..." : "Updating data..."}
-    />
-  {/if}
-
-  {#if isError}
-    <InlineLoading description={err_msg} status="error" />
-  {/if}
-</Modal>
-
 <DataTable
-  useStaticWidth={client_width > 640}
-  zebra
-  size="short"
-  headers={headers}
-  rows={categories}
+	useStaticWidth={client_width > 640}
+	zebra
+	size="short"
+	headers={headers}
+	rows={categories}
 >
-  <svelte:fragment slot="cell" let:row let:cell>
-    {#if cell.key === "cmd"}
-      <Button
-        tooltipPosition="left"
-        tooltipAlignment="end"
-        size="small"
-        kind="ghost"
-        iconDescription="Edit"
-        icon={Edit}
-        on:click={() => edit_category(row.id)}
-      />
-      <DeleteCategory categoryId={row.id} deleteData={delete_category} />
-    {:else}
-      {cell.value}
-    {/if}
-  </svelte:fragment>
+	<svelte:fragment slot="cell" let:row let:cell>
+		{@render cellSnippet(cell, row)}
+	</svelte:fragment>
 
-  <Toolbar size="sm">
-    <ToolbarContent>
-      <!-- <ToolbarSearch /> -->
-      <ToolbarMenu>
-        <ToolbarMenuItem primaryFocus>Restart all</ToolbarMenuItem>
-        <ToolbarMenuItem href="https://cloud.ibm.com/docs/loadbalancer-service"
-          >API documentation</ToolbarMenuItem
-        >
-        <ToolbarMenuItem hasDivider danger>Stop all</ToolbarMenuItem>
-      </ToolbarMenu>
-      <Button on:click={new_category} icon={NewTab}>Buat baru</Button>
-    </ToolbarContent>
-  </Toolbar>
+	<Toolbar size="sm">
+		<ToolbarContent>
+			<!-- <ToolbarSearch /> -->
+			<ToolbarMenu>
+				<ToolbarMenuItem primaryFocus>Restart all</ToolbarMenuItem>
+				<ToolbarMenuItem href="https://cloud.ibm.com/docs/loadbalancer-service"
+					>API documentation</ToolbarMenuItem
+				>
+				<ToolbarMenuItem hasDivider danger>Stop all</ToolbarMenuItem>
+			</ToolbarMenu>
+			<Button on:click={() => onNewCategory()} icon={NewTab}>Buat baru</Button>
+		</ToolbarContent>
+	</Toolbar>
 </DataTable>
-
-{#if showNotification}
-  <ToastNotification
-    timeout={timeout}
-    title="Error"
-    subtitle={err_msg}
-    caption={new Date().toLocaleString()}
-    on:close={(_e) => {
-      timeout = undefined;
-    }}
-  />
-{/if}
