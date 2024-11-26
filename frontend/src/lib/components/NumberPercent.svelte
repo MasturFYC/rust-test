@@ -23,8 +23,10 @@ function updateValue(_e: Event) {
 }
 
 onDestroy(() => {
-	ref_input.removeEventListener('input', updateValue);
-	ref_input.removeEventListener('paste', updateValue);
+    if(ref_input) {
+	    ref_input.removeEventListener('input', updateValue);
+	    ref_input.removeEventListener('paste', updateValue);
+    }
 });
 
 $: if (ref_input) {

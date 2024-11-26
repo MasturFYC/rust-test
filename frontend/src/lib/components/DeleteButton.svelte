@@ -4,10 +4,12 @@ import { Delete } from 'carbon-icons-svelte';
 
 let {
 	idData = 0,
+    disabled = false,
 	onDeleteData
 }: {
-	idData: number;
-	onDeleteData: (e: number) => void;
+	idData: number,
+    disabled?: boolean,
+	onDeleteData: (e: number) => void
 } = $props();
 
 let is_deleting = $state(false);
@@ -22,7 +24,7 @@ function delete_data() {
 </script>
 
 <Button
-	disabled={idData === 1}
+	disabled={disabled}
 	skeleton={is_deleting}
 	tooltipAlignment="end"
 	size="small"

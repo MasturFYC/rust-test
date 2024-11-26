@@ -42,35 +42,58 @@ import {
 	TextInput
 } from 'carbon-components-svelte';
 import { Save } from 'carbon-icons-svelte';
-import { createEventDispatcher, onMount } from 'svelte';
 
 // import type { ComboBoxItem } from "carbon-components-svelte/types/ComboBox/ComboBox.svelte";
 import { formatNumber, getNumber, getPercent } from './NumberFormat';
 import InputNumber from './NumberInput.svelte';
 import NumberPercent from './NumberPercent.svelte';
 import type { ComboBoxItem } from 'carbon-components-svelte/src/ComboBox/ComboBox.svelte';
+import { onMount } from 'svelte';
 
-export let innerWidth = 720;
-export let open = false;
-export let data: iProduct;
-export let isError = false;
-export let isUpdating = false;
-export let errorMessage = '';
-export let suppliers: iRelationProp[] = [];
-export let categories: iPropertyID[] = [];
+interface Props {
+    innerWidth: number,
+    open: boolean,
+    data: iProduct,
+    isError: boolean,
+    isUpdating: boolean,
+    errorMessage: string,
+    suppliers: iRelationProp[],
+    categories: iPropertyID[],
+    onSubmit: (e: iProduct) => void,
+    onReset?: () => void
+}
 
-const dispatch = createEventDispatcher();
+let {
+    innerWidth = $bindable(720),
+    open = $bindable(false),
+    isError = $bindable(false),
+    isUpdating = $bindable(false),
+    data = $bindable(),
+    errorMessage = $bindable(''),
+    suppliers = [],
+    categories = [],
+    onSubmit,
+    onReset
+} : Props = $props();
+
 // let cat_id = "" + data.categoryId;
 //   let prop_id = "test: " + cat_id;
 // let category: ComboBoxItem = {
 //      id: cat_id,
 //      text: ""
 //  }
+function toNumber(v: string | number | undefined): number {
+	if (v == undefined || v === null) return 0;
+	if (typeof v === 'string') {
+		return +v;
+	}
+	return v;
+}
 
 function submit() {
 	isUpdating = true;
 	// console.log(data)
-	dispatch('submit', data);
+	onSubmit(data);
 }
 
 function on_hpp_change(_e: CustomEvent<string | number | null>): void {
@@ -119,10 +142,18 @@ function get_suppliers() {
 	return suppliers.map((m) => ({ id: m.id, text: m.text }));
 }
 
-let str_price = formatNumber(data.price);
-let str_hpp = formatNumber(data.hpp);
-let str_percent = formatNumber(data.margin, 4);
-let str_heavy = formatNumber(data.heavy, 2);
+let str_price = $state('0');
+let str_hpp = $state('0');
+let str_percent = $state('0');
+let str_heavy = $state('0.0');
+
+
+$effect.pre(() => {
+    str_price = formatNumber(toNumber(data.price));
+    str_hpp = formatNumber(toNumber(data.hpp));
+    str_percent = formatNumber(toNumber(data.margin), 4);
+    str_heavy = formatNumber(toNumber(data.heavy), 2);
+})
 //	let str_stock = cardNumber(data.unitInStock.toString());
 
 // $:	console.log(str_price, str_hpp, str_percent)
@@ -133,35 +164,47 @@ onMount(() => {
 	isError = false;
 });
 
-$: category_invalid = data.categoryId === 0;
-$: supplier_invalid = data.supplierId === 0;
-$: name_invalid = data.name.trim().length === 0;
-$: barcode_invalid = data.barcode.trim().length < 8;
-$: unit_invalid = data.unit.trim().length === 0;
-$: is_barcode_invalid = data.barcode.trim().length === 0;
+let category_invalid = $derived(data.categoryId === 0);
+let supplier_invalid = $derived(data.supplierId === 0);
+let name_invalid = $derived(data.name.trim().length === 0);
+let barcode_invalid = $derived(data.barcode.trim().length < 8);
+let unit_invalid = $derived(data.unit.trim().length === 0);
+let is_barcode_invalid = $derived(data.barcode.trim().length === 0);
+let price_invalid = $derived(data.price <= data.hpp);
 
-$: data.price = getNumber(str_price);
-$: data.margin = getPercent(str_percent);
-$: data.hpp = getNumber(str_hpp);
-$: data.heavy = getPercent(str_heavy);
+$effect(() => {
+    data.price = getNumber(str_price);
+    data.margin = getPercent(str_percent);
+    data.hpp = getNumber(str_hpp);
+    data.heavy = getPercent(str_heavy);
+});
+
 //	$: data.unitInStock = getNumber(str_stock);
 // $: console.log(getNumber(str_price));
 
-$: price_invalid = data.price <= data.hpp;
+let noGutter = $state(innerWidth > 640);
+let md = $state(innerWidth < 640);
 
-$: noGutter = innerWidth > 640;
-$: md = innerWidth < 640;
-$: isDataValid =
+let isDataValid = $derived(
 	category_invalid ||
 	supplier_invalid ||
 	is_barcode_invalid ||
 	name_invalid ||
 	unit_invalid ||
-	price_invalid;
+	price_invalid);
+
+$effect(() => {
+    noGutter = innerWidth > 640;
+    md = innerWidth < 640;
+})
+
+$inspect(str_price, str_hpp);
+
 </script>
 
 <Modal
 	bind:open={open}
+    on:close={() => { if(onReset) {onReset()}} }
 	hasForm
 	preventCloseOnClickOutside
 	modalHeading={'Data Barang'}
@@ -169,7 +212,11 @@ $: isDataValid =
 	primaryButtonIcon={Save}
 	secondaryButtonText="Batal"
 	selectorPrimaryFocus={'#prod-name'}
-	on:click:button--secondary={() => (open = false)}
+	on:click:button--secondary={() => {
+        if(onReset) {
+            onReset()
+        }
+    }}
 	on:click:button--primary={submit}
 	size="sm"
 	primaryButtonDisabled={isUpdating || isDataValid}

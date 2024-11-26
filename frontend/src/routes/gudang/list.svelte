@@ -14,6 +14,8 @@
 
 <script lang="ts">
 import { type iGudang } from '$lib/interfaces';
+import type { Snippet } from 'svelte';
+
 import {
 	Button,
 	DataTable,
@@ -25,15 +27,17 @@ import {
 import { NewTab } from 'carbon-icons-svelte';
 import type { DataTableHeader } from 'carbon-components-svelte/src/DataTable/DataTable.svelte';
 
+interface Props {
+	gudangs: iGudang[];
+	onNew: (e: iGudang) => void;
+    tools: (id: number) => ReturnType<Snippet>;
+}
+
 let {
 	gudangs = [],
 	onNew,
 	tools
-}: {
-	gudangs: iGudang[];
-	onNew: (e: iGudang) => void;
-	tools: (id: number) => ReturnType<import('svelte').Snippet>;
-} = $props();
+}: Props = $props();
 
 let client_width = $state(0);
 
@@ -57,6 +61,7 @@ let headers: DataTableHeader[] = [
 </script>
 
 <svelte:window bind:innerWidth={client_width} />
+
 <DataTable zebra headers={headers} rows={gudangs}>
 	<svelte:fragment slot="cell" let:row let:cell>
 		{#if cell.key === 'cmd'}

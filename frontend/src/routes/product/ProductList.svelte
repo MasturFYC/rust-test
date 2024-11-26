@@ -16,21 +16,43 @@ import {
 	Button,
 	ComboBox,
 	DataTable,
+	Loading,
 	Toolbar,
 	ToolbarContent,
 	ToolbarSearch
 } from 'carbon-components-svelte';
 import { Edit, NewTab } from 'carbon-icons-svelte';
-import { createEventDispatcher } from 'svelte';
 import ExapandedList from './ExapandedList.svelte';
+import type { DataTableHeader } from 'carbon-components-svelte/src/DataTable/DataTable.svelte';
+import type { Snippet } from 'svelte';
 
-export let data: iProduct[] = [];
-export let innerWidth = 720;
-export let suppliers: iRelationProp[] = [];
-export let categories: iPropertyID[] = [];
+interface Props {
+    data: iProduct[],
+    innerWidth: number,
+    suppliers: iRelationProp[],
+    categories: iPropertyID[],
+    onEdit: (id: number) => void,
+    onSearch: (e: string | undefined) => void,
+    onSupplierChange: (e: number) => void,
+    onCategoryChange: (e: number) => void,
+    deleteTool: (id: number) => ReturnType<Snippet>,
+    isProductLoading?: boolean
+}
 
-const dispatch = createEventDispatcher();
-const headers = [
+let {
+    data = [],
+    innerWidth = $bindable(720),
+    suppliers = [],
+    categories = [],
+    onEdit,
+    onSearch,
+    onSupplierChange,
+    onCategoryChange,
+    deleteTool,
+    isProductLoading
+}: Props = $props();
+
+const headers: DataTableHeader[] = [
 	{ key: 'name', value: 'Nama Barang', width: 'auto' },
 	{ key: 'barcode', value: 'Barcode', width: '100px' },
 	{ key: 'stocks', value: 'Stock', width: '90px' },
@@ -39,7 +61,7 @@ const headers = [
 	{ key: 'price', value: 'Harga', width: '90px' },
 	{ key: 'cmd', value: '', width: '60px' }
 ];
-const headers2 = [
+const headers2: DataTableHeader[] = [
 	{ key: 'name', value: 'Nama Barang', width: 'auto' },
 	{ key: 'stocks', value: 'Stock', width: '90px' },
 	{ key: 'price', value: 'Harga', width: '90px' },
@@ -53,18 +75,19 @@ function get_headers() {
 	return headers;
 }
 
-function edit_product(id: number | undefined) {
-	dispatch('edit', id);
+function edit_product(id: number) {
+	onEdit(id);
 }
 
-let txt = '';
+let txt = $state('');
 
 function submit_search(e: Event): void {
-	dispatch('search', txt);
+    e.preventDefault();
+	onSearch(txt);
 }
 
-function search_clear(e: any): void {
-	dispatch('search', undefined);
+function search_clear(): void {
+	onSearch(undefined);
 }
 
 // function get_suppliers() {
@@ -78,8 +101,8 @@ const defaultStock = (stocks: iProductStock[]) => {
 	return 0;
 };
 
-let sup_light = false;
-let cat_light = false;
+let sup_light = $state(false);
+let cat_light = $state(false);
 // $: 	console.log(suppliers)
 </script>
 
@@ -93,7 +116,9 @@ let cat_light = false;
 	</svelte:fragment>
 
 	<svelte:fragment slot="cell" let:row let:cell>
-		{#if cell.key === 'cmd'}
+        {#if isProductLoading}  <Loading withOverlay={false} /> {:else}
+
+        {#if cell.key === 'cmd'}
 			<Button
 				tooltipPosition="left"
 				tooltipAlignment="end"
@@ -118,9 +143,10 @@ let cat_light = false;
 		{:else}
 			{cell.value}
 		{/if}
+    {/if}
 	</svelte:fragment>
 	<svelte:fragment slot="expanded-row" let:row>
-		<ExapandedList row={row} bind:innerWidth={innerWidth} on:deleteData />
+		<ExapandedList row={row} bind:innerWidth={innerWidth} {deleteTool} />
 	</svelte:fragment>
 
 	<Toolbar size="sm">
@@ -135,12 +161,12 @@ let cat_light = false;
 				placeholder="filter by category"
 				items={categories}
 				on:select={(e) => {
-					dispatch('categoryChange', e.detail.selectedId);
+					onCategoryChange(e.detail.selectedId);
 					cat_light = true;
 				}}
 				on:clear={() => {
 					cat_light = false;
-					dispatch('categoryChange', 0);
+					onCategoryChange(0);
 				}}
 			/>
 			<ComboBox
@@ -152,11 +178,11 @@ let cat_light = false;
 				placeholder="filter by supplier"
 				items={suppliers.map((m) => ({ id: m.id, text: m.text }))}
 				on:select={(e) => {
-					dispatch('supplierChange', e.detail.selectedId);
+					onSupplierChange(e.detail.selectedId);
 					sup_light = true;
 				}}
 				on:clear={() => {
-					dispatch('supplierChange', undefined);
+					onSupplierChange(0);
 					sup_light = false;
 				}}
 			/>
@@ -167,7 +193,7 @@ let cat_light = false;
 				>
 				<ToolbarMenuItem hasDivider danger>Stop all</ToolbarMenuItem>
 			</ToolbarMenu> -->
-			<Button on:click={() => edit_product(undefined)} icon={NewTab}>Buat baru</Button>
+			<Button on:click={() => edit_product(0)} icon={NewTab}>Buat baru</Button>
 		</ToolbarContent>
 	</Toolbar>
 </DataTable>

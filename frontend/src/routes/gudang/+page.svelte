@@ -14,7 +14,7 @@ import { IbmDb2Warehouse as Warehouse } from 'carbon-icons-svelte';
 import { useMutation, useQueryClient } from '@sveltestack/svelte-query';
 import FormGudang from './form.svelte';
 import { Button, ToastNotification } from 'carbon-components-svelte';
-import DeleteGudang from './DeleteGudang.svelte';
+import DeleteGudang from '$lib/components/DeleteButton.svelte';
 import { Edit } from 'carbon-icons-svelte';
 
 type iResult = {
@@ -27,28 +27,21 @@ const title = 'Gudang';
 const client = useQueryClient();
 const url = `${baseURL}/gudangs`;
 const qaKey = ['gudang', 'list'];
-
-let open = false;
-let isError = false;
-let gudang: iGudang = {
+const initGudang: iGudang = {
 	id: 0,
 	name: '',
 	employeeId: 0,
 	employeeName: '',
 	locate: ''
-};
-let timeout: undefined | number = undefined;
-let showNotification = false;
-let isUpdating = false;
-let errorMessage = '';
+}
 
-/*
-const initResult: iResult = {
-  count: 0,
-  data: [],
-  status: "page Loading",
-};
-*/
+let open = $state(false);
+let isError = $state(false);
+let gudang: iGudang = $state(initGudang);
+let timeout: undefined | number = $state(undefined);
+let isUpdating = $state(false);
+let errorMessage = $state('');
+let showNotification = $derived(timeout !== undefined);
 
 const fetchUpdateData = async (e: iGudang): Promise<iGudang> => {
 	const url = `${baseURL}/gudangs/${e.id}`;
@@ -215,9 +208,9 @@ const deleteData = useMutation(fetchDeleteData, {
 			client.setQueryData<iResult>(qaKey, context.previousGudang);
 		}
 	},
-	onSettled: async (data: any, _error: any, _variables: number, _context: iResult | undefined) => {
+
+    onSettled: async (data: any, _error: any, _variables: number, _context: iResult | undefined) => {
 		if (data.status === 'fail') {
-			showNotification = true;
 			errorMessage = data.message;
 			timeout = 3_000;
 		}
@@ -236,7 +229,7 @@ async function fetchGudangs(): Promise<iResult> {
 	};
 
 	const request = new Request(url, options);
-	let result = await fetch(request);
+	const result = await fetch(request);
 
 	return (await result.json()) as iResult;
 }
@@ -252,9 +245,6 @@ const employeeQueryOptions = () => ({
 	queryFn: async () => await getRelationProp(['Employee']),
 	enabled: browser
 });
-
-const query = useQuery<iResult, Error>(gudangQueryOptions());
-const employeeQuery = useQuery(employeeQueryOptions());
 
 function showErrorMessage() {
 	if ($query.error instanceof Error) {
@@ -291,7 +281,7 @@ function editGudang(e: number) {
 	// timeout = undefined
 
 	if ($query.data) {
-		let test = $query.data.data.filter((f) => f.id === e);
+		let test = gudangs.filter((f) => f.id === e);
 		if (test.length > 0) {
 			gudang = { ...test[0] };
 			open = true;
@@ -299,11 +289,30 @@ function editGudang(e: number) {
 	}
 }
 
-$: showNotification = timeout !== undefined;
-$: {
+const query = useQuery<iResult, Error>(gudangQueryOptions());
+const employeeQuery = useQuery(employeeQueryOptions());
+
+let gudangs = $derived.by(() => {
+    if ($query.isSuccess && $query.data) {
+        return $query.data.data;
+    }
+    return [];
+})
+
+let employees = $derived.by(() => {
+    if($employeeQuery.isSuccess && $employeeQuery.data) {
+        return $employeeQuery.data.data;
+    }
+    return [];
+})
+
+let countOfGudangs = $derived(gudangs.length);
+
+$effect.pre(() => {
 	employeeQuery.setEnabled(browser);
 	query.setEnabled(browser);
-}
+});
+
 </script>
 
 {#snippet tools(id: number)}
@@ -316,7 +325,7 @@ $: {
 		icon={Edit}
 		on:click={() => editGudang(id)}
 	/>
-	<DeleteGudang idData={id} onDeleteData={deleteGudang} />
+	<DeleteGudang idData={id} onDeleteData={deleteGudang} disabled={id===1} />
 {/snippet}
 
 <svelte:head>
@@ -330,10 +339,10 @@ $: {
 	<p>Loading...</p>
 {:else if $query.isError}
 	<p>Error: {showErrorMessage()}</p>
-{:else if $query.isSuccess}
-	<ListCategory tools={tools} gudangs={$query.data.data} onNew={newGudang} />
-	<p>Total: {$query.data.count} item{$query.data.count > 1 ? 's' : ''}</p>
 {/if}
+
+<ListCategory tools={tools} {gudangs} onNew={newGudang} />
+<p>Total: {countOfGudangs} item{countOfGudangs > 1 ? 's' : ''}</p>
 
 {#if showNotification}
 	<ToastNotification
@@ -354,5 +363,5 @@ $: {
 	isUpdating={isUpdating}
 	isError={isError}
 	errorMessage={errorMessage}
-	employees={$employeeQuery.data?.data}
+	employees={employees}
 />

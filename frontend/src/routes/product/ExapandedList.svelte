@@ -7,12 +7,18 @@
 <script lang="ts">
 import { formatNumber } from '$lib/components/NumberFormat';
 import { Column, Grid, Row } from 'carbon-components-svelte';
-import DeleteProduct from './DeleteProduct.svelte';
 import Stocks from './stock.svelte';
 import type { DataTableRow } from 'carbon-components-svelte/src/DataTable/DataTable.svelte';
+import type {Snippet} from 'svelte';
 
-export let row: DataTableRow;
-export let innerWidth = 720;
+interface Props {
+    row: DataTableRow,
+    innerWidth: number,
+     deleteTool: (id: number) => ReturnType<Snippet>
+}
+
+let { row, innerWidth = $bindable(720), deleteTool }: Props = $props();
+
 </script>
 
 <Grid noGutter>
@@ -45,7 +51,7 @@ Deskripsi:  {row['descriptions']}</pre></code
 			</code>
 		</Column>
 		<Column>
-			<DeleteProduct productId={row.id} on:deleteData />
+            {@render deleteTool(row.id)}
 		</Column>
 	</Row>
 </Grid>
