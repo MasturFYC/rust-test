@@ -10,7 +10,11 @@ export default defineConfig({
 		watch: { usePolling: true }
 	},
 	optimizeDeps: {
-		exclude: ['carbon-components-svelte', 'carbon-icons-svelte', 'carbon-pictograms-svelte']
+		exclude: [
+			'carbon-components-svelte',
+			'carbon-icons-svelte',
+			'carbon-pictograms-svelte'
+		]
 	},
 	css: {
 		preprocessorOptions: {

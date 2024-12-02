@@ -1,18 +1,20 @@
 <script lang="ts">
-import { Button } from 'carbon-components-svelte';
-import { Delete } from 'carbon-icons-svelte';
+	import { Button } from 'carbon-components-svelte';
+	import { Delete } from 'carbon-icons-svelte';
 
-let { categoryId, onDeleteData }: { categoryId: number; onDeleteData: (e: number) => void } =
-	$props();
-let is_deleting = $state(false);
+	let {
+		categoryId,
+		onDeleteData
+	}: { categoryId: number; onDeleteData: (e: number) => void } = $props();
+	let is_deleting = $state(false);
 
-function delete_data(e: number) {
-	is_deleting = true;
-	setTimeout(() => {
-		onDeleteData(e);
-		// is_deleting = false;
-	}, 250);
-}
+	function delete_data(e: number) {
+		is_deleting = true;
+		setTimeout(() => {
+			onDeleteData(e);
+			// is_deleting = false;
+		}, 250);
+	}
 </script>
 
 <Button

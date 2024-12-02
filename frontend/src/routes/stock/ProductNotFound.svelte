@@ -1,34 +1,34 @@
 <script lang="ts">
-import { browser } from '$app/environment';
-import { formatNumber } from '$lib/components/NumberFormat';
-import { baseURL, credential_include, type iProduct } from '$lib/interfaces';
-import { useQuery } from '@sveltestack/svelte-query';
-import { CodeSnippet, Loading, Tag } from 'carbon-components-svelte';
+	import { browser } from '$app/environment';
+	import { formatNumber } from '$lib/components/NumberFormat';
+	import { baseURL, credential_include, type iProduct } from '$lib/interfaces';
+	import { useQuery } from '@sveltestack/svelte-query';
+	import { CodeSnippet, Loading, Tag } from 'carbon-components-svelte';
 
-export let productName = '';
-async function fetchProductName(name: string) {
-	const url = `${baseURL}/products/names/list?txt=${name}&limit=5`;
-	const options = {
-		method: 'GET',
-		credentials: credential_include
-	};
-	const request = new Request(url, options);
-	const result = await fetch(request);
+	export let productName = '';
+	async function fetchProductName(name: string) {
+		const url = `${baseURL}/products/names/list?txt=${name}&limit=5`;
+		const options = {
+			method: 'GET',
+			credentials: credential_include
+		};
+		const request = new Request(url, options);
+		const result = await fetch(request);
 
-	console.log(result);
+		console.log(result);
 
-	return await result.json();
-}
+		return await result.json();
+	}
 
-let query = useQuery<{ status: string; data: iProduct[] }, Error>(
-	['productList', productName],
-	async () => await fetchProductName(productName),
-	{ enabled: browser }
-);
+	let query = useQuery<{ status: string; data: iProduct[] }, Error>(
+		['productList', productName],
+		async () => await fetchProductName(productName),
+		{ enabled: browser }
+	);
 
-$: {
-	query.setEnabled(browser);
-}
+	$: {
+		query.setEnabled(browser);
+	}
 </script>
 
 {#if $query.isLoading}

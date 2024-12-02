@@ -1,77 +1,79 @@
 <style lang="css">
-.divider {
-	margin-top: 6px;
-	/* // border-top: 1px solid;
+	.divider {
+		margin-top: 6px;
+		/* // border-top: 1px solid;
     // border-color: #999; */
-}
-:global(#rel-mod .bx--modal-container.bx--modal-container--sm) {
-	max-height: 100%;
-	/* height: 640px; */
-}
+	}
+	:global(#rel-mod .bx--modal-container.bx--modal-container--sm) {
+		max-height: 100%;
+		/* height: 640px; */
+	}
 </style>
 
 <script lang="ts">
-import type { iRelation, RelationTypeWIthID } from '$lib/interfaces';
-import {
-	Checkbox,
-	Column,
-	FluidForm,
-	// FluidForm,
-	Grid,
-	InlineLoading,
-	Modal,
-	Row,
-	TextInput
-} from 'carbon-components-svelte';
-import { Save } from 'carbon-icons-svelte';
+	import type { iRelation, RelationTypeWIthID } from '$lib/interfaces';
+	import {
+		Checkbox,
+		Column,
+		FluidForm,
+		// FluidForm,
+		Grid,
+		InlineLoading,
+		Modal,
+		Row,
+		TextInput
+	} from 'carbon-components-svelte';
+	import { Save } from 'carbon-icons-svelte';
 
-let {
-	open = $bindable(false),
-	initdata,
-	isError = false,
-	isUpdating = false,
-	errorMessage = '',
-	relationTypes = [],
-	saveRelation
-}: {
-	open: boolean;
-	initdata: iRelation;
-	isError?: boolean;
-	isUpdating?: boolean;
-	errorMessage: string;
-	relationTypes: RelationTypeWIthID[] | undefined;
-	saveRelation: (data: iRelation) => void;
-} = $props();
+	let {
+		open = $bindable(false),
+		initdata,
+		isError = false,
+		isUpdating = false,
+		errorMessage = '',
+		relationTypes = [],
+		saveRelation
+	}: {
+		open: boolean;
+		initdata: iRelation;
+		isError?: boolean;
+		isUpdating?: boolean;
+		errorMessage: string;
+		relationTypes: RelationTypeWIthID[] | undefined;
+		saveRelation: (data: iRelation) => void;
+	} = $props();
 
-let data = $state(initdata);
-let isMember = $derived(data.relationType.filter((f) => f === 'Customer').length > 0);
+	let data = $state(initdata);
+	let isMember = $derived(
+		data.relationType.filter((f) => f === 'Customer').length > 0
+	);
 
-function save(e: CustomEvent<null>) {
-	isUpdating = true;
-	e.preventDefault();
-	e.stopPropagation();
+	function save(e: CustomEvent<null>) {
+		isUpdating = true;
+		e.preventDefault();
+		e.stopPropagation();
 
-	// if (x === 2) return false;
+		// if (x === 2) return false;
 
-	const newData = {
-		...data,
-		relationType: [...data.relationType],
-		region: isMember ? data.region : undefined,
-		isSpecial: isMember ? data.isSpecial : false
-	};
+		const newData = {
+			...data,
+			relationType: [...data.relationType],
+			region: isMember ? data.region : undefined,
+			isSpecial: isMember ? data.isSpecial : false
+		};
 
-	saveRelation(newData);
-	// return true;
-}
+		saveRelation(newData);
+		// return true;
+	}
 
-let isDataValid = $derived(
-	data.name.trim().length > 0 &&
-		data.city.trim().length > 0 &&
-		data.relationType.length > 0 &&
-		(isMember ? data.region?.trim().length !== 0 : true)
-);
-// $: console.log(relationTypes
-// $inspect(data);
+	let isDataValid = $derived(
+		data.name.trim().length > 0 &&
+			data.city.trim().length > 0 &&
+			data.relationType.length > 0 &&
+			(isMember ? data.region?.trim().length !== 0 : true)
+	);
+	// $: console.log(relationTypes
+	// $inspect(data);
 </script>
 
 <Modal
@@ -102,7 +104,12 @@ let isDataValid = $derived(
 			labelText="Alamat"
 			placeholder="e.g. Jl. Graha Sudirman Blok Acasia-4 No. 11 Kel. Lemahmekar"
 		/>
-		<TextInput bind:value={data.city} labelText="Kota" placeholder="Indramayu" size="sm" />
+		<TextInput
+			bind:value={data.city}
+			labelText="Kota"
+			placeholder="Indramayu"
+			size="sm"
+		/>
 		<TextInput
 			bind:value={data.phone}
 			labelText="Telepon/mobile"
@@ -147,7 +154,11 @@ let isDataValid = $derived(
 		<Grid>
 			<Row noGutter>
 				<Column>
-					<Checkbox labelText="? Khusus" bind:checked={data.isSpecial} disabled={!isMember} />
+					<Checkbox
+						labelText="? Khusus"
+						bind:checked={data.isSpecial}
+						disabled={!isMember}
+					/>
 				</Column>
 				<Column>
 					<Checkbox labelText="? Aktif" bind:checked={data.isActive} />

@@ -1,14 +1,14 @@
 <script lang="ts">
-import { formatNumber } from '$lib/components/NumberFormat';
-import type { iStock } from '$lib/interfaces';
-import { Grid, Row, Column } from 'carbon-components-svelte';
-import dayjs from 'dayjs';
-import { createEventDispatcher } from 'svelte';
-import LabelProperty from '$lib/components/LabelProperty.svelte';
+	import { formatNumber } from '$lib/components/NumberFormat';
+	import type { iStock } from '$lib/interfaces';
+	import { Grid, Row, Column } from 'carbon-components-svelte';
+	import dayjs from 'dayjs';
+	import { createEventDispatcher } from 'svelte';
+	import LabelProperty from '$lib/components/LabelProperty.svelte';
 
-const dispatch = createEventDispatcher();
+	const dispatch = createEventDispatcher();
 
-export let data: iStock;
+	export let data: iStock;
 </script>
 
 <!-- <Button icon={Close} size="small" on:click={() => dispatch("closeInfo", null)}
@@ -33,7 +33,9 @@ export let data: iStock;
 			</LabelProperty>
 			<LabelProperty sm>
 				<svelte:fragment slot="label">Jatuh tempo</svelte:fragment>
-				<svelte:fragment slot="value">{dayjs(data.dueAt).format('DD MMMM YYYY')}</svelte:fragment>
+				<svelte:fragment slot="value"
+					>{dayjs(data.dueAt).format('DD MMMM YYYY')}</svelte:fragment
+				>
 			</LabelProperty>
 			<LabelProperty sm>
 				<svelte:fragment slot="label">Supplier</svelte:fragment>
@@ -47,7 +49,9 @@ export let data: iStock;
 			</LabelProperty>
 			<LabelProperty right sm>
 				<svelte:fragment slot="label">Total</svelte:fragment>
-				<svelte:fragment slot="value">{formatNumber(data.total)}</svelte:fragment>
+				<svelte:fragment slot="value"
+					>{formatNumber(data.total)}</svelte:fragment
+				>
 			</LabelProperty>
 			<LabelProperty right sm>
 				<svelte:fragment slot="label">Cash / DP</svelte:fragment>
@@ -55,11 +59,15 @@ export let data: iStock;
 			</LabelProperty>
 			<LabelProperty right sm>
 				<svelte:fragment slot="label">Angsuran</svelte:fragment>
-				<svelte:fragment slot="value">{formatNumber(data.payment)}</svelte:fragment>
+				<svelte:fragment slot="value"
+					>{formatNumber(data.payment)}</svelte:fragment
+				>
 			</LabelProperty>
 			<LabelProperty sm right>
 				<svelte:fragment slot="label">Sisa bayar</svelte:fragment>
-				<svelte:fragment slot="value">{formatNumber(data.remain)}</svelte:fragment>
+				<svelte:fragment slot="value"
+					>{formatNumber(data.remain)}</svelte:fragment
+				>
 			</LabelProperty>
 		</Column>
 	</Row>

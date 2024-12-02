@@ -17,7 +17,9 @@ const searchendpoint = '/trx/find';
 
 async function fetchFindTrxs(txt: string, m: number, y: number) {
 	if (!txt) return [];
-	const { data } = await axios.get<iTrx[]>(`${searchendpoint}/${txt}/${m}/${y}`);
+	const { data } = await axios.get<iTrx[]>(
+		`${searchendpoint}/${txt}/${m}/${y}`
+	);
 	return data;
 }
 

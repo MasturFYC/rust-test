@@ -1,5 +1,8 @@
+@charset "utf-8";
+
 h2 {
-	margin-bottom: 12px;
+	margin-bottom: 16px;
+	font-weight: 400;
 }
 
 table.bx--data-table th:nth-child(3),

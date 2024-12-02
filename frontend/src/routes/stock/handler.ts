@@ -1,4 +1,9 @@
-import { baseURL, credential_include, type iStock, type iStockDetail } from '$lib/interfaces';
+import {
+	baseURL,
+	credential_include,
+	type iStock,
+	type iStockDetail
+} from '$lib/interfaces';
 export async function getStockById(
 	id: number,
 	defaultValue?: { stock: iStock; details: iStockDetail[] }
@@ -117,7 +122,9 @@ export async function postUpdateOnlyStock(
 	return result;
 }
 
-export async function postDeleteStock(ids: number[]): Promise<{ status: string; data: number }> {
+export async function postDeleteStock(
+	ids: number[]
+): Promise<{ status: string; data: number }> {
 	// console.log(id, stock,details);
 	const url = `${baseURL}/stocks`;
 	const json = JSON.stringify(ids);

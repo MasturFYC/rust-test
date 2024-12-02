@@ -7,10 +7,14 @@ let persistedRefreshToken = browser && localStorage.getItem('refresh_token');
 let persistedAccess = browser && sessionStorage.getItem('access_token');
 
 export const currentUser = writable<string>(persistedUser ? persistedUser : '');
-export const currentRole = writable<string[]>(persistedRole ? persistedRole.split(',') : []);
+export const currentRole = writable<string[]>(
+	persistedRole ? persistedRole.split(',') : []
+);
 export const isLogginIn = writable(false);
 export const accessToken = writable(persistedAccess ? persistedAccess : '');
-export const refreshToken = writable(persistedRefreshToken ? persistedRefreshToken : '');
+export const refreshToken = writable(
+	persistedRefreshToken ? persistedRefreshToken : ''
+);
 export const tokenType = writable('');
 
 if (browser) {

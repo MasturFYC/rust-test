@@ -1,305 +1,361 @@
 <script lang="ts">
-import { browser } from '$app/environment';
-import { formatNumber } from '$lib/components/NumberFormat';
-import { getBarcodes, getRelationProp } from '$lib/fetchers';
-import {
-	baseURL,
-	credential_include,
-	type iCurrentUser,
-	type iGudang,
-	type iStock,
-	type iStockDetail
-} from '$lib/interfaces';
-import { SendToBack } from 'carbon-icons-svelte';
-import { numberToText } from '$lib/number-to-string';
-import { useQuery, useQueryClient } from '@sveltestack/svelte-query';
-import {
-	Column,
-	Grid,
-	Loading,
-	LocalStorage,
-	Pagination,
-	Row,
-	ToastNotification
-} from 'carbon-components-svelte';
-import dayjs from 'dayjs';
-import { onDestroy, tick } from 'svelte';
-import FormStock from './FormStock.svelte';
-import FormStockPayment from './FormStockPayment.svelte';
-import ProductNotFound from './ProductNotFound.svelte';
-import StockDetail from './StockDetail.svelte';
-import StockList from './StockList.svelte';
-import {
-	getStockById,
-	getStocks,
-	postCreateStock,
-	postDeleteStock,
-	postUpdateOnlyStock,
-	postUpdateStock
-} from './handler';
-import { details, initStock, isStockLoading, isStockUpdating, stock } from './store';
+	import { browser } from '$app/environment';
+	import { formatNumber } from '$lib/components/NumberFormat';
+	import { getBarcodes, getRelationProp } from '$lib/fetchers';
+	import {
+		baseURL,
+		credential_include,
+		type iCurrentUser,
+		type iGudang,
+		type iStock,
+		type iStockDetail
+	} from '$lib/interfaces';
+	import { SendToBack } from 'carbon-icons-svelte';
+	import { numberToText } from '$lib/number-to-string';
+	import { useQuery, useQueryClient } from '@sveltestack/svelte-query';
+	import {
+		Column,
+		Grid,
+		Loading,
+		LocalStorage,
+		Pagination,
+		Row,
+		ToastNotification
+	} from 'carbon-components-svelte';
+	import dayjs from 'dayjs';
+	import { onDestroy, tick } from 'svelte';
+	import FormStock from './FormStock.svelte';
+	import FormStockPayment from './FormStockPayment.svelte';
+	import ProductNotFound from './ProductNotFound.svelte';
+	import StockDetail from './StockDetail.svelte';
+	import StockList from './StockList.svelte';
+	import {
+		getStockById,
+		getStocks,
+		postCreateStock,
+		postDeleteStock,
+		postUpdateOnlyStock,
+		postUpdateStock
+	} from './handler';
+	import {
+		details,
+		initStock,
+		isStockLoading,
+		isStockUpdating,
+		stock
+	} from './store';
 
-const title = 'Stock';
-const client = useQueryClient();
+	const title = 'Stock';
+	const client = useQueryClient();
 
-let txt = '';
-let page = 1;
-let limit = 5;
-let supplierId = 0;
-let warehouseId = 0;
-let opt = 0;
-let stockId = 0;
-let open = false;
-const qKey = 'stocks';
-let innerWidth = 0;
-let timeout: number | undefined = undefined;
+	let txt = '';
+	let page = 1;
+	let limit = 5;
+	let supplierId = 0;
+	let warehouseId = 0;
+	let opt = 0;
+	let stockId = 0;
+	let open = false;
+	const qKey = 'stocks';
+	let innerWidth = 0;
+	let timeout: number | undefined = undefined;
 
-let isEdit = false;
+	let isEdit = false;
 
-let profile: iCurrentUser = {
-	id: '',
-	name: '',
-	email: '',
-	photo: '',
-	role: '',
-	verified: false,
-	updatedAt: '',
-	createdAt: ''
-};
-
-function onProductNotFound(e: CustomEvent<string>) {
-	showNotification = false;
-	setTimeout(() => {
-		showNotification = true;
-	}, 250);
-	txt = e.detail;
-	timeout = 6_000;
-}
-
-const supplierQuery = useQuery(
-	['relation', 'supplier'],
-	async () => await getRelationProp(['Supplier']),
-	{
-		enabled: browser
-	}
-);
-
-const employeeQuery = useQuery(
-	['relation', 'employee'],
-	async () => await getRelationProp(['Employee']),
-	{
-		enabled: browser
-	}
-);
-
-type iGudangResult = {
-	count: number;
-	data: iGudang[];
-	status: string;
-};
-
-const fetchGudangs = async (): Promise<iGudangResult> => {
-	const url = `${baseURL}/gudangs`;
-	const options = {
-		headers: {
-			'content-type': 'application/json'
-		},
-		method: 'GET',
-		credentials: credential_include
+	let profile: iCurrentUser = {
+		id: '',
+		name: '',
+		email: '',
+		photo: '',
+		role: '',
+		verified: false,
+		updatedAt: '',
+		createdAt: ''
 	};
-	const request = new Request(url, options);
-	let result = await fetch(request);
 
-	return (await result.json()) as iGudangResult;
-};
-
-const queryGudangOptions = () => ({
-	queryKey: ['gudang', 'list'],
-	queryFn: async () => await fetchGudangs(),
-	enabled: browser
-});
-
-const gudangQuery = useQuery<iGudangResult, Error>(queryGudangOptions());
-
-const queryBarcode = useQuery('barcodes', async () => await getBarcodes(), {
-	enabled: browser
-});
-
-export const prefetchNextPage = (data: {
-	status: string;
-	stocks: iStock[];
-	totalItems: number;
-	totalPages: number;
-	count: number;
-	currentPage: number;
-}) => {
-	if (data.currentPage < data.totalPages) {
-		client.prefetchQuery(
-			[qKey, opt, data.currentPage + 1, limit, supplierId, warehouseId, txt],
-			() => getStocks(opt, data.currentPage + 1, limit, supplierId, warehouseId, txt)
-		);
-	}
-};
-
-const queryStock = useQuery({
-	queryKey: [qKey, { id: stockId }],
-	queryFn: async () => getStockById(stockId),
-	enabled: false
-});
-
-const queryStocks = useQuery({
-	queryKey: [qKey, opt, page, limit, supplierId, warehouseId, txt],
-	queryFn: async () => await getStocks(opt, page, limit, supplierId, warehouseId, txt),
-	enabled: browser,
-	onSuccess: prefetchNextPage,
-	keepPreviousData: true
-});
-
-function setQueryOption(p: number, l: number, o: number, s: number, w: number, t: string) {
-	queryStocks.setOptions({
-		queryKey: [qKey, o, p, l, s, w, t],
-		keepPreviousData: true,
-		enabled: browser,
-		queryFn: async () => await getStocks(opt, page, limit, supplierId, warehouseId, txt),
-		onSuccess: prefetchNextPage
-	});
-
-	// console.log([qKey, p, l, o, t, r]);
-	// console.log(q_key);
-}
-
-function stockClose(e: CustomEvent<any>): void {
-	changeStockSession(0, false);
-}
-
-function createNewStock(_e: CustomEvent<number>): void {
-	isEdit = false;
-	changeStockSession(0, true);
-}
-
-function editStock(e: CustomEvent<number>) {
-	changeStockSession(e.detail, true);
-}
-
-async function changeStockSession(id: number, mode: boolean) {
-	stockId = id;
-	await tick();
-	queryStock.setOptions({
-		queryKey: [qKey, { id: stockId }],
-		queryFn: async () => getStockById(stockId, { stock: { ...initStock }, details: [] }),
-		enabled: true
-	});
-
-	// setTimeout(() => {
-	isStockLoading.update((o) => (o = false));
-	// }, 250);
-	isEdit = mode;
-}
-async function updateOnlyStock() {
-	const x = dayjs($stock.createdAt);
-	const y = dayjs($stock.dueAt);
-	const duration = y.diff(x, 'days');
-
-	const savedStock: iStock = {
-		...$stock,
-		updatedBy: profile.name,
-		dueRange: duration
-	};
-	delete savedStock.isDetailChanged;
-	delete savedStock.isModified;
-	delete savedStock.isPayed;
-
-	// console.log(savedStock);
-
-	const result = await postUpdateOnlyStock(stockId, savedStock);
-	if (result) {
-		await client.invalidateQueries([qKey, { id: stockId }]);
-		await client.invalidateQueries([qKey, opt, page, limit, supplierId, warehouseId, txt]);
-		isStockUpdating.update((o) => (o = false));
-		isEdit = false;
+	function onProductNotFound(e: CustomEvent<string>) {
+		showNotification = false;
+		setTimeout(() => {
+			showNotification = true;
+		}, 250);
+		txt = e.detail;
+		timeout = 6_000;
 	}
 
-	changeStockSession(0, false);
-}
-
-async function saveStock(e: CustomEvent<iStockDetail[]>) {
-	if ($stock.isDetailChanged) {
-		// console.log("UDPATE-WITH-DETAILS");
-		if (e.detail.length > 0) {
-			const x = dayjs($stock.createdAt);
-			const y = dayjs($stock.dueAt);
-			const duration = y.diff(x, 'days');
-
-			const savedStock: iStock = {
-				...$stock,
-				paymentType: 'Cash',
-				updatedBy: profile.name,
-				dueRange: duration
-			};
-			delete savedStock.isDetailChanged;
-			delete savedStock.isModified;
-			delete savedStock.isPayed;
-
-			// console.log(savedStock);
-
-			if ($stock.id === 0) {
-				const result = await postCreateStock(savedStock, e.detail);
-				if (result) {
-					await client.invalidateQueries([qKey, { id: stockId }]);
-					await client.invalidateQueries([qKey, opt, page, limit, supplierId, warehouseId, txt]);
-					// setTimeout(() => {
-					isStockUpdating.update((o) => (o = false));
-					isEdit = false;
-					// }, 250);
-				}
-			} else {
-				//					console.log(e.detail);
-				const result = await postUpdateStock(stockId, savedStock, e.detail);
-				if (result) {
-					await client.invalidateQueries([qKey, { id: stockId }]);
-					await client.invalidateQueries([qKey, opt, page, limit, supplierId, warehouseId, txt]);
-					// setTimeout(() => {
-					isStockUpdating.update((o) => (o = false));
-					isEdit = false;
-					// }, 250);
-				}
-			}
-			changeStockSession(0, false);
+	const supplierQuery = useQuery(
+		['relation', 'supplier'],
+		async () => await getRelationProp(['Supplier']),
+		{
+			enabled: browser
 		}
-	} else {
-		// console.log("UDPATE-ONLY-STOCK");
-		updateOnlyStock();
+	);
+
+	const employeeQuery = useQuery(
+		['relation', 'employee'],
+		async () => await getRelationProp(['Employee']),
+		{
+			enabled: browser
+		}
+	);
+
+	type iGudangResult = {
+		count: number;
+		data: iGudang[];
+		status: string;
+	};
+
+	const fetchGudangs = async (): Promise<iGudangResult> => {
+		const url = `${baseURL}/gudangs`;
+		const options = {
+			headers: {
+				'content-type': 'application/json'
+			},
+			method: 'GET',
+			credentials: credential_include
+		};
+		const request = new Request(url, options);
+		let result = await fetch(request);
+
+		return (await result.json()) as iGudangResult;
+	};
+
+	const queryGudangOptions = () => ({
+		queryKey: ['gudang', 'list'],
+		queryFn: async () => await fetchGudangs(),
+		enabled: browser
+	});
+
+	const gudangQuery = useQuery<iGudangResult, Error>(queryGudangOptions());
+
+	const queryBarcode = useQuery('barcodes', async () => await getBarcodes(), {
+		enabled: browser
+	});
+
+	export const prefetchNextPage = (data: {
+		status: string;
+		stocks: iStock[];
+		totalItems: number;
+		totalPages: number;
+		count: number;
+		currentPage: number;
+	}) => {
+		if (data.currentPage < data.totalPages) {
+			client.prefetchQuery(
+				[qKey, opt, data.currentPage + 1, limit, supplierId, warehouseId, txt],
+				() =>
+					getStocks(
+						opt,
+						data.currentPage + 1,
+						limit,
+						supplierId,
+						warehouseId,
+						txt
+					)
+			);
+		}
+	};
+
+	const queryStock = useQuery({
+		queryKey: [qKey, { id: stockId }],
+		queryFn: async () => getStockById(stockId),
+		enabled: false
+	});
+
+	const queryStocks = useQuery({
+		queryKey: [qKey, opt, page, limit, supplierId, warehouseId, txt],
+		queryFn: async () =>
+			await getStocks(opt, page, limit, supplierId, warehouseId, txt),
+		enabled: browser,
+		onSuccess: prefetchNextPage,
+		keepPreviousData: true
+	});
+
+	function setQueryOption(
+		p: number,
+		l: number,
+		o: number,
+		s: number,
+		w: number,
+		t: string
+	) {
+		queryStocks.setOptions({
+			queryKey: [qKey, o, p, l, s, w, t],
+			keepPreviousData: true,
+			enabled: browser,
+			queryFn: async () =>
+				await getStocks(opt, page, limit, supplierId, warehouseId, txt),
+			onSuccess: prefetchNextPage
+		});
+
+		// console.log([qKey, p, l, o, t, r]);
+		// console.log(q_key);
 	}
-}
 
-async function deleteStocks(e: CustomEvent<number[]>) {
-	let log = await postDeleteStock(e.detail);
-	if (log && log.data > 0) {
-		client.invalidateQueries([qKey, opt, page, limit, supplierId, warehouseId, txt]);
+	function stockClose(e: CustomEvent<any>): void {
+		changeStockSession(0, false);
 	}
 
-	setTimeout(() => {
-		isStockUpdating.set(false);
-	}, 250);
-	// console.log(log);
-}
+	function createNewStock(_e: CustomEvent<number>): void {
+		isEdit = false;
+		changeStockSession(0, true);
+	}
 
-const unsubscribe = queryStock.subscribe((o) => {
-	stock.set(o.data?.stock ?? { ...initStock });
-	details.set(o.data?.details ?? []);
-});
+	function editStock(e: CustomEvent<number>) {
+		changeStockSession(e.detail, true);
+	}
 
-onDestroy(unsubscribe);
+	async function changeStockSession(id: number, mode: boolean) {
+		stockId = id;
+		await tick();
+		queryStock.setOptions({
+			queryKey: [qKey, { id: stockId }],
+			queryFn: async () =>
+				getStockById(stockId, { stock: { ...initStock }, details: [] }),
+			enabled: true
+		});
 
-$: {
-	supplierQuery.setEnabled(browser);
-	employeeQuery.setEnabled(browser);
-	gudangQuery.setEnabled(browser);
-	queryStocks.setEnabled(browser);
-	queryStock.setEnabled(browser);
-}
-$: showNotification = timeout !== undefined;
-$: setQueryOption(page, limit, opt, supplierId, warehouseId, txt);
+		// setTimeout(() => {
+		isStockLoading.update((o) => (o = false));
+		// }, 250);
+		isEdit = mode;
+	}
+	async function updateOnlyStock() {
+		const x = dayjs($stock.createdAt);
+		const y = dayjs($stock.dueAt);
+		const duration = y.diff(x, 'days');
+
+		const savedStock: iStock = {
+			...$stock,
+			updatedBy: profile.name,
+			dueRange: duration
+		};
+		delete savedStock.isDetailChanged;
+		delete savedStock.isModified;
+		delete savedStock.isPayed;
+
+		// console.log(savedStock);
+
+		const result = await postUpdateOnlyStock(stockId, savedStock);
+		if (result) {
+			await client.invalidateQueries([qKey, { id: stockId }]);
+			await client.invalidateQueries([
+				qKey,
+				opt,
+				page,
+				limit,
+				supplierId,
+				warehouseId,
+				txt
+			]);
+			isStockUpdating.update((o) => (o = false));
+			isEdit = false;
+		}
+
+		changeStockSession(0, false);
+	}
+
+	async function saveStock(e: CustomEvent<iStockDetail[]>) {
+		if ($stock.isDetailChanged) {
+			// console.log("UDPATE-WITH-DETAILS");
+			if (e.detail.length > 0) {
+				const x = dayjs($stock.createdAt);
+				const y = dayjs($stock.dueAt);
+				const duration = y.diff(x, 'days');
+
+				const savedStock: iStock = {
+					...$stock,
+					paymentType: 'Cash',
+					updatedBy: profile.name,
+					dueRange: duration
+				};
+				delete savedStock.isDetailChanged;
+				delete savedStock.isModified;
+				delete savedStock.isPayed;
+
+				// console.log(savedStock);
+
+				if ($stock.id === 0) {
+					const result = await postCreateStock(savedStock, e.detail);
+					if (result) {
+						await client.invalidateQueries([qKey, { id: stockId }]);
+						await client.invalidateQueries([
+							qKey,
+							opt,
+							page,
+							limit,
+							supplierId,
+							warehouseId,
+							txt
+						]);
+						// setTimeout(() => {
+						isStockUpdating.update((o) => (o = false));
+						isEdit = false;
+						// }, 250);
+					}
+				} else {
+					//					console.log(e.detail);
+					const result = await postUpdateStock(stockId, savedStock, e.detail);
+					if (result) {
+						await client.invalidateQueries([qKey, { id: stockId }]);
+						await client.invalidateQueries([
+							qKey,
+							opt,
+							page,
+							limit,
+							supplierId,
+							warehouseId,
+							txt
+						]);
+						// setTimeout(() => {
+						isStockUpdating.update((o) => (o = false));
+						isEdit = false;
+						// }, 250);
+					}
+				}
+				changeStockSession(0, false);
+			}
+		} else {
+			// console.log("UDPATE-ONLY-STOCK");
+			updateOnlyStock();
+		}
+	}
+
+	async function deleteStocks(e: CustomEvent<number[]>) {
+		let log = await postDeleteStock(e.detail);
+		if (log && log.data > 0) {
+			client.invalidateQueries([
+				qKey,
+				opt,
+				page,
+				limit,
+				supplierId,
+				warehouseId,
+				txt
+			]);
+		}
+
+		setTimeout(() => {
+			isStockUpdating.set(false);
+		}, 250);
+		// console.log(log);
+	}
+
+	const unsubscribe = queryStock.subscribe((o) => {
+		stock.set(o.data?.stock ?? { ...initStock });
+		details.set(o.data?.details ?? []);
+	});
+
+	onDestroy(unsubscribe);
+
+	$: {
+		supplierQuery.setEnabled(browser);
+		employeeQuery.setEnabled(browser);
+		gudangQuery.setEnabled(browser);
+		queryStocks.setEnabled(browser);
+		queryStock.setEnabled(browser);
+	}
+	$: showNotification = timeout !== undefined;
+	$: setQueryOption(page, limit, opt, supplierId, warehouseId, txt);
 </script>
 
 <svelte:window bind:innerWidth={innerWidth} />

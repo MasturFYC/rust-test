@@ -1,25 +1,25 @@
 <script lang="ts">
-import { useIsFetching } from '@sveltestack/svelte-query';
-import { createEventDispatcher } from 'svelte';
-import Icon from './Icon.svelte';
+	import { useIsFetching } from '@sveltestack/svelte-query';
+	import { createEventDispatcher } from 'svelte';
+	import Icon from './Icon.svelte';
 
-const isFetching = useIsFetching();
-const dispatch = createEventDispatcher();
+	const isFetching = useIsFetching();
+	const dispatch = createEventDispatcher();
 
-export let size = 10;
-export let page = 0;
-export let totalPages = 0;
-export let totalElements = 0;
+	export let size = 10;
+	export let page = 0;
+	export let totalPages = 0;
+	export let totalElements = 0;
 
-let initSize = size;
-export let rows = [3, 5, 10, 25, 50, 100, 250, 500, 1000];
+	let initSize = size;
+	export let rows = [3, 5, 10, 25, 50, 100, 250, 500, 1000];
 
-$: if (initSize != size) {
-	initSize = size;
-	dispatch('changeSize', size);
-}
+	$: if (initSize != size) {
+		initSize = size;
+		dispatch('changeSize', size);
+	}
 
-$: isLoading = $isFetching > 0;
+	$: isLoading = $isFetching > 0;
 </script>
 
 <!--

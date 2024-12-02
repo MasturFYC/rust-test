@@ -1,9 +1,9 @@
 <script lang="ts">
-const staticUrl = import.meta.env.VITE_API_STATICURL as string;
-export let iconName = '';
-export let title = '';
-export let size = 16;
-export let isLeft = false;
+	const staticUrl = import.meta.env.VITE_API_STATICURL as string;
+	export let iconName = '';
+	export let title = '';
+	export let size = 16;
+	export let isLeft = false;
 </script>
 
 <span class="icon" class:is-left={isLeft}

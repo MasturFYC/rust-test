@@ -1,5 +1,5 @@
 <script lang="ts">
-export let showModal = false;
+	export let showModal = false;
 </script>
 
 <div class="modal" class:is-active={showModal}>
@@ -9,7 +9,11 @@ export let showModal = false;
 	<div class="modal-card">
 		<header class="modal-card-head">
 			<p class="modal-card-title subtitle mb-0"><slot name="header" /></p>
-			<button class="delete" aria-label="close" on:click={() => (showModal = false)}></button>
+			<button
+				class="delete"
+				aria-label="close"
+				on:click={() => (showModal = false)}
+			></button>
 		</header>
 		<section class="modal-card-body">
 			<slot name="content" />

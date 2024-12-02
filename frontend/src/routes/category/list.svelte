@@ -1,86 +1,86 @@
 <script lang="ts">
-import { type iCategory } from '$lib/interfaces';
-import {
-	Button,
-	DataTable,
-	Toolbar,
-	ToolbarContent,
-	ToolbarMenu,
-	ToolbarMenuItem
-} from 'carbon-components-svelte';
-import { NewTab } from 'carbon-icons-svelte';
-import type {
-	DataTableHeader,
-	DataTableCell,
-	DataTableRow
-} from 'carbon-components-svelte/src/DataTable/DataTable.svelte';
+	import { type iCategory } from '$lib/interfaces';
+	import {
+		Button,
+		DataTable,
+		Toolbar,
+		ToolbarContent,
+		ToolbarMenu,
+		ToolbarMenuItem
+	} from 'carbon-components-svelte';
+	import { NewTab } from 'carbon-icons-svelte';
+	import type {
+		DataTableHeader,
+		DataTableCell,
+		DataTableRow
+	} from 'carbon-components-svelte/src/DataTable/DataTable.svelte';
 
-let {
-	categories = [],
-	cellSnippet,
-	onNewCategory
-}: {
-	categories: iCategory[];
-	cellSnippet: (
-		cell: DataTableCell<DataTableRow>,
-		row: DataTableRow
-	) => ReturnType<import('svelte').Snippet>;
-	onNewCategory: () => void;
-} = $props();
+	let {
+		categories = [],
+		cellSnippet,
+		onNewCategory
+	}: {
+		categories: iCategory[];
+		cellSnippet: (
+			cell: DataTableCell<DataTableRow>,
+			row: DataTableRow
+		) => ReturnType<import('svelte').Snippet>;
+		onNewCategory: () => void;
+	} = $props();
 
-// let data: iResult = {
-// 	count: 0,
-// 	data: [],
-// 	status: ""
-// };
+	// let data: iResult = {
+	// 	count: 0,
+	// 	data: [],
+	// 	status: ""
+	// };
 
-// function delete_category(e: number) {
-// 	isUpdating = true;
-// 	$deleteData.mutate(e);
-// }
+	// function delete_category(e: number) {
+	// 	isUpdating = true;
+	// 	$deleteData.mutate(e);
+	// }
 
-let headers: DataTableHeader[] = [
-	{ key: 'id', value: '#ID', width: '10%' },
-	{ key: 'name', value: 'Nama', width: 'auto' },
-	{ key: 'cmd', value: '', width: '150px' }
-];
+	let headers: DataTableHeader[] = [
+		{ key: 'id', value: '#ID', width: '10%' },
+		{ key: 'name', value: 'Nama', width: 'auto' },
+		{ key: 'cmd', value: '', width: '150px' }
+	];
 
-// 	const descriptionMap = [
-// 		"Submitting...",
-// 		"Success",
-// 		"Cancelling...",
-// ]	;
+	// 	const descriptionMap = [
+	// 		"Submitting...",
+	// 		"Success",
+	// 		"Cancelling...",
+	// ]	;
 
-// 	const stateMap = [
-// 		"finished",
-// 		"dormant",
-// 		"dormant",
-// 	];
+	// 	const stateMap = [
+	// 		"finished",
+	// 		"dormant",
+	// 		"dormant",
+	// 	];
 
-// 	let timeout: NodeJS.Timeout;
-// 	let state = 1;
+	// 	let timeout: NodeJS.Timeout;
+	// 	let state = 1;
 
-// 	function reset(incomingState: number) {
-// 		if (incomingState > 2) {
-// 			clearTimeout(timeout);
-// 		}
+	// 	function reset(incomingState: number) {
+	// 		if (incomingState > 2) {
+	// 			clearTimeout(timeout);
+	// 		}
 
-// 		if (incomingState) {
-// 			timeout = setTimeout(() => {
-// 				state = incomingState;
-// 			}, 2000);
-// 		}
-// 	}
+	// 		if (incomingState) {
+	// 			timeout = setTimeout(() => {
+	// 				state = incomingState;
+	// 			}, 2000);
+	// 		}
+	// 	}
 
-// 	onDestroy(() => reset(4));
+	// 	onDestroy(() => reset(4));
 
-// 	$: reset(3);
+	// 	$: reset(3);
 
-//  let selectedRowIds = [categories.length > 0 ? categories[0].id : 0];
+	//  let selectedRowIds = [categories.length > 0 ? categories[0].id : 0];
 
-let client_width = $state(0);
+	let client_width = $state(0);
 
-// $: console.log("selectedRowIds", selectedRowIds);
+	// $: console.log("selectedRowIds", selectedRowIds);
 </script>
 
 <svelte:window bind:innerWidth={client_width} />

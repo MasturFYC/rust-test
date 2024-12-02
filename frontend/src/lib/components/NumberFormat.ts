@@ -1,4 +1,7 @@
-export const format = (node: HTMLInputElement, formatFunction: (value: string) => string) => {
+export const format = (
+	node: HTMLInputElement,
+	formatFunction: (value: string) => string
+) => {
 	function updateValue(e: Event) {
 		node.value = formatFunction(node.value);
 	}

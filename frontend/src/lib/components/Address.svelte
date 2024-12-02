@@ -1,7 +1,7 @@
 <script lang="ts">
-export let street = '';
-export let city: string;
-export let phone = '';
+	export let street = '';
+	export let city: string;
+	export let phone = '';
 </script>
 
 <span

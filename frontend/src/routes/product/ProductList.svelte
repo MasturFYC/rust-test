@@ -1,112 +1,127 @@
 <style lang="scss">
-.cell-right {
-	text-align: right;
-}
-/*
-		 :global(table.bx--data-table th, table.bx--data-table--zebra) {
+	.cell-right {
+		text-align: right;
+	}
+	/*
+		 :global(table.bx--products-table th, table.bx--data-table--zebra) {
 		background-color: #000;
 		 }
 		 */
 </style>
 
 <script lang="ts">
-import { formatNumber } from '$lib/components/NumberFormat';
-import type { iProduct, iProductStock, iPropertyID, iRelationProp } from '$lib/interfaces';
-import {
-	Button,
-	ComboBox,
-	DataTable,
-	Loading,
-	Toolbar,
-	ToolbarContent,
-	ToolbarSearch
-} from 'carbon-components-svelte';
-import { Edit, NewTab } from 'carbon-icons-svelte';
-import ExapandedList from './ExapandedList.svelte';
-import type { DataTableHeader } from 'carbon-components-svelte/src/DataTable/DataTable.svelte';
-import type { Snippet } from 'svelte';
+	import { formatNumber } from '$lib/components/NumberFormat';
+	import type {
+		iProduct,
+		iProductStock,
+		iPropertyID,
+		iRelationProp
+	} from '$lib/interfaces';
+	import {
+		Button,
+		ComboBox,
+		DataTable,
+		Loading,
+		Toolbar,
+		ToolbarContent,
+		ToolbarSearch
+	} from 'carbon-components-svelte';
+	import { Edit, NewTab } from 'carbon-icons-svelte';
+	import ExapandedList from './ExapandedList.svelte';
+	import type { DataTableHeader } from 'carbon-components-svelte/src/DataTable/DataTable.svelte';
+	import { getContext, type Snippet } from 'svelte';
 
-interface Props {
-    data: iProduct[],
-    innerWidth: number,
-    suppliers: iRelationProp[],
-    categories: iPropertyID[],
-    onEdit: (id: number) => void,
-    onSearch: (e: string | undefined) => void,
-    onSupplierChange: (e: number) => void,
-    onCategoryChange: (e: number) => void,
-    deleteTool: (id: number) => ReturnType<Snippet>,
-    isProductLoading?: boolean
-}
-
-let {
-    data = [],
-    innerWidth = $bindable(720),
-    suppliers = [],
-    categories = [],
-    onEdit,
-    onSearch,
-    onSupplierChange,
-    onCategoryChange,
-    deleteTool,
-    isProductLoading
-}: Props = $props();
-
-const headers: DataTableHeader[] = [
-	{ key: 'name', value: 'Nama Barang', width: 'auto' },
-	{ key: 'barcode', value: 'Barcode', width: '100px' },
-	{ key: 'stocks', value: 'Stock', width: '90px' },
-	{ key: 'hpp', value: 'HPP', width: '80px' },
-	{ key: 'margin', value: 'Margin', width: '80px' },
-	{ key: 'price', value: 'Harga', width: '90px' },
-	{ key: 'cmd', value: '', width: '60px' }
-];
-const headers2: DataTableHeader[] = [
-	{ key: 'name', value: 'Nama Barang', width: 'auto' },
-	{ key: 'stocks', value: 'Stock', width: '90px' },
-	{ key: 'price', value: 'Harga', width: '90px' },
-	{ key: 'cmd', value: '', width: '60px' }
-];
-
-function get_headers() {
-	if (innerWidth < 720) {
-		return headers2;
+	interface Props {
+		innerWidth: number;
+		products: iProduct[];
+		suppliers: iRelationProp[];
+		categories: iPropertyID[];
+		isProductLoading?: boolean;
+		deleteTool: (id: number) => ReturnType<Snippet>;
+		onEdit: (id: number) => void;
+		onSearch: (e: string | undefined) => void;
+		onSupplierChange: (e: number) => void;
+		onCategoryChange: (e: number) => void;
 	}
-	return headers;
-}
 
-function edit_product(id: number) {
-	onEdit(id);
-}
+	let {
+		products = [],
+		innerWidth = $bindable(720),
+		suppliers = [],
+		categories = [],
+		onEdit,
+		onSearch,
+		onSupplierChange,
+		onCategoryChange,
+		deleteTool,
+		isProductLoading
+	}: Props = $props();
 
-let txt = $state('');
+	const headers: DataTableHeader[] = [
+		{ key: 'name', value: 'Nama Barang', width: 'auto' },
+		{ key: 'barcode', value: 'Barcode', width: '100px' },
+		{ key: 'stocks', value: 'Stock', width: '90px' },
+		{ key: 'hpp', value: 'HPP', width: '80px' },
+		{ key: 'margin', value: 'Margin', width: '80px' },
+		{ key: 'price', value: 'Harga', width: '90px' },
+		{ key: 'cmd', value: '', width: '60px' }
+	];
+	const headers2: DataTableHeader[] = [
+		{ key: 'name', value: 'Nama Barang', width: 'auto' },
+		{ key: 'stocks', value: 'Stock', width: '90px' },
+		{ key: 'price', value: 'Harga', width: '90px' },
+		{ key: 'cmd', value: '', width: '60px' }
+	];
 
-function submit_search(e: Event): void {
-    e.preventDefault();
-	onSearch(txt);
-}
-
-function search_clear(): void {
-	onSearch(undefined);
-}
-
-// function get_suppliers() {
-// 	return suppliers.map((m) => ({ id: m.id, text: m.text }));
-// }
-const defaultStock = (stocks: iProductStock[]) => {
-	const d = stocks.filter((f) => f.gudangId === 1)[0];
-	if (d) {
-		return d.qty;
+	function getHeader() {
+		if (innerWidth < 720) {
+			return headers2;
+		}
+		return headers;
 	}
-	return 0;
-};
 
-let sup_light = $state(false);
-let cat_light = $state(false);
-// $: 	console.log(suppliers)
+	function editProduct(id: number) {
+		onEdit(id);
+	}
+
+	let txt = $state('');
+
+	function searchSubmit(e: Event): void {
+		e.preventDefault();
+		onSearch(txt);
+	}
+
+	function searchClear(): void {
+		onSearch(undefined);
+	}
+
+	// function get_suppliers() {
+	// 	return suppliers.map((m) => ({ id: m.id, text: m.text }));
+	// }
+	const defaultStock = (stocks: iProductStock[]) => {
+		const d = stocks.filter((f) => f.gudangId === 1)[0];
+		if (d) {
+			return d.qty;
+		}
+		return 0;
+	};
+
+	let sup_light = $state(false);
+	let cat_light = $state(false);
+
+	let kunci = $derived(getContext<{count: number}>("kunci"));
+	// $: 	console.log(suppliers)
 </script>
 
-<DataTable expandable size="medium" headers={get_headers()} rows={data}>
+<div>{kunci.count}</div>
+
+<DataTable
+	expandable
+	size="medium"
+	headers={getHeader()}
+	rows={products}
+	zebra
+>
 	<svelte:fragment slot="cell-header" let:header>
 		{#if header.key === 'price' || header.key === 'hpp' || header.key === 'stocks' || header.key === 'margin'}
 			<div class="cell-right">{header.value}</div>
@@ -116,9 +131,9 @@ let cat_light = $state(false);
 	</svelte:fragment>
 
 	<svelte:fragment slot="cell" let:row let:cell>
-        {#if isProductLoading}  <Loading withOverlay={false} /> {:else}
-
-        {#if cell.key === 'cmd'}
+		{#if isProductLoading}
+			<Loading withOverlay={false} />
+		{:else if cell.key === 'cmd'}
 			<Button
 				tooltipPosition="left"
 				tooltipAlignment="end"
@@ -126,7 +141,7 @@ let cat_light = $state(false);
 				kind="ghost"
 				iconDescription="Edit"
 				icon={Edit}
-				on:click={() => edit_product(row.id)}
+				on:click={() => editProduct(row.id)}
 			/>
 			<!-- <div></div> -->
 		{:else if cell.key === 'relationType'}
@@ -143,15 +158,22 @@ let cat_light = $state(false);
 		{:else}
 			{cell.value}
 		{/if}
-    {/if}
 	</svelte:fragment>
 	<svelte:fragment slot="expanded-row" let:row>
-		<ExapandedList row={row} bind:innerWidth={innerWidth} {deleteTool} />
+		<ExapandedList
+			row={row}
+			bind:innerWidth={innerWidth}
+			deleteTool={deleteTool}
+		/>
 	</svelte:fragment>
 
 	<Toolbar size="sm">
 		<ToolbarContent>
-			<ToolbarSearch on:change={submit_search} bind:value={txt} on:clear={search_clear} />
+			<ToolbarSearch
+				on:change={searchSubmit}
+				bind:value={txt}
+				on:clear={searchClear}
+			/>
 			<ComboBox
 				type="inline"
 				light={cat_light}
@@ -193,7 +215,7 @@ let cat_light = $state(false);
 				>
 				<ToolbarMenuItem hasDivider danger>Stop all</ToolbarMenuItem>
 			</ToolbarMenu> -->
-			<Button on:click={() => edit_product(0)} icon={NewTab}>Buat baru</Button>
+			<Button on:click={() => editProduct(0)} icon={NewTab}>Buat baru</Button>
 		</ToolbarContent>
 	</Toolbar>
 </DataTable>

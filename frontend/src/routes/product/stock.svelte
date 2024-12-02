@@ -1,8 +1,8 @@
 <script lang="ts">
-import { formatNumber } from '$lib/components/NumberFormat';
-import type { iProductStock } from '$lib/interfaces';
-export let stocks: iProductStock[];
-export let unit: string;
+	import { formatNumber } from '$lib/components/NumberFormat';
+	import type { iProductStock } from '$lib/interfaces';
+	export let stocks: iProductStock[];
+	export let unit: string;
 </script>
 
 {#each stocks as s}

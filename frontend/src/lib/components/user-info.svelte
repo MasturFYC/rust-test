@@ -1,51 +1,55 @@
 <script lang="ts">
-import { baseURL, credential_include, type iCurrentUser } from '$lib/interfaces';
-import { HeaderPanelLink, LocalStorage } from 'carbon-components-svelte';
-import { onMount } from 'svelte';
+	import {
+		baseURL,
+		credential_include,
+		type iCurrentUser
+	} from '$lib/interfaces';
+	import { HeaderPanelLink, LocalStorage } from 'carbon-components-svelte';
+	import { onMount } from 'svelte';
 
-type iResult = {
-	status: string;
-	data: iCurrentUser;
-};
-export let isOpen = true;
-let storage: LocalStorage;
-const url = `${baseURL}/users/me`;
+	type iResult = {
+		status: string;
+		data: iCurrentUser;
+	};
+	export let isOpen = true;
+	let storage: LocalStorage;
+	const url = `${baseURL}/users/me`;
 
-let profile: iCurrentUser = {
-	id: '',
-	name: '',
-	email: '',
-	photo: '',
-	role: '',
-	verified: false,
-	updatedAt: '',
-	createdAt: ''
-};
-
-async function load_profile() {
-	const options = {
-		headers: { accept: 'application/json' },
-		method: 'GET',
-		credentials: credential_include
+	let profile: iCurrentUser = {
+		id: '',
+		name: '',
+		email: '',
+		photo: '',
+		role: '',
+		verified: false,
+		updatedAt: '',
+		createdAt: ''
 	};
 
-	const request = new Request(url, options);
+	async function load_profile() {
+		const options = {
+			headers: { accept: 'application/json' },
+			method: 'GET',
+			credentials: credential_include
+		};
 
-	await fetch(request)
-		.then(async (response) => response)
-		.then(async (data) => {
-			const result = await data.json();
-			profile = result.data as iCurrentUser;
-		})
-		.catch((e) => {
-			console.log('Error:', e);
-			storage.clearItem();
-		});
-}
+		const request = new Request(url, options);
 
-onMount(async () => {
-	load_profile();
-});
+		await fetch(request)
+			.then(async (response) => response)
+			.then(async (data) => {
+				const result = await data.json();
+				profile = result.data as iCurrentUser;
+			})
+			.catch((e) => {
+				console.log('Error:', e);
+				storage.clearItem();
+			});
+	}
+
+	onMount(async () => {
+		load_profile();
+	});
 </script>
 
 <LocalStorage key="__user_info" bind:value={profile} bind:this={storage} />
@@ -55,5 +59,7 @@ onMount(async () => {
 		>Profile {profile.name}</HeaderPanelLink
 	>
 {:else}
-	<HeaderPanelLink on:click={() => (isOpen = false)}>Please login</HeaderPanelLink>
+	<HeaderPanelLink on:click={() => (isOpen = false)}
+		>Please login</HeaderPanelLink
+	>
 {/if}

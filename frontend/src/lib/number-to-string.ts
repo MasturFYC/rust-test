@@ -115,7 +115,12 @@ function jutaan(arr: string[]): string {
 	const a = parseInt('' + arr.at(0), 10);
 	const b = parseInt('' + arr.at(1), 10);
 	const c = parseInt('' + arr.at(2), 10);
-	return [ratusan(a), a === 0 ? satuan(0) : satuan(18), ribu(b), ratusan(c)].join(' ');
+	return [
+		ratusan(a),
+		a === 0 ? satuan(0) : satuan(18),
+		ribu(b),
+		ratusan(c)
+	].join(' ');
 }
 
 function milyaran(arr: string[]): string {
@@ -158,7 +163,13 @@ function ngibul(arr: string[]): string {
 	return [
 		ribuan(['' + arr.at(0), '' + arr.at(1)]),
 		satuan(20),
-		milyaran(['' + arr.at(2), '' + arr.at(3), '' + arr.at(4), '' + arr.at(5), '' + arr.at(6)])
+		milyaran([
+			'' + arr.at(2),
+			'' + arr.at(3),
+			'' + arr.at(4),
+			'' + arr.at(5),
+			'' + arr.at(6)
+		])
 	].join(' ');
 }
 
@@ -178,7 +189,11 @@ function fractionText(t: string): string[] {
 }
 
 function ribu(e: number): string {
-	return e === 0 ? satuan(0) : e === 1 ? satuan(13) : [ratusan(e), satuan(17)].join(' ');
+	return e === 0
+		? satuan(0)
+		: e === 1
+			? satuan(13)
+			: [ratusan(e), satuan(17)].join(' ');
 }
 
 export { numberToText, fractionText };

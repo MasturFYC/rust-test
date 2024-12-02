@@ -1,29 +1,29 @@
 <style lang="scss">
-:global(.font-small .bx--col, .font-small .bx--col-md-1) {
-	font-size: 12px;
-}
+	:global(.font-small .bx--col, .font-small .bx--col-md-1) {
+		font-size: 12px;
+	}
 </style>
 
 <script lang="ts">
-import LabelProperty from '$lib/components/LabelProperty.svelte';
-import { formatNumber } from '$lib/components/NumberFormat';
-import type { iProduct, iProductStock } from '$lib/interfaces';
-import { Grid, Row, Column } from 'carbon-components-svelte';
-import { toNumber } from './handler';
-export let product: iProduct;
-export let oldQty: number = 0;
-export let newQty: number = 0;
-export let selectedGudangId = 0;
-export let oldGudangId = 0;
+	import LabelProperty from '$lib/components/LabelProperty.svelte';
+	import { formatNumber } from '$lib/components/NumberFormat';
+	import type { iProduct, iProductStock } from '$lib/interfaces';
+	import { Grid, Row, Column } from 'carbon-components-svelte';
+	import { toNumber } from './handler';
+	export let product: iProduct;
+	export let oldQty: number = 0;
+	export let newQty: number = 0;
+	export let selectedGudangId = 0;
+	export let oldGudangId = 0;
 
-const getStockByGudang = (gudangId: number, stocks: iProductStock[]) => {
-	const i = stocks.findIndex((f) => f.gudangId === gudangId);
-	if (i >= 0) {
-		const d = stocks[i];
-		return toNumber(d.qty);
-	}
-	return 0;
-};
+	const getStockByGudang = (gudangId: number, stocks: iProductStock[]) => {
+		const i = stocks.findIndex((f) => f.gudangId === gudangId);
+		if (i >= 0) {
+			const d = stocks[i];
+			return toNumber(d.qty);
+		}
+		return 0;
+	};
 </script>
 
 <!-- <div>
@@ -54,7 +54,9 @@ const getStockByGudang = (gudangId: number, stocks: iProductStock[]) => {
 			</LabelProperty>
 			<LabelProperty sm>
 				<svelte:fragment slot="label">Variant</svelte:fragment>
-				<svelte:fragment slot="value">{product.variantName ?? ''}</svelte:fragment>
+				<svelte:fragment slot="value"
+					>{product.variantName ?? ''}</svelte:fragment
+				>
 			</LabelProperty>
 			<LabelProperty sm>
 				<svelte:fragment slot="label">Supplier</svelte:fragment>
@@ -64,19 +66,27 @@ const getStockByGudang = (gudangId: number, stocks: iProductStock[]) => {
 		<Column>
 			<LabelProperty sm right>
 				<svelte:fragment slot="label">HPP</svelte:fragment>
-				<svelte:fragment slot="value">{formatNumber(product.hpp)}</svelte:fragment>
+				<svelte:fragment slot="value"
+					>{formatNumber(product.hpp)}</svelte:fragment
+				>
 			</LabelProperty>
 			<LabelProperty sm right>
 				<svelte:fragment slot="label">Margin</svelte:fragment>
-				<svelte:fragment slot="value">{formatNumber(product.margin, 4)}%</svelte:fragment>
+				<svelte:fragment slot="value"
+					>{formatNumber(product.margin, 4)}%</svelte:fragment
+				>
 			</LabelProperty>
 			<LabelProperty sm right>
 				<svelte:fragment slot="label">Harga</svelte:fragment>
-				<svelte:fragment slot="value">{formatNumber(product.price)}</svelte:fragment>
+				<svelte:fragment slot="value"
+					>{formatNumber(product.price)}</svelte:fragment
+				>
 			</LabelProperty>
 			<LabelProperty sm>
 				<svelte:fragment slot="label">Berat</svelte:fragment>
-				<svelte:fragment slot="value">{formatNumber(product.heavy)} kg</svelte:fragment>
+				<svelte:fragment slot="value"
+					>{formatNumber(product.heavy)} kg</svelte:fragment
+				>
 			</LabelProperty>
 		</Column>
 	</Row>
@@ -91,7 +101,9 @@ const getStockByGudang = (gudangId: number, stocks: iProductStock[]) => {
 								<strong>
 									{getStockByGudang(oldGudangId, product.stocks) - oldQty} + {newQty}
 									=
-									{getStockByGudang(oldGudangId, product.stocks) - oldQty + newQty}
+									{getStockByGudang(oldGudangId, product.stocks) -
+										oldQty +
+										newQty}
 									{product.unit}
 								</strong>
 							{:else}
