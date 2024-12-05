@@ -29,7 +29,7 @@
 	import dayjs from 'dayjs';
 	import ProductList from './ProductList.svelte';
 	import DeleteProduct from '$lib/components/DeleteButton.svelte';
-	import { setContext, tick } from 'svelte';
+	import { tick } from 'svelte';
 
 	type ResultBase = {
 		status: string;
@@ -339,8 +339,8 @@
 		}
 	});
 
-	let kunci = $state({ count: 0 });
-	setContext("kunci", kunci);
+	// let kunci = $state({ count: 0 });
+	// setContext("kunci", kunci);
 
 	async function editProduct(e: number) {
 		const id = e;
@@ -359,9 +359,7 @@
 				open = true;
 			});
 		}
-
-		kunci.count =  kunci.count + 500;
-
+		// kunci.count =  kunci.count + 500;
 	}
 
 	function deleteProduct(e: number): void {
@@ -379,7 +377,7 @@
 	}
 
 	function supplierChange(e: number): void {
-		opt = (e === 0) ? 0 : 2;
+		opt = e === 0 ? 0 : 2;
 		rel_id = e;
 	}
 
@@ -417,15 +415,11 @@
 	});
 
 	let products = $derived.by(() => {
-		return $query.isSuccess && $query.data
-			? $query.data.data
-			: [];
+		return $query.isSuccess && $query.data ? $query.data.data : [];
 	});
 
 	let totalItems = $derived.by(() => {
-		return $query.isSuccess && $query.data
-			? $query.data.totalItems
-			: 0;
+		return $query.isSuccess && $query.data ? $query.data.totalItems : 0;
 	});
 
 	$effect(() => {
@@ -447,7 +441,6 @@
 	let isProductLoading = $derived.by(() => $query.isLoading);
 
 	$inspect(isLoading);
-
 
 	// $effect(() => {
 	//     setQueryOption(page, pageSize, opt, txt, rel_id, cat_id);

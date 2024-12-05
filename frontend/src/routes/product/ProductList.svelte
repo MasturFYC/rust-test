@@ -109,19 +109,13 @@
 	let sup_light = $state(false);
 	let cat_light = $state(false);
 
-	let kunci = $derived(getContext<{count: number}>("kunci"));
+	// let kunci = $derived(getContext<{count: number}>("kunci"));
 	// $: 	console.log(suppliers)
 </script>
 
-<div>{kunci.count}</div>
+<!-- <div>{kunci.count}</div> -->
 
-<DataTable
-	expandable
-	size="medium"
-	headers={getHeader()}
-	rows={products}
-	zebra
->
+<DataTable expandable size="medium" headers={getHeader()} rows={products} zebra>
 	<svelte:fragment slot="cell-header" let:header>
 		{#if header.key === 'price' || header.key === 'hpp' || header.key === 'stocks' || header.key === 'margin'}
 			<div class="cell-right">{header.value}</div>

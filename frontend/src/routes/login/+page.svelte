@@ -15,15 +15,19 @@
 	import { credential_include, type iUserLogin } from '$lib/interfaces';
 	import { Button, PasswordInput, TextInput } from 'carbon-components-svelte';
 	import { Login } from 'carbon-icons-svelte';
+	import { isLogginIn } from '$lib/store';
+	// import ProductInfo from '../stock/ProductInfo.svelte';
 
 	const baseURL = import.meta.env.VITE_API_URL;
 	const url = `${baseURL}/auth/login`;
 
-	let user: iUserLogin = { email: '', password: '' };
-	let isLoading = false;
-	let message = '';
+	let user: iUserLogin = $state({ email: '', password: '' });
+	let isLoading = $state(false);
+	let message = $state('');
 
-	const submit = async () => {
+	const submit = async (e: SubmitEvent) => {
+		e.preventDefault();
+
 		isLoading = true;
 		const options = {
 			headers: {
@@ -38,6 +42,7 @@
 		const result = await fetch(request);
 
 		if (result.ok) {
+			isLogginIn.update(() => true);
 			await goto('/', { replaceState: true });
 		}
 	};
@@ -46,7 +51,7 @@
 <div class="div-form">
 	<h1>Login</h1>
 	<p>Sign in to have access</p>
-	<form on:submit|preventDefault={submit}>
+	<form onsubmit={submit}>
 		<TextInput
 			autocomplete="email"
 			type="email"

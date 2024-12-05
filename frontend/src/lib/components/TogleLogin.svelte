@@ -6,10 +6,11 @@
 		type iCurrentUser
 	} from '$lib/interfaces';
 	import { HeaderPanelLink, LocalStorage } from 'carbon-components-svelte';
+	import { isLogginIn } from '$lib/store';
 
-	export let isOpen = true;
+	let { closePanel }: { closePanel: (e: boolean) => void } = $props();
 
-	let profile: iCurrentUser = {
+	let profile: iCurrentUser = $state({
 		id: '',
 		name: '',
 		email: '',
@@ -18,13 +19,14 @@
 		verified: false,
 		updatedAt: '',
 		createdAt: ''
-	};
+	});
 
 	const url = `${baseURL}/auth/logout`;
 	let storage: LocalStorage;
 
 	async function log_out() {
-		isOpen = false;
+		closePanel(false);
+		isLogginIn.update(() => false);
 		const options = {
 			headers: { accept: 'application/json' },
 			method: 'GET',
@@ -43,12 +45,12 @@
 
 <LocalStorage key="__user_info" bind:this={storage} bind:value={profile} />
 
-{#if profile.id != ''}
+{#if $isLogginIn}
 	<HeaderPanelLink on:click={() => log_out()}
 		>Logout {profile.name}!</HeaderPanelLink
 	>
 {:else}
-	<HeaderPanelLink on:click={() => (isOpen = false)} href="/login"
+	<HeaderPanelLink on:click={() => closePanel(false)} href="/login"
 		>Login</HeaderPanelLink
 	>
 {/if}

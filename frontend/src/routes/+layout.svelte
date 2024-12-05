@@ -3,7 +3,6 @@
 	import { QueryClient, QueryClientProvider } from '@sveltestack/svelte-query';
 	import { page } from '$app/stores';
 	import ToggleTheme from '$lib/components/ToggleTheme.svelte';
-	import TogleLogin from '$lib/components/TogleLogin.svelte';
 	import UserInfo from '$lib/components/user-info.svelte';
 	import {
 		Column,
@@ -35,16 +34,21 @@
 		IbmDb2Warehouse as Warehouse
 	} from 'carbon-icons-svelte';
 	import { expoIn } from 'svelte/easing';
-	import dayjs from "dayjs";
-	import locale from "dayjs/locale/id";
-	import advanced from "dayjs/plugin/advancedFormat";
-	import timezone from "dayjs/plugin/timezone";
-	import utc from "dayjs/plugin/utc";
+	import dayjs from 'dayjs';
+	import locale from 'dayjs/locale/id';
+	import advanced from 'dayjs/plugin/advancedFormat';
+	import timezone from 'dayjs/plugin/timezone';
+	import utc from 'dayjs/plugin/utc';
+	import { isLogginIn } from '$lib/store';
+	import { baseURL, credential_include } from '$lib/interfaces';
+	import { onMount } from 'svelte';
 
 	dayjs.extend(timezone);
 	dayjs.extend(utc);
 	dayjs.extend(advanced);
 	dayjs.locale(locale);
+
+	const url = `${baseURL}/users/me`;
 
 	// const staticUrl = import.meta.env.VITE_API_STATICURL as string;
 	let { children } = $props();
@@ -121,6 +125,32 @@
 			icon: SendToBack
 		}
 	];
+
+	async function load_profile() {
+		const options = {
+			headers: { accept: 'application/json' },
+			method: 'GET',
+			credentials: credential_include
+		};
+
+		const request = new Request(url, options);
+
+		await fetch(request)
+			.then(async (response) => response)
+			.then(async (data) => {
+				const result = await data.json();
+				if (result.status === 'success') {
+					isLogginIn.update(() => true);
+				}
+			})
+			.catch((e) => {
+				console.log('Error:', e);
+			});
+	}
+
+	onMount(async () => {
+		load_profile();
+	});
 </script>
 
 <Theme persist persistKey="__carbon-theme" />
@@ -142,8 +172,7 @@
 		<HeaderAction bind:isOpen={isOpen} transition={transitions[selected].value}>
 			<HeaderPanelLinks>
 				<HeaderPanelDivider><ToggleTheme /></HeaderPanelDivider>
-				<TogleLogin bind:isOpen={isOpen} />
-				<UserInfo bind:isOpen={isOpen} />
+				<UserInfo closePanel={(e) => (isOpen = e)} />
 				<HeaderPanelDivider>Switcher subject 2</HeaderPanelDivider>
 				<HeaderPanelLink>Switcher item 1</HeaderPanelLink>
 				<HeaderPanelLink>Switcher item 2</HeaderPanelLink>
@@ -154,47 +183,56 @@
 		</HeaderAction>
 	</HeaderUtilities>
 </Header>
-<SideNav
-	bind:isOpen={isSideNavOpen}
-	rail={(client_width >= 720 && client_width <= 1080) || isRail}
-	expansionBreakpoint={720}
-	fixed
->
-	<SideNavItems>
-		{#each sideLink as side (side.id)}
-			<SideNavLink
-				icon={side.icon}
-				href={side.href}
-				text={side.title}
-				isSelected={$page.url.pathname == side.href}
-			/>
-			<!-- on:click={() => (selected_side = side.id)} -->
-		{/each}
-		<SideNavMenu icon={Next} text="Master">
-			<SideNavMenuItem href="/relation" text="Relasi" />
-			<SideNavMenuItem href="/category" text="Kategori Barang" />
-			<SideNavMenuItem href="/product" text="Data Barang" />
-		</SideNavMenu>
-		<Toggle
-			labelText="Sidenav"
-			size="sm"
-			style="margin: 9px;"
-			on:toggle={() => (isRail = !isRail)}
-		>
-			<span slot="labelA" style="color: red">Hide</span>
-			<span slot="labelB" style="color: green">Expand</span>
-		</Toggle>
-	</SideNavItems>
-</SideNav>
 
-<Content>
-	<Grid condensed={client_width <= 640} noGutter={client_width <= 640}>
-		<Row>
-			<Column>
-				<QueryClientProvider client={queryClient}>
-					{@render children()}
-				</QueryClientProvider>
-			</Column>
-		</Row>
-	</Grid>
-</Content>
+{#if $isLogginIn}
+	<SideNav
+		bind:isOpen={isSideNavOpen}
+		rail={(client_width >= 720 && client_width <= 1080) || isRail}
+		expansionBreakpoint={720}
+		fixed
+	>
+		<SideNavItems>
+			{#each sideLink as side (side.id)}
+				<SideNavLink
+					icon={side.icon}
+					href={side.href}
+					text={side.title}
+					isSelected={$page.url.pathname == side.href}
+				/>
+				<!-- on:click={() => (selected_side = side.id)} -->
+			{/each}
+			<SideNavMenu icon={Next} text="Master">
+				<SideNavMenuItem href="/relation" text="Relasi" />
+				<SideNavMenuItem href="/category" text="Kategori Barang" />
+				<SideNavMenuItem href="/product" text="Data Barang" />
+			</SideNavMenu>
+			<Toggle
+				labelText="Sidenav"
+				size="sm"
+				style="margin: 9px;"
+				on:toggle={() => (isRail = !isRail)}
+			>
+				<span slot="labelA" style="color: red">Hide</span>
+				<span slot="labelB" style="color: green">Expand</span>
+			</Toggle>
+		</SideNavItems>
+	</SideNav>
+
+	<Content>
+		<Grid condensed={client_width <= 640} noGutter={client_width <= 640}>
+			<Row>
+				<Column>
+					<QueryClientProvider client={queryClient}>
+						{@render children()}
+					</QueryClientProvider>
+				</Column>
+			</Row>
+		</Grid>
+	</Content>
+{:else}
+	<Content>
+		<QueryClientProvider client={queryClient}>
+			{@render children()}
+		</QueryClientProvider>
+	</Content>
+{/if}
