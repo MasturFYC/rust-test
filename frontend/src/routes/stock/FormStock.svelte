@@ -46,9 +46,18 @@
 	import type { ComboBoxItem } from 'carbon-components-svelte/src/ComboBox/ComboBox.svelte';
 
 	// const dispatch = createEventDispatcher();
-	export let suppliers: iRelationProp[] = [];
-	export let employees: iRelationProp[] = [];
-	export let innerWidth = 0;
+
+	interface Props {
+		suppliers: iRelationProp[] | undefined;
+		employees: iRelationProp[] | undefined;
+		innerWidth: number;
+	}
+
+	let {
+		suppliers = [],
+		employees = [],
+		innerWidth = $bindable(0)
+	}: Props = $props();
 
 	type DatePict =
 		| string
@@ -62,7 +71,7 @@
 					  };
 		  };
 
-	let ref_invoice: HTMLInputElement;
+	let ref_invoice: HTMLInputElement | undefined = $state(undefined);
 
 	function get_suppliers() {
 		return suppliers.map((m) => ({ id: m.id, text: m.text }));
@@ -143,11 +152,11 @@
 			}));
 		}
 	}
-	function on_employee_clear(e: any): void {
+	function on_employee_clear(_e: any): void {
 		stock.update((s) => ({ ...s, warehouseId: 0, warehouseName: undefined }));
 	}
 
-	function on_supplier_clear(e: any): void {
+	function on_supplier_clear(_e: any): void {
 		stock.update((s) => ({ ...s, supplierId: 0, supplierName: undefined }));
 	}
 
@@ -168,12 +177,14 @@
 		}
 	}
 
-	let strDate = dayjs($stock.createdAt).format('DD-MM-YYYY');
+	let strDate = $state(dayjs($stock.createdAt).format('DD-MM-YYYY'));
 	let strDp = formatNumber(toNumber($stock.dp));
 
-	$: if (ref_invoice) {
-		ref_invoice.focus();
-	}
+	$effect(() => {
+		if (ref_invoice) {
+			ref_invoice.focus();
+		}
+	});
 
 	function updateDp(str: string) {
 		const dp = getNumber(str);
@@ -183,7 +194,7 @@
 			total: toNumber(s.total) - (toNumber(s.payment) + dp)
 		}));
 	}
-	$: updateDp(strDp);
+	$effect(() => updateDp(strDp));
 </script>
 
 <Form on:submit style="margin: 24px 0 0 0;">

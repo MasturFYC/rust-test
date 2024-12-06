@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
-	import { useQuery, useQueryClient } from '@sveltestack/svelte-query';
+	import { useQuery } from '@sveltestack/svelte-query';
 	import { baseURL, credential_include, type iProduct } from '$lib/interfaces';
 	import { InlineLoading } from 'carbon-components-svelte';
 	// import { formatNumber } from "$lib/components/NumberFormat";
@@ -10,11 +10,22 @@
 		status: string;
 		data: iProduct;
 	};
-	export let productId = 0;
-	export let oldQty: number = 0;
-	export let newQty: number = 0;
-	export let selectedGudangId = 0;
-	export let oldGudangId = 0;
+
+	interface Props {
+		productId: number;
+		oldQty: number;
+		newQty: number;
+		selectedGudangId: number;
+		oldGudangId: number;
+	}
+
+	let {
+		productId = 0,
+		oldQty = 0,
+		newQty = 0,
+		selectedGudangId = 0,
+		oldGudangId = 0
+	}: Props = $props();
 
 	async function fetchProduct() {
 		const url = `${baseURL}/products/${productId}`;
@@ -34,9 +45,9 @@
 		enabled: false
 	});
 
-	$: {
+	$effect(() => {
 		query.setEnabled(browser);
-	}
+	});
 </script>
 
 {#if $query.isLoading}

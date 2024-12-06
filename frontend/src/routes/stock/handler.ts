@@ -47,7 +47,9 @@ export async function getStocks(
 	};
 	const request = new Request(url, options);
 	const result = await fetch(request);
-	return await result.json();
+    const r = await result.json();
+    console.log(r);
+	return r;
 }
 
 export async function postCreateStock(

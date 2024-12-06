@@ -10,11 +10,22 @@
 	import type { iProduct, iProductStock } from '$lib/interfaces';
 	import { Grid, Row, Column } from 'carbon-components-svelte';
 	import { toNumber } from './handler';
-	export let product: iProduct;
-	export let oldQty: number = 0;
-	export let newQty: number = 0;
-	export let selectedGudangId = 0;
-	export let oldGudangId = 0;
+
+	interface Props {
+		product: iProduct;
+		oldQty: number;
+		newQty: number;
+		selectedGudangId: number;
+		oldGudangId: number;
+	}
+
+	let {
+		product,
+		oldQty = 0,
+		newQty = 0,
+		selectedGudangId = 0,
+		oldGudangId = 0
+	}: Props = $props();
 
 	const getStockByGudang = (gudangId: number, stocks: iProductStock[]) => {
 		const i = stocks.findIndex((f) => f.gudangId === gudangId);

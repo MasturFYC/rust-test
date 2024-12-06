@@ -11,24 +11,43 @@
 	} from 'carbon-components-svelte';
 	import { Delete, Edit, NewTab } from 'carbon-icons-svelte';
 	import dayjs from 'dayjs';
-	import { createEventDispatcher, tick } from 'svelte';
 	import StockInfo from './StockInfo.svelte';
 	import { isStockLoading, isStockUpdating } from './store';
+	import { tick } from 'svelte';
+	import type { DataTableHeader } from 'carbon-components-svelte/src/DataTable/DataTable.svelte';
 
-	export let data: iStock[] = [];
-	// export let innerWidth = 720;
-	export let suppliers: iRelationProp[] = [];
-	export let employees: iRelationProp[] = [];
+	interface Props {
+		data: iStock[] | undefined;
+		suppliers: iRelationProp[] | undefined;
+		employees: iRelationProp[] | undefined;
+		txt: string;
+		selectedSupplierId: number;
+		selectedWarehouseId: number;
+		ondelete: (e: number[]) => void;
+		onsearch: (e: string | undefined) => void;
+		onedit: (e: number) => void;
+		onsupplierchange: (e: number) => void;
+		onwarehousechange: (e: number) => void;
+	}
 
-	export let txt = '';
-	export let selectedSupplierId = 0;
-	export let selectedWarehouseId = 0;
-	let sup_light = false;
-	let ware_light = false;
-	let selectedRowIds: number[] = [];
+	let {
+		data = [],
+		suppliers = [],
+		employees = [],
+		txt = '',
+		selectedSupplierId = 0,
+		selectedWarehouseId = 0,
+		onedit,
+		ondelete,
+		onsearch,
+		onsupplierchange,
+		onwarehousechange
+	}: Props = $props();
 
-	const dispatch = createEventDispatcher();
-	const headers = [
+	let selectedRowIds: number[] = $state([]);
+	let searchText = $state(txt);
+
+	const headers: DataTableHeader[] = [
 		{ key: 'id', value: 'ID#', width: '12%' },
 		{ key: 'createdAt', value: 'Tanggal', width: '120px' },
 		{ key: 'invoiceId', value: 'No. Faktur', width: 'auto' },
@@ -42,21 +61,23 @@
 		isStockLoading.set(true);
 		await tick();
 
-		dispatch('edit', id);
+		onedit(id);
 	}
 
 	function searchStock(e: Event): void {
-		dispatch('search', txt);
+		e.preventDefault();
+		onsearch(searchText);
 	}
 
 	function searchClear(e: any): void {
-		dispatch('search', undefined);
+		e.preventDefault();
+		onsearch(undefined);
 	}
 
-	async function deleteItems(e: MouseEvent) {
+	async function deleteItems(_e: MouseEvent) {
 		isStockUpdating.set(true);
 		// await tick();
-		dispatch('deleteStocks', selectedRowIds);
+		ondelete(selectedRowIds);
 		await tick();
 		selectedRowIds = [];
 	}
@@ -107,43 +128,39 @@
 		<ToolbarContent>
 			<ToolbarSearch
 				on:change={searchStock}
-				bind:value={txt}
+				bind:value={searchText}
 				on:clear={searchClear}
 			/>
 			<ComboBox
 				type="inline"
-				light={sup_light || selectedSupplierId > 0}
+				light={selectedSupplierId > 0}
 				size="sm"
 				style="width: 165px; border-bottom: none;"
 				class={'supplier'}
-				placeholder="supplier"
+				placeholder="Supplier"
 				selectedId={selectedSupplierId}
 				items={suppliers.map((m) => ({ id: m.id, text: m.text }))}
 				on:select={(e) => {
-					dispatch('supplierChange', e.detail.selectedId);
-					sup_light = true;
+					onsupplierchange(e.detail.selectedId);
 				}}
 				on:clear={() => {
-					sup_light = false;
-					dispatch('supplierChange', 0);
+					onsupplierchange(0);
 				}}
 			/>
 			<ComboBox
 				type="inline"
-				light={ware_light || selectedWarehouseId > 0}
+				light={selectedWarehouseId > 0}
 				class={'supplier'}
 				size="sm"
 				selectedId={selectedWarehouseId}
 				style="width: 165px; border-bottom: none;"
-				placeholder="penjaga gudang"
+				placeholder="Penjaga gudang"
 				items={employees.map((m) => ({ id: m.id, text: m.text }))}
 				on:select={(e) => {
-					dispatch('warehouseChange', e.detail.selectedId);
-					ware_light = true;
+					onwarehousechange(e.detail.selectedId);
 				}}
 				on:clear={() => {
-					ware_light = false;
-					dispatch('warehouseChange', 0);
+					onwarehousechange(0);
 				}}
 			/>
 			<Button

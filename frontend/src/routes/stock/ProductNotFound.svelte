@@ -5,7 +5,8 @@
 	import { useQuery } from '@sveltestack/svelte-query';
 	import { CodeSnippet, Loading, Tag } from 'carbon-components-svelte';
 
-	export let productName = '';
+	let { productName = '' } = $props();
+
 	async function fetchProductName(name: string) {
 		const url = `${baseURL}/products/names/list?txt=${name}&limit=5`;
 		const options = {
@@ -26,9 +27,9 @@
 		{ enabled: browser }
 	);
 
-	$: {
+	$effect.pre(() => {
 		query.setEnabled(browser);
-	}
+	});
 </script>
 
 {#if $query.isLoading}

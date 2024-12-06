@@ -2,67 +2,45 @@
 	import { browser } from '$app/environment';
 	import { formatNumber } from '$lib/components/NumberFormat';
 	import { getBarcodes, getRelationProp } from '$lib/fetchers';
-	import {
-		baseURL,
-		credential_include,
-		type iCurrentUser,
-		type iGudang,
-		type iStock,
-		type iStockDetail
-	} from '$lib/interfaces';
+	import { baseURL, credential_include } from '$lib/interfaces';
+    import type { iCurrentUser, iGudang, iStock, iStockDetail } from '$lib/interfaces';
 	import { SendToBack } from 'carbon-icons-svelte';
 	import { numberToText } from '$lib/number-to-string';
 	import { useQuery, useQueryClient } from '@sveltestack/svelte-query';
-	import {
-		Column,
-		Grid,
-		Loading,
-		LocalStorage,
-		Pagination,
-		Row,
-		ToastNotification
-	} from 'carbon-components-svelte';
+	import { Column, Grid, Loading, LocalStorage, Pagination, Row, ToastNotification } from 'carbon-components-svelte';
 	import dayjs from 'dayjs';
-	import { onDestroy, tick } from 'svelte';
+	import { tick } from 'svelte';
 	import FormStock from './FormStock.svelte';
 	import FormStockPayment from './FormStockPayment.svelte';
 	import ProductNotFound from './ProductNotFound.svelte';
 	import StockDetail from './StockDetail.svelte';
 	import StockList from './StockList.svelte';
-	import {
-		getStockById,
-		getStocks,
-		postCreateStock,
-		postDeleteStock,
-		postUpdateOnlyStock,
-		postUpdateStock
-	} from './handler';
-	import {
-		details,
-		initStock,
-		isStockLoading,
-		isStockUpdating,
-		stock
-	} from './store';
+	import { getStockById, getStocks, postCreateStock, postDeleteStock, postUpdateOnlyStock, postUpdateStock } from './handler';
+	import { details, initStock, isStockLoading, isStockUpdating, stock } from './store';
+
+    type iGudangResult = {
+		count: number;
+		data: iGudang[];
+		status: string;
+	};
 
 	const title = 'Stock';
 	const client = useQueryClient();
 
-	let txt = '';
-	let page = 1;
-	let limit = 5;
-	let supplierId = 0;
-	let warehouseId = 0;
-	let opt = 0;
-	let stockId = 0;
-	let open = false;
+	let txt = $state('');
+	let page = $state(1);
+	let limit = $state(5);
+	let supplierId = $state(0);
+	let warehouseId = $state(0);
+	let opt = $state(0);
+	let stockId = $state(0);
+	let open = $state(false);
 	const qKey = 'stocks';
-	let innerWidth = 0;
-	let timeout: number | undefined = undefined;
-
-	let isEdit = false;
-
-	let profile: iCurrentUser = {
+	let innerWidth =$state(0);
+	let timeout: number | undefined = $state(undefined);
+    let showNotification = $state(false);
+	let isEdit = $state(false);
+	let profile: iCurrentUser = $state({
 		id: '',
 		name: '',
 		email: '',
@@ -71,14 +49,19 @@
 		verified: false,
 		updatedAt: '',
 		createdAt: ''
-	};
+	});
 
-	function onProductNotFound(e: CustomEvent<string>) {
+    let pageNext = $derived(page + 1);
+    let query_key = $derived([qKey, page, limit, supplierId, warehouseId, txt]);
+    const query_next = $derived([qKey, pageNext, limit, supplierId, warehouseId, txt]);
+
+
+	function onProductNotFound(e: string) {
 		showNotification = false;
 		setTimeout(() => {
 			showNotification = true;
 		}, 250);
-		txt = e.detail;
+		txt = e;
 		timeout = 6_000;
 	}
 
@@ -98,11 +81,6 @@
 		}
 	);
 
-	type iGudangResult = {
-		count: number;
-		data: iGudang[];
-		status: string;
-	};
 
 	const fetchGudangs = async (): Promise<iGudangResult> => {
 		const url = `${baseURL}/gudangs`;
@@ -139,69 +117,70 @@
 		count: number;
 		currentPage: number;
 	}) => {
+        console.log(data.currentPage, data.totalPages);
+
 		if (data.currentPage < data.totalPages) {
 			client.prefetchQuery(
-				[qKey, opt, data.currentPage + 1, limit, supplierId, warehouseId, txt],
+				query_next,
 				() =>
-					getStocks(
-						opt,
-						data.currentPage + 1,
-						limit,
-						supplierId,
-						warehouseId,
-						txt
-					)
+                    loadstock(data.currentPage+1)
 			);
 		}
 	};
 
-	const queryStock = useQuery({
-		queryKey: [qKey, { id: stockId }],
-		queryFn: async () => getStockById(stockId),
-		enabled: false
-	});
+	const queryStock = $derived.by(() => {
+       return useQuery({
+            queryKey: [qKey, { id: stockId }],
+            queryFn: async () => getStockById(stockId),
+            enabled: false
+            });
+    });
 
-	const queryStocks = useQuery({
-		queryKey: [qKey, opt, page, limit, supplierId, warehouseId, txt],
-		queryFn: async () =>
-			await getStocks(opt, page, limit, supplierId, warehouseId, txt),
-		enabled: browser,
-		onSuccess: prefetchNextPage,
-		keepPreviousData: true
-	});
+    const loadstock = async (p: number) => {
+        return await getStocks(opt, p, limit, supplierId, warehouseId, txt);
+    }
 
-	function setQueryOption(
-		p: number,
-		l: number,
-		o: number,
-		s: number,
-		w: number,
-		t: string
-	) {
-		queryStocks.setOptions({
-			queryKey: [qKey, o, p, l, s, w, t],
-			keepPreviousData: true,
-			enabled: browser,
-			queryFn: async () =>
-				await getStocks(opt, page, limit, supplierId, warehouseId, txt),
-			onSuccess: prefetchNextPage
-		});
+	const queryStocks = $derived.by(() => {
+        return useQuery({
+            queryKey: query_key,
+            queryFn: async () => loadstock(page),
+            enabled: browser,
+            onSuccess: prefetchNextPage,
+            keepPreviousData: true
+        })
+    });
 
-		// console.log([qKey, p, l, o, t, r]);
-		// console.log(q_key);
-	}
+	// function setQueryOption(
+	// 	p: number,
+	// 	l: number,
+	// 	o: number,
+	// 	s: number,
+	// 	w: number,
+	// 	t: string
+	// ) {
+	// 	queryStocks.setOptions({
+	// 		queryKey: [qKey, o, p, l, s, w, t],
+	// 		keepPreviousData: true,
+	// 		enabled: browser,
+	// 		queryFn: async () =>
+	// 			await getStocks(opt, page, limit, supplierId, warehouseId, txt),
+	// 		onSuccess: prefetchNextPage
+	// 	});
+	// 	// console.log([qKey, p, l, o, t, r]);
+	// 	// console.log(q_key);
+	// }
 
-	function stockClose(e: CustomEvent<any>): void {
+	function stockClose(_e: any): void {
 		changeStockSession(0, false);
 	}
 
-	function createNewStock(_e: CustomEvent<number>): void {
+	function createNewStock(_e: number): void {
 		isEdit = false;
 		changeStockSession(0, true);
 	}
 
-	function editStock(e: CustomEvent<number>) {
-		changeStockSession(e.detail, true);
+	function editStock(e: number) {
+		changeStockSession(e, true);
 	}
 
 	async function changeStockSession(id: number, mode: boolean) {
@@ -215,7 +194,7 @@
 		});
 
 		// setTimeout(() => {
-		isStockLoading.update((o) => (o = false));
+		isStockLoading.update(() => false);
 		// }, 250);
 		isEdit = mode;
 	}
@@ -238,26 +217,18 @@
 		const result = await postUpdateOnlyStock(stockId, savedStock);
 		if (result) {
 			await client.invalidateQueries([qKey, { id: stockId }]);
-			await client.invalidateQueries([
-				qKey,
-				opt,
-				page,
-				limit,
-				supplierId,
-				warehouseId,
-				txt
-			]);
-			isStockUpdating.update((o) => (o = false));
+			await client.invalidateQueries(query_key);
+			isStockUpdating.update(() => false);
 			isEdit = false;
 		}
 
 		changeStockSession(0, false);
 	}
 
-	async function saveStock(e: CustomEvent<iStockDetail[]>) {
+	async function saveStock(e: iStockDetail[]) {
 		if ($stock.isDetailChanged) {
 			// console.log("UDPATE-WITH-DETAILS");
-			if (e.detail.length > 0) {
+			if (e.length > 0) {
 				const x = dayjs($stock.createdAt);
 				const y = dayjs($stock.dueAt);
 				const duration = y.diff(x, 'days');
@@ -275,39 +246,23 @@
 				// console.log(savedStock);
 
 				if ($stock.id === 0) {
-					const result = await postCreateStock(savedStock, e.detail);
+					const result = await postCreateStock(savedStock, e);
 					if (result) {
 						await client.invalidateQueries([qKey, { id: stockId }]);
-						await client.invalidateQueries([
-							qKey,
-							opt,
-							page,
-							limit,
-							supplierId,
-							warehouseId,
-							txt
-						]);
+						await client.invalidateQueries(query_key);
 						// setTimeout(() => {
-						isStockUpdating.update((o) => (o = false));
+						isStockUpdating.update(() => false);
 						isEdit = false;
 						// }, 250);
 					}
 				} else {
 					//					console.log(e.detail);
-					const result = await postUpdateStock(stockId, savedStock, e.detail);
+					const result = await postUpdateStock(stockId, savedStock, e);
 					if (result) {
 						await client.invalidateQueries([qKey, { id: stockId }]);
-						await client.invalidateQueries([
-							qKey,
-							opt,
-							page,
-							limit,
-							supplierId,
-							warehouseId,
-							txt
-						]);
+						await client.invalidateQueries(query_key);
 						// setTimeout(() => {
-						isStockUpdating.update((o) => (o = false));
+						isStockUpdating.update(() => false);
 						isEdit = false;
 						// }, 250);
 					}
@@ -320,42 +275,89 @@
 		}
 	}
 
-	async function deleteStocks(e: CustomEvent<number[]>) {
-		let log = await postDeleteStock(e.detail);
+	async function deleteStocks(e: number[]) {
+		let log = await postDeleteStock(e);
 		if (log && log.data > 0) {
-			client.invalidateQueries([
-				qKey,
-				opt,
-				page,
-				limit,
-				supplierId,
-				warehouseId,
-				txt
-			]);
+			client.invalidateQueries(query_key);
 		}
-
 		setTimeout(() => {
 			isStockUpdating.set(false);
 		}, 250);
 		// console.log(log);
 	}
 
-	const unsubscribe = queryStock.subscribe((o) => {
-		stock.set(o.data?.stock ?? { ...initStock });
-		details.set(o.data?.details ?? []);
-	});
+    const subsribe = () => {
+        queryStock.subscribe((o) => {
+            stock.set(o.data?.stock ?? { ...initStock });
+            details.set(o.data?.details ?? []);
+        });
+    }
 
-	onDestroy(unsubscribe);
+    let isStockAvailabel = $derived.by(() => {
+        return $queryStock.isSuccess && $queryStock.data;
+    })
 
-	$: {
-		supplierQuery.setEnabled(browser);
-		employeeQuery.setEnabled(browser);
-		gudangQuery.setEnabled(browser);
-		queryStocks.setEnabled(browser);
-		queryStock.setEnabled(browser);
-	}
-	$: showNotification = timeout !== undefined;
-	$: setQueryOption(page, limit, opt, supplierId, warehouseId, txt);
+    let suppliers = $derived.by(()=> {
+        if($supplierQuery.isSuccess && $supplierQuery.data) {
+            return $supplierQuery.data.data;
+        }
+        return [];
+    })
+
+    let employees = $derived.by(()=>{
+        if($employeeQuery.isSuccess && $employeeQuery.data) {
+            return $employeeQuery.data.data;
+        }
+        return[];
+    })
+
+    let stocks = $derived.by(() => {
+        if($queryStocks.isSuccess && $queryStocks.data) {
+            return $queryStocks.data.stocks;
+        }
+        return [];
+    })
+
+    let gudangs = $derived.by(() => {
+        if($gudangQuery.isSuccess && $gudangQuery.data) {
+            return $gudangQuery.data.data;
+        }
+        return [];
+    })
+
+    let barcodes = $derived.by(() => {
+        if($queryBarcode.isSuccess && $queryBarcode.data.data) {
+            return $queryBarcode.data.data;
+        }
+        return [];
+    })
+
+    let totalItems = $derived.by(() => {
+        if($queryStocks.isSuccess && $queryStocks.data) {
+            return $queryStocks.data.totalItems;
+        }
+        return 0;
+    })
+
+
+    $effect.pre(() => {
+        if(isStockAvailabel) {
+            subsribe();
+        }
+    });
+
+	// $effect.root(()=>  {
+	// 	supplierQuery.setEnabled(browser);
+	// 	employeeQuery.setEnabled(browser);
+	// 	gudangQuery.setEnabled(browser);
+	// 	queryStocks.setEnabled(browser);
+	// 	queryStock.setEnabled(browser);
+	// });
+
+    $effect(() => {
+        showNotification = timeout !== undefined;
+    });
+	// $: setQueryOption(page, limit, opt, supplierId, warehouseId, txt);
 </script>
 
 <svelte:window bind:innerWidth={innerWidth} />
@@ -386,44 +388,44 @@
 	</Grid>
 
 	<FormStock
-		suppliers={$supplierQuery.data?.data}
-		employees={$employeeQuery.data?.data}
+		suppliers={suppliers}
+		employees={employees}
 		bind:innerWidth={innerWidth}
 	/>
 	<StockDetail
-		barcodes={$queryBarcode.data?.data}
-		gudangs={$gudangQuery.data?.data}
-		on:productNotFound={onProductNotFound}
-		on:createNewStock={createNewStock}
-		on:close={stockClose}
-		on:save={saveStock}
-		on:addDp={() => (open = true)}
+		barcodes={barcodes}
+		gudangs={gudangs}
+		onnotfound={onProductNotFound}
+		onnew={createNewStock}
+		onclose={stockClose}
+		onsave={saveStock}
+		onadddp={() => (open = true)}
 	/>
 {:else}
 	<StockList
-		data={$queryStocks.data?.stocks}
-		suppliers={$supplierQuery.data?.data}
-		employees={$employeeQuery.data?.data}
+		data={stocks}
+		suppliers={suppliers}
+		employees={employees}
 		txt={txt}
 		selectedSupplierId={supplierId}
 		selectedWarehouseId={warehouseId}
-		on:supplierChange={(e) => {
-			opt = e.detail === 0 ? 0 : 2;
-			supplierId = e.detail;
+		onsupplierchange={(e) => {
+			opt = e === 0 ? 0 : 2;
+			supplierId = e;
 		}}
-		on:warehouseChange={(e) => {
-			opt = e.detail === 0 ? 0 : 3;
-			warehouseId = e.detail;
+		onwarehousechange={(e) => {
+			opt = e === 0 ? 0 : 3;
+			warehouseId = e;
 		}}
-		on:search={(e) => {
-			opt = e.detail === null || e.detail === '' ? 0 : 1;
-			txt = e.detail ?? '';
+		onsearch={(e) => {
+			opt = e === null || e === '' ? 0 : 1;
+			txt = e ?? '';
 		}}
-		on:edit={editStock}
-		on:deleteStocks={deleteStocks}
+		onedit={editStock}
+		ondelete={deleteStocks}
 	/>
 	<Pagination
-		totalItems={$queryStocks.data?.totalItems}
+		totalItems={totalItems}
 		pageSizes={[3, 5, 10, 20, 50]}
 		pageSize={limit}
 		style="margin-top: 1px;"

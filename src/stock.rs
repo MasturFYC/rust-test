@@ -93,7 +93,7 @@ async fn get_stocks(
 ) -> impl Responder {
 	let query_params = opts.into_inner();
 	let page = query_params.page.unwrap_or(1);
-	let limit = query_params.page.unwrap_or(10);
+	let limit = query_params.limit.unwrap_or(10);
 	let query_result = app_state.db_client.get_stocks(query_params).await;
 	if query_result.is_err() {
 		let message = "Something bad happened while fetching all stock items";
@@ -109,9 +109,13 @@ async fn get_stocks(
 	// count all stocks in database
 	let length = v.1;
 	let lim = limit as i64;
+	let p: i64 = if length > lim { length / lim } else { 1 };
+	let r: i64 = if length > lim { length % lim } else { 0 };
+	let remain: i64 = if r > 0 { 1 } else { 0 };
+
 	let json_response = json!({
 		"status": "success",
-		"totalPages": (length / lim) + (if length % lim == 0 {0} else {1}),
+		"totalPages": p + remain,
 		"count": stocks.len(), // count of selected stocks
 		"stocks": stocks, // selected stocks
 		"currentPage": page,

@@ -39,7 +39,6 @@
 		ComboBox
 	} from 'carbon-components-svelte';
 	import { onDestroy, onMount, tick } from 'svelte';
-	import { createEventDispatcher } from 'svelte';
 	import ExpandedRow from './ExpandedRow.svelte';
 	import '$assets/styles.css';
 	import dayjs from 'dayjs';
@@ -54,18 +53,39 @@
 	import { toNumber } from './handler';
 	import { stock, details } from './store';
 	import { isStockUpdating } from './store';
-	import type { DataTableRow } from 'carbon-components-svelte/src/DataTable/DataTable.svelte';
+	import type {
+		DataTableHeader,
+		DataTableRow
+	} from 'carbon-components-svelte/src/DataTable/DataTable.svelte';
 
-	const dispatch = createEventDispatcher();
+	interface Props {
+		barcodes: { barcode: string }[] | undefined;
+		gudangs: iGudang[] | undefined;
+		onclose: (e: number) => void;
+		onadddp: () => void;
+		onnew: (e: number) => void;
+		onsave: (e: iStockDetail[]) => void;
+		onnotfound: (e: string) => void;
+	}
+
+	let {
+		barcodes = [],
+		gudangs = [],
+		onclose,
+		onadddp,
+		onnew,
+		onsave,
+		onnotfound
+	}: Props = $props();
+
 	let reform: HTMLDivElement;
-	let isDirty = false;
-	let isBarcodeDirty = false;
-	let showNotification = false;
-	let timeout: number | undefined = undefined;
-	let notifyTitle = 'Error';
-	let notifySubtitle = '';
+	let isDirty = $state(false);
+	let isBarcodeDirty = $state(false);
+	let timeout: number | undefined = $state(undefined);
+	let notifyTitle = $state('Error');
+	let notifySubtitle = $state('');
 
-	let headers = [
+	let headers: DataTableHeader[] = [
 		{ key: 'barcode', value: 'Barcode', width: '12%' },
 		{ key: 'name', value: 'Nama barang', width: 'auto' },
 		{ key: 'qty', value: 'Qty', width: '70px' },
@@ -77,16 +97,13 @@
 		{ key: 'gudangId', value: 'Simpan di Gudang', width: 'auto' }
 	];
 
-	export let barcodes: { barcode: string }[] = [];
-	export let gudangs: iGudang[] = [];
-
 	const get_gudang = () => {
 		return gudangs.map((m) => ({ id: m.id, text: m.name }));
 	};
 
-	let items = 0;
-	let currentId = 0;
-	let isAddNew = false;
+	let items = $state(0);
+	let currentId = $state(0);
+	let isAddNew = $state(false);
 
 	// let currentDetail: iStockDetail;
 	let currentKey = 'barcode';
@@ -271,6 +288,16 @@
 		e.preventDefault();
 
 		if (e.key === 'Escape') {
+			if (isBarcodeDirty) {
+				const el = document.getElementById('barcode-id') as HTMLInputElement;
+				if (el) {
+					const i = $details.findIndex((f) => f.id === currentId);
+					let currentDetail = $details[i];
+					isBarcodeDirty = false;
+					el.value = currentDetail.barcode;
+					return false;
+				}
+			}
 			const i = $details.findIndex((f) => f.id === 0);
 			if (i >= 0) {
 				const slices = [...$details];
@@ -304,8 +331,10 @@
 
 		let x = 0;
 		if (e.key === 'ArrowDown') {
+			if (isBarcodeDirty) return false;
 			x = i === $details.length - 1 ? 0 : i + 1;
 		} else if (e.key === 'ArrowUp') {
+			if (isBarcodeDirty) return false;
 			x = i === 0 ? $details.length - 1 : i - 1;
 		} else if (e.key === '+' && e.ctrlKey) {
 			const i = $details.findIndex((f) => f.id === 0);
@@ -415,7 +444,7 @@
 				await tick();
 				currentKey = 'barcode';
 				setFocuse('#barcode-id');
-				dispatch('productNotFound', strCode);
+				onnotfound(strCode);
 			}
 		}
 	}
@@ -560,11 +589,12 @@
 		}, 100);
 	}
 
-	let selectedRowIds: number[] = [];
-	$: showNotification = timeout !== undefined;
-	$: {
+	let selectedRowIds: number[] = $state([]);
+	let showNotification = $derived(timeout !== undefined);
+
+	$effect(() => {
 		items = $details.filter((f) => f.id > 0).length;
-	}
+	});
 
 	function updateStock() {
 		let total = $details.reduce((o, t) => o + toNumber(t.subtotal), 0);
@@ -595,9 +625,7 @@
 
 		isStockUpdating.set(true);
 		await tick();
-
-		dispatch(
-			'save',
+		onsave(
 			$details
 				.filter((f) => f.id !== 0)
 				.map((m) => ({ ...m, stockId: $stock.id }))
@@ -614,11 +642,16 @@
 		return '-';
 	};
 
-	$: isStockValid =
-		$stock.supplierId > 0 &&
-		$stock.warehouseId > 0 &&
-		$stock.total > 0 &&
-		$stock.invoiceId.trim().length > 0;
+	let isStockValid = $derived.by(() => {
+		return (
+			$stock.supplierId > 0 &&
+			$stock.warehouseId > 0 &&
+			$stock.total > 0 &&
+			$stock.invoiceId.trim().length > 0
+		);
+	});
+
+	// $inspect($stock);
 </script>
 
 {#if showNotification}
@@ -642,8 +675,8 @@
 	tabindex={0}
 	role="row"
 	aria-labelledby="table-detail"
-	on:keydown={onTableKeyDown}
-	on:focus={onTablePointerEnter}
+	onkeydown={onTableKeyDown}
+	onfocus={onTablePointerEnter}
 >
 	<DataTable
 		selectable
@@ -673,7 +706,7 @@
 					style="border: none;"
 					size="small"
 					on:click={() => {
-						dispatch('createNewStock', 0);
+						onnew(0);
 						selectedRowIds = [];
 					}}
 					disabled={items === 0 || $isStockUpdating || $stock.id === 0}
@@ -684,7 +717,7 @@
 					kind="tertiary"
 					style="border: none;"
 					size="small"
-					on:click={() => dispatch('addDp', null)}
+					on:click={() => onadddp()}
 					disabled={items === 0 || $isStockUpdating}>Pembayaran / Dp</Button
 				>
 				<Button
@@ -699,7 +732,7 @@
 					kind="danger-ghost"
 					size="small"
 					disabled={$isStockUpdating}
-					on:click={() => dispatch('close', 0)}>Close</Button
+					on:click={() => onclose(0)}>Close</Button
 				>
 			</ToolbarContent>
 		</Toolbar>
@@ -771,9 +804,8 @@
 					<div
 						role="button"
 						tabindex={-1}
-						on:keyup
 						aria-labelledby="btn-101"
-						on:click={() => (currentKey = cell.key)}
+						onclick={() => (currentKey = cell.key)}
 						class="cell-right"
 						class:qty={cell.key === 'subtotal'}
 						class:qty-alert={toNumber(row['qty']) === 0}
@@ -784,9 +816,8 @@
 					<div
 						role="button"
 						tabindex={-1}
-						on:keyup
 						aria-labelledby="btn-105"
-						on:click={() => (currentKey = cell.key)}
+						onclick={() => (currentKey = cell.key)}
 						class:qty-alert={toNumber(row['qty']) === 0}
 						class="cell-right"
 					>
@@ -796,9 +827,8 @@
 					<div
 						role="button"
 						tabindex={-1}
-						on:keyup
 						aria-labelledby="btn-102"
-						on:click={() => (currentKey = cell.key)}
+						onclick={() => (currentKey = cell.key)}
 						class:qty-alert={toNumber(row['qty']) === 0}
 					>
 						{cell.value}
@@ -817,9 +847,8 @@
 				<div
 					role="button"
 					tabindex={-1}
-					on:keyup
 					aria-labelledby="btn-103"
-					on:click={() => (currentKey = cell.key)}
+					onclick={() => (currentKey = cell.key)}
 					class="cell-right"
 					class:subtotal={cell.key === 'subtotal'}
 					class:qty-alert={toNumber(row['qty']) === 0}
@@ -830,9 +859,8 @@
 				<div
 					role="button"
 					tabindex={-1}
-					on:keyup
 					aria-labelledby="btn-107"
-					on:click={() => (currentKey = cell.key)}
+					onclick={() => (currentKey = cell.key)}
 					class="cell-right"
 					class:qty={cell.key === 'qty'}
 					class:qty-alert={toNumber(row['qty']) <= 0}
@@ -845,9 +873,8 @@
 				<div
 					role="button"
 					tabindex={-1}
-					on:keyup
 					aria-labelledby="btn-105"
-					on:click={() => (currentKey = cell.key)}
+					onclick={() => (currentKey = cell.key)}
 					class:qty-alert={toNumber(row['qty']) === 0}
 					class="cell-right"
 				>
@@ -857,9 +884,8 @@
 				<div
 					role="button"
 					tabindex={-1}
-					on:keyup
 					aria-labelledby="btn-104"
-					on:click={() => (currentKey = cell.key)}
+					onclick={() => (currentKey = cell.key)}
 					class:qty-alert={toNumber(row['qty']) === 0}
 				>
 					{cell.value}
@@ -884,7 +910,7 @@
 		size="small"
 		icon={Add}
 		kind="tertiary"
-		on:click={totalItemClick}
+		onclick={totalItemClick}
 		disabled={$isStockUpdating}
 		>Total: {items} item{items > 1 ? 's' : ''}</Button
 	>
@@ -892,6 +918,6 @@
 
 <datalist id="barcode-list">
 	{#each barcodes as c, i}
-		<option id="list-{i}" value={c.barcode} />
+		<option id="list-{i}" value={c.barcode}></option>
 	{/each}
 </datalist>

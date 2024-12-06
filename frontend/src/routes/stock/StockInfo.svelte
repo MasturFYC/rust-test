@@ -3,12 +3,9 @@
 	import type { iStock } from '$lib/interfaces';
 	import { Grid, Row, Column } from 'carbon-components-svelte';
 	import dayjs from 'dayjs';
-	import { createEventDispatcher } from 'svelte';
 	import LabelProperty from '$lib/components/LabelProperty.svelte';
 
-	const dispatch = createEventDispatcher();
-
-	export let data: iStock;
+	let { data }: { data: iStock } = $props();
 </script>
 
 <!-- <Button icon={Close} size="small" on:click={() => dispatch("closeInfo", null)}
