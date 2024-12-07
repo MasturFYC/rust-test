@@ -42,7 +42,7 @@ async fn get_stock(
 					let message =
 						format!("Stock with ID: {} not found", stock_id);
 					HttpResponse::NotFound().json(json!({
-						"status": "fail",
+						"status": "failed",
 						"message": message
 					}))
 				}
@@ -58,7 +58,7 @@ async fn get_stock(
 		Err(e) => {
 			let message = format!("Error {:?}", e);
 			let response = serde_json::json!({
-				"status": "fail",
+				"status": "failed",
 				"message": message
 			});
 			HttpResponse::InternalServerError().json(response)
@@ -162,7 +162,7 @@ async fn create(
 		// {
 		// 	println!("{:?}", e);
 		// 	return Err(HttpResponse::BadRequest().json(json!({
-		// 		"status": "fail",
+		// 		"status": "failed",
 		// 		"message": "Note with that name already exists"
 		// 	})));
 		// }
@@ -187,7 +187,7 @@ async fn update(
 		.await;
 	if query_result.is_err() {
 		return HttpResponse::BadRequest().json(json!({
-			"status": "fail-1",
+			"status": "failed-1",
 			"message": "Bad request"
 		}));
 	}
@@ -195,7 +195,7 @@ async fn update(
 	if query_result.unwrap().is_none() {
 		let message = format!("Stock with ID: {} not found", stock_id);
 		return HttpResponse::NotFound().json(json!({
-			"status": "fail-2",
+			"status": "failed-2",
 			"message": message
 		}));
 	}
@@ -235,7 +235,7 @@ async fn update_only_stock(
 		.await;
 	if query_result.is_err() {
 		return HttpResponse::BadRequest().json(json!({
-			"status": "fail-1",
+			"status": "failed-1",
 			"message": "Bad request"
 		}));
 	}
@@ -243,7 +243,7 @@ async fn update_only_stock(
 	if query_result.unwrap().is_none() {
 		let message = format!("Stock with ID: {} not found", stock_id);
 		return HttpResponse::NotFound().json(json!({
-			"status": "fail-2",
+			"status": "failed-2",
 			"message": message
 		}));
 	}
@@ -273,7 +273,6 @@ async fn update_only_stock(
 #[delete("")]
 async fn delete(
 	body: web::Json<Vec<i32>>,
-	// path: web::Path<Vec<i32>>,
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
 	let ids = body.into_inner();
@@ -284,9 +283,9 @@ async fn delete(
 	match query_result {
 		Ok(rows_affected) => {
 			if rows_affected == 0 {
-				let message = "Stock with ID: those ids  not found".to_string();
+				let message = "Stock with those ids not found".to_string();
 				return HttpResponse::NotFound().json(json!({
-					"status": "fail",
+					"status": "failed",
 					"message": message
 				}));
 			}

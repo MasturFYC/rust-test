@@ -1,9 +1,17 @@
 import {
 	baseURL,
 	credential_include,
+	type iGudang,
 	type iStock,
 	type iStockDetail
 } from '$lib/interfaces';
+
+export type iGudangResult = {
+	count: number;
+	data: iGudang[];
+	status: string;
+};
+
 export async function getStockById(
 	id: number,
 	defaultValue?: { stock: iStock; details: iStockDetail[] }
@@ -11,7 +19,6 @@ export async function getStockById(
 	if (id === 0) {
 		return await Promise.resolve({ ...defaultValue!, status: 'success' });
 	}
-
 	const url = `${baseURL}/stocks/details/${id}`;
 	const options = {
 		method: 'GET',
@@ -21,7 +28,6 @@ export async function getStockById(
 	const result = await fetch(request);
 	let json = await result.json();
 	// console.log(json);
-
 	return json;
 }
 
@@ -47,8 +53,7 @@ export async function getStocks(
 	};
 	const request = new Request(url, options);
 	const result = await fetch(request);
-    const r = await result.json();
-    console.log(r);
+	const r = await result.json();
 	return r;
 }
 
@@ -61,7 +66,6 @@ export async function postCreateStock(
 		stock: stock,
 		details: details
 	});
-
 	const options = {
 		headers: {
 			'content-type': 'application/json'
@@ -87,7 +91,6 @@ export async function postUpdateStock(
 		stock: stock,
 		details: details
 	});
-
 	const options = {
 		headers: {
 			'content-type': 'application/json'
@@ -109,7 +112,6 @@ export async function postUpdateOnlyStock(
 	// console.log(id, stock,details);
 	const url = `${baseURL}/stocks/update-only-stock/${id}`;
 	const json = JSON.stringify(stock);
-
 	const options = {
 		headers: {
 			'content-type': 'application/json'
@@ -130,7 +132,6 @@ export async function postDeleteStock(
 	// console.log(id, stock,details);
 	const url = `${baseURL}/stocks`;
 	const json = JSON.stringify(ids);
-
 	const options = {
 		headers: {
 			'content-type': 'application/json'
@@ -151,4 +152,19 @@ export function toNumber(v: string | number | undefined): number {
 		return +v;
 	}
 	return v;
+}
+
+export async function fetchGudangs(): Promise<iGudangResult> {
+	const url = `${baseURL}/gudangs`;
+	const options = {
+		headers: {
+			'content-type': 'application/json'
+		},
+		method: 'GET',
+		credentials: credential_include
+	};
+	const request = new Request(url, options);
+	let result = await fetch(request);
+
+	return (await result.json()) as iGudangResult;
 }

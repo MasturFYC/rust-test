@@ -14,18 +14,3 @@ SET order_type = $2,
    created_at = $14,
    updated_at = now()
 WHERE id = $1
-RETURNING id,
-   order_type as "order_type: OrderType",
-   customer_id,
-   sales_id,
-   payment_type as "payment_type: PaymentType",
-   updated_by,
-   total,
-   dp,
-   payment,
-   remain,
-   invoice_id,
-   due_at,
-   is_protected,
-   created_at,
-   updated_at

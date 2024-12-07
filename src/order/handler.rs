@@ -1,10 +1,13 @@
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use serde_json::json;
 
-use crate::{dtos::RequestQueryDto, extractors::auth::RequireAuth, AppState};
+use crate::{
+	dtos::RequestQueryDto, extractors::auth::RequireAuth, AppState,
+	error::HttpError,
+};
 
 use resdb::{
-	model::{RequestQueryOrderDtos, UserRole},
+	model::{OrderDtos, RequestQueryOrderDtos, UserRole},
 	order::db::OrderExt,
 };
 
@@ -13,47 +16,124 @@ pub fn order_scope(conf: &mut web::ServiceConfig) {
 		.wrap(RequireAuth::allowed_roles(vec![UserRole::Admin]))
 		.service(get_order)
 		.service(get_orders)
+		.service(get_order_with_details)
 		// .service(get_relations_by_type)
 		.service(create)
+		.service(update_only_order)
 		.service(update)
 		.service(delete);
-
 	conf.service(scope);
 }
 
 #[get("/{id}")]
-async fn get_order(path: web::Path<i32>, app_state: web::Data<AppState>) -> impl Responder {
+async fn get_order(
+	path: web::Path<i32>,
+	app_state: web::Data<AppState>,
+) -> impl Responder {
 	let order_id = path.into_inner();
 	let query_result = app_state.db_client.get_order(order_id).await;
-
 	match query_result {
 		Ok(order) => {
 			match order {
+				#![allow(non_snake_case)]
 				None => {
-					let message = format!("Order with ID: {} not found", order_id);
+					let message =
+						format!("Order with ID: {} not found", order_id);
 					HttpResponse::NotFound().json(json!({
-						"status": "fail",
+						"status": "failed",
 						"message": message
 					}))
 				}
 				Some(x) => {
-					let order_response = json!({"status": "success","data": x});
+					let order_response = json!({
+						"status": "success",
+						"data": x
+					});
 					HttpResponse::Ok().json(order_response)
 				}
 			}
 			// if order.is_none() {
 			//     let message = format!("Order with ID: {} not found", order_id);
 			//         return HttpResponse::NotFound()
-			//             .json(serde_json::json!({"status": "fail","message": message}));
+			//             .json(serde_json::json!({"status": "failed","message": message}));
 			// }
-
 			// let order_response = serde_json::json!({"status": "success","data": order});
 			// return HttpResponse::Ok().json(order_response);
 		}
 		Err(e) => {
 			let message = format!("Error {:?}", e);
-			HttpResponse::InternalServerError()
-				.json(serde_json::json!({"status": "fail","message": message}))
+			HttpResponse::InternalServerError().json(
+				serde_json::json!({"status": "failed","message": message}),
+			)
+		}
+	}
+}
+
+#[get("/details/{id}")]
+async fn get_order_with_details(
+	path: web::Path<i32>,
+	app_state: web::Data<AppState>,
+) -> Result<HttpResponse, HttpError> {
+	let order_id = path.into_inner();
+	let result = app_state
+		.db_client
+		.get_order_with_details(order_id)
+		.await
+		.map_err(|e| HttpError::server_error(e.to_string()))?;
+	let (stock, details) = result;
+	let response = json!(
+		{"status": "success",
+		"stock": stock,
+		"details": details
+	});
+	Ok(HttpResponse::Ok().json(response))
+}
+
+#[put("/update-only-order/{id}")]
+async fn update_only_order(
+	path: web::Path<i32>,
+	body: web::Json<OrderDtos>,
+	app_state: web::Data<AppState>,
+) -> impl Responder {
+	let order_id = path.into_inner();
+	let query_result = app_state
+		.db_client //
+		.get_order(order_id)
+		.await;
+	if query_result.is_err() {
+		return HttpResponse::BadRequest().json(json!({
+			"status": "failed-1",
+			"message": "Bad request"
+		}));
+	}
+	// let old = ; //_or(None);
+	if query_result.unwrap().is_none() {
+		let message = format!("Order with ID: {} not found", order_id);
+		return HttpResponse::NotFound().json(json!({
+			"status": "failed-2",
+			"message": message
+		}));
+	}
+
+	let data = body.into_inner();
+	let query_result = app_state //
+		.db_client
+		.order_update_only(order_id, data)
+		.await;
+	match query_result {
+		Ok(result) => {
+			let stock_response = json!({
+			"status": "success",
+			"id": result,
+			});
+			HttpResponse::Ok().json(stock_response)
+		}
+		Err(err) => {
+			let message = format!("Error: {:?}", err);
+			HttpResponse::InternalServerError().json(json!({
+				"status": "error1",
+				"message": message
+			}))
 		}
 	}
 }
@@ -81,11 +161,15 @@ async fn get_orders(
 	// count all orders in database
 	let length = v.1;
 	let lim = limit as i64;
+	let p: i64 = if length > lim { length / lim } else { 1 };
+	let r: i64 = if length > lim { length % lim } else { 0 };
+	let remain: i64 = if r > 0 { 1 } else { 0 };
 	let json_response = json!({
 		"status": "success",
-		"totalPages": (length / lim) + (if length % lim == 0 {0} else {1}),
+		"totalPages": p + remain,
 		"count": orders.len(), // count of selected orders
 		"data": orders, // selected orders
+		"currentPage": page,
 		"totalItems": length, // all item orders in database
 	});
 	HttpResponse::Ok().json(json_response)
@@ -104,24 +188,20 @@ async fn create(
 		.await;
 	match query_result {
 		Ok(o) => {
-			let order = o.0;
-			let details = o.1;
-			let detail_response = json!({
+			let response = json!({
 				"status": "success",
-				"data": {
-					"order" : order,
-					"details" : details
-				}
+				"id" : o.0,
+				"length" : o.1
 			});
 			// println!("{:?}", v);
-			HttpResponse::Created().json(detail_response)
+			HttpResponse::Created().json(response)
 		}
 		Err(e) => {
 			if e.to_string()
 				.contains("duplicate key value violates unique constraint")
 			{
 				return HttpResponse::BadRequest().json(json!({
-					"status": "fail",
+					"status": "failed",
 					"message": "Note with that name already exists"
 				}));
 			}
@@ -142,12 +222,14 @@ async fn update(
 	let order_id = path.into_inner();
 	let query_result = app_state.db_client.get_order(order_id).await;
 	if query_result.is_err() {
-		return HttpResponse::BadRequest().json(json!({"status": "fail","message": "Bad request"}));
+		return HttpResponse::BadRequest()
+			.json(json!({"status": "failed","message": "Bad request"}));
 	}
 	// let old = ; //_or(None);
 	if query_result.unwrap().is_none() {
 		let message = format!("Order with ID: {} not found", order_id);
-		return HttpResponse::NotFound().json(json!({"status": "fail","message": message}));
+		return HttpResponse::NotFound()
+			.json(json!({"status": "failed","message": message}));
 	}
 	let data = body.into_inner();
 	let query_result = app_state
@@ -166,22 +248,25 @@ async fn update(
 		}
 		Err(err) => {
 			let message = format!("Error: {:?}", err);
-			HttpResponse::InternalServerError().json(json!({"status": "error","message": message}))
+			HttpResponse::InternalServerError()
+				.json(json!({"status": "error","message": message}))
 		}
 	}
 }
 
 #[delete("/{id}")]
-async fn delete(path: web::Path<i32>, app_state: web::Data<AppState>) -> impl Responder {
-	let order_id = path.into_inner();
-	let query_result = app_state.db_client.order_delete(order_id).await;
+async fn delete(
+	body: web::Json<Vec<i32>>,
+	app_state: web::Data<AppState>,
+) -> impl Responder {
+	let ids = body.into_inner();
+	let query_result = app_state.db_client.order_delete(ids).await;
 	match query_result {
 		Ok(rows_affected) => {
 			if rows_affected == 0 {
-				let message = format!("Order with ID: {} not found", order_id);
-
+				let message = "Order with those ids not found".to_string();
 				return HttpResponse::NotFound().json(json!({
-					"status": "fail",
+					"status": "failed",
 					"message": message
 				}));
 			}

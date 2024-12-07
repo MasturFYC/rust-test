@@ -69,7 +69,7 @@
 		onsearch(searchText);
 	}
 
-	function searchClear(e: any): void {
+	function searchClear(e: Event): void {
 		e.preventDefault();
 		onsearch(undefined);
 	}
@@ -87,6 +87,7 @@
 	batchSelection
 	batchExpansion
 	size="medium"
+	zebra
 	headers={headers}
 	rows={data}
 	bind:selectedRowIds={selectedRowIds}
@@ -114,7 +115,7 @@
 				disabled={$isStockUpdating || $isStockLoading}
 				skeleton={$isStockLoading}
 				icon={Edit}
-				on:click={() => editStock(row.id)}
+				onclick={() => editStock(row.id)}
 			/>
 		{:else}
 			{cell.value}
@@ -123,7 +124,6 @@
 	<svelte:fragment slot="expanded-row" let:row>
 		<StockInfo data={data.filter((f) => f.id === row.id)[0]} />
 	</svelte:fragment>
-
 	<Toolbar size="sm">
 		<ToolbarContent>
 			<ToolbarSearch

@@ -2,12 +2,19 @@
 	import { browser } from '$app/environment';
 	import { formatNumber } from '$lib/components/NumberFormat';
 	import { getBarcodes, getRelationProp } from '$lib/fetchers';
-	import { baseURL, credential_include } from '$lib/interfaces';
-    import type { iCurrentUser, iGudang, iStock, iStockDetail } from '$lib/interfaces';
+	import type { iCurrentUser, iStock, iStockDetail } from '$lib/interfaces';
 	import { SendToBack } from 'carbon-icons-svelte';
 	import { numberToText } from '$lib/number-to-string';
-	import { useQuery, useQueryClient } from '@sveltestack/svelte-query';
-	import { Column, Grid, Loading, LocalStorage, Pagination, Row, ToastNotification } from 'carbon-components-svelte';
+	import { useQuery, useQueryClient, useIsFetching } from '@sveltestack/svelte-query';
+	import {
+		Column,
+		Grid,
+		Loading,
+		LocalStorage,
+		Pagination,
+		Row,
+		ToastNotification
+	} from 'carbon-components-svelte';
 	import dayjs from 'dayjs';
 	import { tick } from 'svelte';
 	import FormStock from './FormStock.svelte';
@@ -15,30 +22,39 @@
 	import ProductNotFound from './ProductNotFound.svelte';
 	import StockDetail from './StockDetail.svelte';
 	import StockList from './StockList.svelte';
-	import { getStockById, getStocks, postCreateStock, postDeleteStock, postUpdateOnlyStock, postUpdateStock } from './handler';
-	import { details, initStock, isStockLoading, isStockUpdating, stock } from './store';
-
-    type iGudangResult = {
-		count: number;
-		data: iGudang[];
-		status: string;
-	};
+	import {
+		type iGudangResult,
+		fetchGudangs,
+		getStockById,
+		getStocks,
+		postCreateStock,
+		postDeleteStock,
+		postUpdateOnlyStock,
+		postUpdateStock
+	} from './handler';
+	import {
+		details,
+		initStock,
+		isStockLoading,
+		isStockUpdating,
+		stock
+	} from './store';
 
 	const title = 'Stock';
+	const qKey = 'stocks';
 	const client = useQueryClient();
-
+    const pages = [3, 5, 10, 25, 50];
 	let txt = $state('');
 	let page = $state(1);
-	let limit = $state(5);
+	let pageSize = $state(5);
 	let supplierId = $state(0);
 	let warehouseId = $state(0);
 	let opt = $state(0);
 	let stockId = $state(0);
 	let open = $state(false);
-	const qKey = 'stocks';
-	let innerWidth =$state(0);
+	let innerWidth = $state(0);
 	let timeout: number | undefined = $state(undefined);
-    let showNotification = $state(false);
+	let showNotification = $state(false);
 	let isEdit = $state(false);
 	let profile: iCurrentUser = $state({
 		id: '',
@@ -51,10 +67,17 @@
 		createdAt: ''
 	});
 
-    let pageNext = $derived(page + 1);
-    let query_key = $derived([qKey, page, limit, supplierId, warehouseId, txt]);
-    const query_next = $derived([qKey, pageNext, limit, supplierId, warehouseId, txt]);
-
+	let pageNext = $derived(page + 1);
+	let query_key = $derived([qKey, page, pageSize, supplierId, warehouseId, txt]);
+	const query_next = $derived([
+		qKey,
+		pageNext,
+		pageSize,
+		supplierId,
+		warehouseId,
+		txt
+	]);
+    let isFetching = $derived(useIsFetching(query_key));
 
 	function onProductNotFound(e: string) {
 		showNotification = false;
@@ -81,35 +104,22 @@
 		}
 	);
 
-
-	const fetchGudangs = async (): Promise<iGudangResult> => {
-		const url = `${baseURL}/gudangs`;
-		const options = {
-			headers: {
-				'content-type': 'application/json'
-			},
-			method: 'GET',
-			credentials: credential_include
-		};
-		const request = new Request(url, options);
-		let result = await fetch(request);
-
-		return (await result.json()) as iGudangResult;
-	};
-
 	const queryGudangOptions = () => ({
 		queryKey: ['gudang', 'list'],
 		queryFn: async () => await fetchGudangs(),
 		enabled: browser
 	});
 
-	const gudangQuery = useQuery<iGudangResult, Error>(queryGudangOptions());
-
-	const queryBarcode = useQuery('barcodes', async () => await getBarcodes(), {
+	const queryBarcodeOptions = () => ({
+		queryKey: ['barcodes'],
+		queryFn: async () => await getBarcodes(),
 		enabled: browser
 	});
 
-	export const prefetchNextPage = (data: {
+	const gudangQuery = useQuery<iGudangResult, Error>(queryGudangOptions());
+	const queryBarcode = useQuery(queryBarcodeOptions());
+
+	const prefetchNextPage = (data: {
 		status: string;
 		stocks: iStock[];
 		totalItems: number;
@@ -117,38 +127,34 @@
 		count: number;
 		currentPage: number;
 	}) => {
-        console.log(data.currentPage, data.totalPages);
+	//	console.log(data.currentPage, data.totalPages);
 
 		if (data.currentPage < data.totalPages) {
-			client.prefetchQuery(
-				query_next,
-				() =>
-                    loadstock(data.currentPage+1)
-			);
+			client.prefetchQuery(query_next, () => loadstock(data.currentPage + 1));
 		}
 	};
 
 	const queryStock = $derived.by(() => {
-       return useQuery({
-            queryKey: [qKey, { id: stockId }],
-            queryFn: async () => getStockById(stockId),
-            enabled: false
-            });
-    });
+		return useQuery({
+			queryKey: [qKey, { id: stockId }],
+			queryFn: async () => getStockById(stockId),
+			enabled: false
+		});
+	});
 
-    const loadstock = async (p: number) => {
-        return await getStocks(opt, p, limit, supplierId, warehouseId, txt);
-    }
+	const loadstock = async (p: number) => {
+		return await getStocks(opt, p, pageSize, supplierId, warehouseId, txt);
+	};
 
 	const queryStocks = $derived.by(() => {
-        return useQuery({
-            queryKey: query_key,
-            queryFn: async () => loadstock(page),
-            enabled: browser,
-            onSuccess: prefetchNextPage,
-            keepPreviousData: true
-        })
-    });
+		return useQuery({
+			queryKey: query_key,
+			queryFn: async () => loadstock(page),
+			enabled: browser,
+			onSuccess: prefetchNextPage,
+			keepPreviousData: true
+		});
+	});
 
 	// function setQueryOption(
 	// 	p: number,
@@ -163,7 +169,7 @@
 	// 		keepPreviousData: true,
 	// 		enabled: browser,
 	// 		queryFn: async () =>
-	// 			await getStocks(opt, page, limit, supplierId, warehouseId, txt),
+	// 			await getStocks(opt, page, pageSize, supplierId, warehouseId, txt),
 	// 		onSuccess: prefetchNextPage
 	// 	});
 	// 	// console.log([qKey, p, l, o, t, r]);
@@ -286,65 +292,64 @@
 		// console.log(log);
 	}
 
-    const subsribe = () => {
-        queryStock.subscribe((o) => {
-            stock.set(o.data?.stock ?? { ...initStock });
-            details.set(o.data?.details ?? []);
-        });
-    }
+	const subsribe = () => {
+		queryStock.subscribe((o) => {
+			stock.set(o.data?.stock ?? { ...initStock });
+			details.set(o.data?.details ?? []);
+		});
+	};
 
-    let isStockAvailabel = $derived.by(() => {
-        return $queryStock.isSuccess && $queryStock.data;
-    })
+	let isStockAvailabel = $derived.by(() => {
+		return $queryStock.isSuccess && $queryStock.data;
+	});
 
-    let suppliers = $derived.by(()=> {
-        if($supplierQuery.isSuccess && $supplierQuery.data) {
-            return $supplierQuery.data.data;
-        }
-        return [];
-    })
+	let suppliers = $derived.by(() => {
+		if ($supplierQuery.isSuccess && $supplierQuery.data) {
+			return $supplierQuery.data.data;
+		}
+		return [];
+	});
 
-    let employees = $derived.by(()=>{
-        if($employeeQuery.isSuccess && $employeeQuery.data) {
-            return $employeeQuery.data.data;
-        }
-        return[];
-    })
+	let employees = $derived.by(() => {
+		if ($employeeQuery.isSuccess && $employeeQuery.data) {
+			return $employeeQuery.data.data;
+		}
+		return [];
+	});
 
-    let stocks = $derived.by(() => {
-        if($queryStocks.isSuccess && $queryStocks.data) {
-            return $queryStocks.data.stocks;
-        }
-        return [];
-    })
+	let stocks = $derived.by(() => {
+		if ($queryStocks.isSuccess && $queryStocks.data) {
+			return $queryStocks.data.stocks;
+		}
+		return [];
+	});
 
-    let gudangs = $derived.by(() => {
-        if($gudangQuery.isSuccess && $gudangQuery.data) {
-            return $gudangQuery.data.data;
-        }
-        return [];
-    })
+	let gudangs = $derived.by(() => {
+		if ($gudangQuery.isSuccess && $gudangQuery.data) {
+			return $gudangQuery.data.data;
+		}
+		return [];
+	});
 
-    let barcodes = $derived.by(() => {
-        if($queryBarcode.isSuccess && $queryBarcode.data.data) {
-            return $queryBarcode.data.data;
-        }
-        return [];
-    })
+	let barcodes = $derived.by(() => {
+		if ($queryBarcode.isSuccess && $queryBarcode.data.data) {
+			return $queryBarcode.data.data;
+		}
+		return [];
+	});
 
-    let totalItems = $derived.by(() => {
-        if($queryStocks.isSuccess && $queryStocks.data) {
-            return $queryStocks.data.totalItems;
-        }
-        return 0;
-    })
+	let totalItems = $derived.by(() => {
+		if ($queryStocks.isSuccess && $queryStocks.data) {
+			return $queryStocks.data.totalItems;
+		}
+		return 0;
+	});
 
-
-    $effect.pre(() => {
-        if(isStockAvailabel) {
-            subsribe();
-        }
-    });
+	$effect.pre(() => {
+		if (isStockAvailabel) {
+			subsribe();
+		}
+	});
 
 	// $effect.root(()=>  {
 	// 	supplierQuery.setEnabled(browser);
@@ -354,10 +359,10 @@
 	// 	queryStock.setEnabled(browser);
 	// });
 
-    $effect(() => {
-        showNotification = timeout !== undefined;
-    });
-	// $: setQueryOption(page, limit, opt, supplierId, warehouseId, txt);
+	$effect(() => {
+		showNotification = timeout !== undefined;
+	});
+	// $: setQueryOption(page, pageSize, opt, supplierId, warehouseId, txt);
 </script>
 
 <svelte:window bind:innerWidth={innerWidth} />
@@ -367,17 +372,29 @@
 	<meta name="description" content="Stock this app" />
 </svelte:head>
 
-<LocalStorage key="__user_info" bind:value={profile} />
-<h2><SendToBack size={24} /> {title}</h2>
-<FormStockPayment bind:open={open} />
+{#snippet paginating(isLoading: boolean)}
+<Pagination
+            totalItems={totalItems}
+            pageSizes={pages}
+            pageSize={pageSize}
+            style="margin-top: 1px;"
+            page={!isLoading ? page : 0}
+            on:update={(e) => {
+                e.preventDefault();
+                if(!isLoading) {
+                    pageSize = e.detail.pageSize;
+                    page = e.detail.page;
+                }
+            }}
+            on:click:button--next={(e) => (page = e.detail.page)}
+            on:click:button--previous={(e) => (page = e.detail.page)}
+        />
+{/snippet}
 
-{#if $supplierQuery.isLoading || $employeeQuery.isLoading || $queryBarcode.isLoading || $queryStocks.isLoading || $gudangQuery.isLoading}
-	<Loading withOverlay small />
-{:else if isEdit}
+{#snippet formStock()}
 	<Grid noGutter={innerWidth > 720}>
 		<Row>
-			<Column noGutterRight><h1>Stock</h1></Column>
-			<!-- <Column>{stock.dp}</Column> -->
+			<Column noGutterRight><h4>Nota #{$stock.id} / {$stock.invoiceId}</h4></Column>
 			<Column noGutterLeft style={'text-align: right;'}>
 				<h1><strong>{formatNumber($stock.total)}</strong></h1>
 				<div class="text-number">
@@ -401,7 +418,9 @@
 		onsave={saveStock}
 		onadddp={() => (open = true)}
 	/>
-{:else}
+{/snippet}
+
+{#snippet stockList()}
 	<StockList
 		data={stocks}
 		suppliers={suppliers}
@@ -424,23 +443,10 @@
 		onedit={editStock}
 		ondelete={deleteStocks}
 	/>
-	<Pagination
-		totalItems={totalItems}
-		pageSizes={[3, 5, 10, 20, 50]}
-		pageSize={limit}
-		style="margin-top: 1px;"
-		page={page}
-		on:update={(e) => {
-			limit = e.detail.pageSize;
-			page = e.detail.page;
-		}}
-		on:click:button--next={(e) => (page = e.detail.page)}
-		on:click:button--previous={(e) => (page = e.detail.page)}
-	/>
-{/if}
+{/snippet}
 
-{#if showNotification}
-	<ToastNotification
+{#snippet toas()}
+<ToastNotification
 		style={'margin-top: 24px; width: 100%'}
 		on:click={() => (timeout = 12_000)}
 		fullWidth
@@ -455,6 +461,33 @@
 			<ProductNotFound productName={txt} />
 		</div>
 	</ToastNotification>
+{/snippet}
+
+<LocalStorage key="__user_info" bind:value={profile} />
+<Grid noGutter>
+	<Row>
+		<Column>
+			<h2><SendToBack size={24} /> {title}</h2>
+		</Column>
+		<Column
+			>{#if $supplierQuery.isLoading || $employeeQuery.isLoading || $queryBarcode.isLoading || $queryStocks.isLoading || $gudangQuery.isLoading}
+				<Loading withOverlay={false} small={true} />
+			{/if}</Column
+		>
+	</Row>
+</Grid>
+
+<FormStockPayment bind:open={open} />
+
+{#if isEdit}
+    {@render formStock()}
+{:else}
+    {@render stockList()}
+    {@render paginating($isFetching !== 0)}
+{/if}
+
+{#if showNotification}
+    {@render toas()}
 {/if}
 
 <!-- <div><code><pre>{JSON.stringify($stock, null, 4)}</pre></code></div> -->

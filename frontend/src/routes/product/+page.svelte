@@ -25,7 +25,7 @@
 		useQuery,
 		useQueryClient
 	} from '@sveltestack/svelte-query';
-	import { Loading, Pagination } from 'carbon-components-svelte';
+	import { Column, Grid, Loading, Pagination, Row } from 'carbon-components-svelte';
 	import dayjs from 'dayjs';
 	import ProductList from './ProductList.svelte';
 	import DeleteProduct from '$lib/components/DeleteButton.svelte';
@@ -481,7 +481,15 @@
 
 <svelte:window bind:innerWidth={innerWidth} />
 
-<h2><Product size={24} /> {title}</h2>
+<Grid noGutter>
+    <Row>
+        <Column><h2><Product size={24} /> {title}</h2></Column>
+        <Column>	{#if $categoryQuery.isLoading || $supplierQuery.isLoading || isLoading || isProductLoading}
+		<Loading withOverlay={false} small={true} />
+	{/if}
+        </Column>
+    </Row>
+</Grid>
 <!-- <subtitle>Tabel data barang / produk</subtitle> -->
 
 <!-- {#if open} -->
@@ -498,10 +506,6 @@
 	onReset={() => reset()}
 />
 <!-- {/if} -->
-
-{#if $categoryQuery.isLoading || $supplierQuery.isLoading || isLoading}
-	<Loading withOverlay={false} />
-{/if}
 
 {#if $query.isError}
 	<span>Error: {$query.error.message}</span>

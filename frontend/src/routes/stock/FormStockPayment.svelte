@@ -16,16 +16,18 @@
 	import { stock } from './store';
 
 	// export let innerWidth = 720;
-	export let open = false;
+	let { open = $bindable(false) } = $props();
 	// export let isError = false;
 	// export let isUpdating = false;
 	// export let errorMessage = "";
 
 	// const dispatch = createEventDispatcher();
-	$: strRemain = formatNumber(
-		toNumber($stock.total) - (toNumber($stock.payment) + toNumber($stock.dp))
+	let strRemain = $state(
+		formatNumber(
+			toNumber($stock.total) - (toNumber($stock.payment) + toNumber($stock.dp))
+		)
 	);
-	$: strDp = formatNumber(toNumber($stock.dp));
+	let strDp = $state(formatNumber(toNumber($stock.dp)));
 
 	async function submit() {
 		// isUpdating = true;

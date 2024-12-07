@@ -234,6 +234,7 @@ pub mod db {
 		where
 			S: Into<i32> + Send,
 			O: Into<Stock> + Send;
+
 		async fn stock_delete(&self, ids: Vec<i32>)
 			-> Result<u64, sqlx::Error>;
 	}
@@ -442,6 +443,7 @@ pub mod db {
 			)
 			.fetch_optional(&mut *tx)
 			.await?;
+
 			let stock = new_stock.unwrap();
 			let pid = stock.id;
 
@@ -521,10 +523,8 @@ pub mod db {
 			.await?;
 			let (ledger_details, len) =
 				LedgerUtil::from_stock(&total, &o.dp, pid, pid);
-
 			let mut i: usize = 0;
-			//        let len = ledger_details.len();
-
+			// let len = ledger_details.len();
 			loop {
 				let d = ledger_details.get(i).unwrap();
 
@@ -553,21 +553,16 @@ pub mod db {
 				)
 				.execute(&mut *tx)
 				.await?;
-
 				i = i.checked_add(1).unwrap();
-
 				if i == len {
 					break;
 				}
 			}
-
 			// let details: Vec<StockDetails> =
 			// 	sqlx::query_file_as!(StockDetails, "sql/order-detail-get-by-order-2.sql", pid)
 			// 		.fetch_all(&mut *tx)
 			// 		.await?;
-
 			tx.commit().await?;
-
 			Ok((pid, detail_len))
 		}
 
@@ -585,17 +580,14 @@ pub mod db {
 			let pid: i32 = id.into(); //.unwrap();
 			let dto: Stock = data.into(); //.unwrap();
 			let details: Vec<StockDetail> = details.into(); //.try_into().unwrap();
-
 			let pass = BigDecimal::from(0);
 			let total = details.iter().fold(pass.to_owned(), |d, t| {
 				d + ((&t.price - &t.discount) * &t.qty)
 			});
-
 			let mut conn: sqlx::pool::PoolConnection<sqlx::Postgres> =
 				self.pool.acquire().await?;
 			let mut tx: sqlx::Transaction<sqlx::Postgres> =
 				conn.begin().await?;
-
 			let test = sqlx::query_scalar(
 				r#"
                 SELECT
@@ -609,9 +601,7 @@ pub mod db {
 			.bind(pid)
 			.fetch_optional(&mut *tx)
 			.await?;
-
 			let payment = test.unwrap_or(BigDecimal::from(0));
-
 			let o = OrderBuilder::new(
 				OrderType::Stock,
 				dto.updated_by,
@@ -634,10 +624,8 @@ pub mod db {
 			)
 			.fetch_all(&mut *tx)
 			.await?;
-
 			let mut i: usize = 0;
 			let len = old_details.len();
-
 			loop {
 				if let Some(d) = old_details.get(i) {
 					let _ = sqlx::query!(
@@ -653,9 +641,7 @@ pub mod db {
 					.execute(&mut *tx)
 					.await?;
 				}
-
 				i = i.checked_add(1).unwrap();
-
 				if i == len {
 					break;
 				}
@@ -689,28 +675,17 @@ pub mod db {
 			let mut i = 0;
 			let detail_len = details.len();
 
-			// print!("\n\nTOTAL NEW DETAILS: {}\n\n", detail_len);
-
 			loop {
 				if let Some(d) = details.get(i) {
 					let subtotal = (&d.price - &d.discount) * &d.qty;
 					let _ = sqlx::query!(
-						r#"
-					UPDATE
-					    stocks
-					SET
-						qty = (qty + $3)
-					WHERE
-						product_id = $1 AND gudang_id = $2
-					"#,
+						r#"UPDATE stocks SET qty = (qty + $3) WHERE	product_id = $1 AND gudang_id = $2"#,
 						d.product_id,
 						d.gudang_id,
 						d.qty
 					)
 					.execute(&mut *tx)
 					.await?;
-
-					// let xx = test.rows_affected();
 
 					let _ = sqlx::query_file!(
 						"sql/order-detail-insert.sql",
@@ -728,12 +703,12 @@ pub mod db {
 					)
 					.execute(&mut *tx)
 					.await?;
+				}
 
-					i = i.checked_add(1).unwrap();
+				i = i.checked_add(1).unwrap();
 
-					if i == detail_len {
-						break;
-					}
+				if i == detail_len {
+					break;
 				}
 			}
 
