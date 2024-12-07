@@ -1,3 +1,17 @@
+<style lang="scss">
+	.col-parent {
+		display: flex;
+		flex-direction: column;
+	}
+	.col-child {
+		display: inline-block;
+		align-self: flex-end;
+	}
+	.num-right {
+		text-align: right;
+	}
+</style>
+
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { formatNumber } from '$lib/components/NumberFormat';
@@ -5,7 +19,11 @@
 	import type { iCurrentUser, iStock, iStockDetail } from '$lib/interfaces';
 	import { SendToBack } from 'carbon-icons-svelte';
 	import { numberToText } from '$lib/number-to-string';
-	import { useQuery, useQueryClient, useIsFetching } from '@sveltestack/svelte-query';
+	import {
+		useQuery,
+		useQueryClient,
+		useIsFetching
+	} from '@sveltestack/svelte-query';
 	import {
 		Column,
 		Grid,
@@ -30,7 +48,8 @@
 		postCreateStock,
 		postDeleteStock,
 		postUpdateOnlyStock,
-		postUpdateStock
+		postUpdateStock,
+		toNumber
 	} from './handler';
 	import {
 		details,
@@ -43,7 +62,7 @@
 	const title = 'Stock';
 	const qKey = 'stocks';
 	const client = useQueryClient();
-    const pages = [3, 5, 10, 25, 50];
+	const pages = [3, 5, 10, 25, 50];
 	let txt = $state('');
 	let page = $state(1);
 	let pageSize = $state(5);
@@ -68,7 +87,14 @@
 	});
 
 	let pageNext = $derived(page + 1);
-	let query_key = $derived([qKey, page, pageSize, supplierId, warehouseId, txt]);
+	let query_key = $derived([
+		qKey,
+		page,
+		pageSize,
+		supplierId,
+		warehouseId,
+		txt
+	]);
 	const query_next = $derived([
 		qKey,
 		pageNext,
@@ -77,7 +103,7 @@
 		warehouseId,
 		txt
 	]);
-    let isFetching = $derived(useIsFetching(query_key));
+	let isFetching = $derived(useIsFetching(query_key));
 
 	function onProductNotFound(e: string) {
 		showNotification = false;
@@ -127,7 +153,7 @@
 		count: number;
 		currentPage: number;
 	}) => {
-	//	console.log(data.currentPage, data.totalPages);
+		//	console.log(data.currentPage, data.totalPages);
 
 		if (data.currentPage < data.totalPages) {
 			client.prefetchQuery(query_next, () => loadstock(data.currentPage + 1));
@@ -373,34 +399,56 @@
 </svelte:head>
 
 {#snippet paginating(isLoading: boolean)}
-<Pagination
-            totalItems={totalItems}
-            pageSizes={pages}
-            pageSize={pageSize}
-            style="margin-top: 1px;"
-            page={!isLoading ? page : 0}
-            on:update={(e) => {
-                e.preventDefault();
-                if(!isLoading) {
-                    pageSize = e.detail.pageSize;
-                    page = e.detail.page;
-                }
-            }}
-            on:click:button--next={(e) => (page = e.detail.page)}
-            on:click:button--previous={(e) => (page = e.detail.page)}
-        />
+	<Pagination
+		totalItems={totalItems}
+		pageSizes={pages}
+		pageSize={pageSize}
+		style="margin-top: 1px;"
+		page={!isLoading ? page : 0}
+		on:update={(e) => {
+			e.preventDefault();
+			if (!isLoading) {
+				pageSize = e.detail.pageSize;
+				page = e.detail.page;
+			}
+		}}
+		on:click:button--next={(e) => (page = e.detail.page)}
+		on:click:button--previous={(e) => (page = e.detail.page)}
+	/>
 {/snippet}
 
 {#snippet formStock()}
 	<Grid noGutter={innerWidth > 720}>
 		<Row>
-			<Column noGutterRight><h4>Nota #{$stock.id} / {$stock.invoiceId}</h4></Column>
-			<Column noGutterLeft style={'text-align: right;'}>
-				<h1><strong>{formatNumber($stock.total)}</strong></h1>
-				<div class="text-number">
-					{numberToText($stock.total.toString(10))}
-				</div></Column
-			>
+			<Column noGutterRight>
+				<h4>Nota #{$stock.id} / {$stock.invoiceId}</h4>
+				<Grid noGutter>
+					<Row>
+						<Column>Bayar:</Column>
+						<Column>{formatNumber($stock.dp)}</Column>
+					</Row>
+					<Row>
+						<Column>Angsuran:</Column>
+						<Column>{formatNumber($stock.payment)}</Column>
+					</Row>
+					<Row>
+						<Column>Sisa bayar:</Column>
+						<Column>{formatNumber($stock.remain)}</Column>
+					</Row>
+				</Grid>
+			</Column>
+			<Column noGutterLeft>
+				<div class="col-parent">
+					<div class="col-child">
+						<h1 class="num-right">
+							<strong>{formatNumber($stock.total)}</strong>
+						</h1>
+						<div class="text-number">
+							{numberToText($stock.total.toString(10))}
+						</div>
+					</div>
+				</div>
+			</Column>
 		</Row>
 	</Grid>
 
@@ -446,7 +494,7 @@
 {/snippet}
 
 {#snippet toas()}
-<ToastNotification
+	<ToastNotification
 		style={'margin-top: 24px; width: 100%'}
 		on:click={() => (timeout = 12_000)}
 		fullWidth
@@ -477,17 +525,29 @@
 	</Row>
 </Grid>
 
-<FormStockPayment bind:open={open} />
+{#if open}
+	<FormStockPayment
+		bind:open={open}
+		total={$stock.total}
+		dp={$stock.dp}
+		payment={$stock.payment}
+		onupdate={(e) => {
+			stock.update((o) => ({
+				...o,
+				dp: e,
+				remain: toNumber(o.total) - (e + toNumber(o.payment))
+			}));
+		}}
+	/>
+{/if}
 
 {#if isEdit}
-    {@render formStock()}
+	{@render formStock()}
 {:else}
-    {@render stockList()}
-    {@render paginating($isFetching !== 0)}
+	{@render stockList()}
+	{@render paginating($isFetching !== 0)}
 {/if}
 
 {#if showNotification}
-    {@render toas()}
+	{@render toas()}
 {/if}
-
-<!-- <div><code><pre>{JSON.stringify($stock, null, 4)}</pre></code></div> -->

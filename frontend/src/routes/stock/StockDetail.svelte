@@ -313,9 +313,12 @@
 			const d = $details[i];
 			const qty = toNumber(d.qty);
 			d.qty = qty + 1;
-			const slices = [...$details];
-			slices.splice(i, 1, d);
-			details.update(() => [...slices]);
+			d.subtotal = d.qty * (d.hpp - d.discount);
+			updateCurrentDetail(d);
+			// const slices = [...$details];
+			// slices.splice(i, 1, d);
+			// details.update(() => [...slices]);
+			// console.log(d.qty);
 			return true;
 		}
 
@@ -323,9 +326,11 @@
 			const d = $details[i];
 			const qty = toNumber(d.qty) - 1;
 			d.qty = qty <= 1 ? 1 : qty;
-			const slices = [...$details];
-			slices.splice(i, 1, d);
-			details.update(() => [...slices]);
+			d.subtotal = d.qty * (d.hpp - d.discount);
+			updateCurrentDetail(d);
+			// const slices = [...$details];
+			// slices.splice(i, 1, d);
+			// details.update(() => [...slices]);
 			return true;
 		}
 
@@ -410,7 +415,7 @@
 
 				if (i >= 0) {
 					let d = $details[i];
-					d.price = toNumber(p.price);
+					d.price = toNumber(p.hpp);
 
 					if (found) {
 						d.qty = toNumber(d.qty) + 1;

@@ -25,6 +25,16 @@
 	} from 'carbon-components-svelte';
 	import { Save } from 'carbon-icons-svelte';
 
+	interface Props {
+		open: boolean;
+		initdata: iRelation;
+		isError?: boolean;
+		isUpdating?: boolean;
+		errorMessage: string;
+		relationTypes: RelationTypeWIthID[] | undefined;
+		saveRelation: (data: iRelation) => void;
+	}
+
 	let {
 		open = $bindable(false),
 		initdata,
@@ -33,15 +43,7 @@
 		errorMessage = '',
 		relationTypes = [],
 		saveRelation
-	}: {
-		open: boolean;
-		initdata: iRelation;
-		isError?: boolean;
-		isUpdating?: boolean;
-		errorMessage: string;
-		relationTypes: RelationTypeWIthID[] | undefined;
-		saveRelation: (data: iRelation) => void;
-	} = $props();
+	}: Props = $props();
 
 	let data = $state(initdata);
 	let isMember = $derived(

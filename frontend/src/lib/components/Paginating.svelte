@@ -6,6 +6,14 @@
 	const isFetching = useIsFetching();
 	const dispatch = createEventDispatcher();
 
+	// interface Props {
+	// 	size: number;
+	// 	page: number;
+	// 	totalPages: number;
+	// 	totalElements: number;
+	// 	rows: number[];
+	// }
+
 	export let size = 10;
 	export let page = 0;
 	export let totalPages = 0;

@@ -76,6 +76,7 @@
 	function get_suppliers() {
 		return suppliers.map((m) => ({ id: m.id, text: m.text }));
 	}
+
 	function get_employees() {
 		return employees.map((m) => ({ id: m.id, text: m.text }));
 	}
@@ -84,6 +85,7 @@
 		if (!value) return true;
 		return item.text.toLowerCase().includes(value.toLowerCase());
 	}
+
 	function get_employee_info(id: number): string {
 		let item = suppliers.filter((f) => f.id === id)[0];
 
@@ -125,6 +127,7 @@
 		}
 		return '-';
 	}
+
 	function on_employee_changed(
 		e: CustomEvent<{ selectedId: any; selectedItem: ComboBoxItem }>
 	): void {
@@ -194,6 +197,7 @@
 			total: toNumber(s.total) - (toNumber(s.payment) + dp)
 		}));
 	}
+
 	$effect(() => updateDp(strDp));
 </script>
 

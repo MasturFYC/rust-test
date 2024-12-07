@@ -13,92 +13,41 @@
 	import InputNumber from '$lib/components/NumberInput.svelte';
 	import { tick } from 'svelte';
 	import { toNumber } from './handler';
-	import { stock } from './store';
 
-	// export let innerWidth = 720;
-	let { open = $bindable(false) } = $props();
-	// export let isError = false;
-	// export let isUpdating = false;
-	// export let errorMessage = "";
+	interface Props {
+		total: number;
+		dp: number;
+		payment: number;
+		open: boolean;
+		onupdate: (e: number) => void;
+	}
 
-	// const dispatch = createEventDispatcher();
-	let strRemain = $state(
-		formatNumber(
-			toNumber($stock.total) - (toNumber($stock.payment) + toNumber($stock.dp))
-		)
-	);
-	let strDp = $state(formatNumber(toNumber($stock.dp)));
+	let {
+		open = $bindable(false),
+		total = 0,
+		dp = 0,
+		payment = 0,
+		onupdate
+	}: Props = $props();
+	let localDp = $state(dp);
+
+	let strRemain = $derived.by(() => {
+		return formatNumber(
+			toNumber(total) - (toNumber(payment) + toNumber(localDp))
+		);
+	});
 
 	async function submit() {
-		// isUpdating = true;
-		const newDp = getNumber(strDp);
-		// console.log(dp);
-		stock.update((s) => ({
-			...s,
-			dp: newDp
-			// remain: toNumber(s.total) - (newDp + toNumber(s.payment)),
-		}));
-		// console.log($stock);
+		onupdate(localDp);
 		await tick();
 		open = false;
 	}
 
 	function on_dp_change(e: CustomEvent<string | number | null>): void {
 		if (typeof e.detail === 'string') {
-			strDp = e.detail;
-			const dp = getNumber(e.detail);
-			const total = toNumber($stock.total);
-			const payment = toNumber($stock.payment);
-			const remain = total - (dp + payment);
-			strRemain = formatNumber(remain);
+			localDp = getNumber(e.detail);
 		}
 	}
-
-	// function on_price_change(e: CustomEvent<string | number | null>): void {
-	// }
-
-	// function on_percent_change(e: CustomEvent<string | number | null>): void {
-	// }
-
-	// function shouldFilterItem(item: ComboBoxItem, value: string) {
-	//   if (!value) return true;
-	//   return item.text.toLowerCase().includes(value.toLowerCase());
-	// }
-
-	// function get_supplier_info(id: number): string {
-	//   let item = suppliers.filter((f) => f.id === id)[0];
-
-	//   if (item) {
-	//     let info: string;
-
-	//     if (item.street) {
-	//       info = item.street;
-	//       info = info + " - " + item.city;
-	//     } else {
-	//       info = item.city;
-	//     }
-	//     if (item.phone) {
-	//       info = info + ", " + item.phone;
-	//     }
-
-	//     return info;
-	//   }
-	//   return "-";
-	// }
-
-	// function get_suppliers() {
-	//   return suppliers.map((m) => ({ id: m.id, text: m.text }));
-	// }
-
-	// let str_price = formatNumber(data.price);
-	// let str_hpp = formatNumber(data.hpp);
-	// let str_percent = formatNumber(data.margin, 4);
-	// let str_heavy = formatNumber(data.heavy, 2);
-	//	let str_stock = cardNumber(data.unitInStock.toString());
-
-	// $:	console.log(str_price, str_hpp, str_percent)
-
-	//$: data.categoryId = +cat_id;
 </script>
 
 <Modal
@@ -121,24 +70,24 @@
 			<Row>
 				<Column sm md noGutterRight>
 					<InputNumber
-						value={formatNumber($stock.total)}
+						value={formatNumber(total)}
 						labelText="Total"
 						size="sm"
 						classes={'align-left'}
 						readonly
 					/>
 					<InputNumber
-						value={formatNumber($stock.dp)}
+						value={formatNumber(localDp)}
 						labelText="Jumlah bayar"
 						id="stock-dp"
 						size="sm"
 						classes={'align-left'}
-						on:change={on_dp_change}
+						on:input={on_dp_change}
 					/>
 				</Column>
 				<Column noGutterLeft>
 					<InputNumber
-						value={formatNumber($stock.payment)}
+						value={formatNumber(payment)}
 						labelText="Angsuran"
 						readonly
 						classes={'align-left'}
@@ -170,7 +119,7 @@
 	<!-- {#if isUpdating}
     <InlineLoading
       status="active"
-      description={$stock.id === 0 ? "Posting data..." : "Updating data..."}
+      description={data.id === 0 ? "Posting data..." : "Updating data..."}
     />
   {/if} -->
 

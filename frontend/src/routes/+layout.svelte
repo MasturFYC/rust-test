@@ -157,7 +157,7 @@
 
 <svelte:window bind:innerWidth={client_width} />
 
-<Header bind:isSideNavOpen={isSideNavOpen}>
+<Header bind:isSideNavOpen={isSideNavOpen} platformName="Carbon">
 	<span slot="company"
 		><img
 			src="https://static.sapulidi.site/pixel.svg?raw=true"
@@ -168,6 +168,7 @@
 	<svelte:fragment slot="skip-to-content">
 		<SkipToContent />
 	</svelte:fragment>
+
 	<HeaderUtilities>
 		<HeaderAction bind:isOpen={isOpen} transition={transitions[selected].value}>
 			<HeaderPanelLinks>
@@ -191,7 +192,7 @@
 		expansionBreakpoint={720}
 		fixed
 	>
-		<SideNavItems>
+	<SideNavItems>
 			{#each sideLink as side (side.id)}
 				<SideNavLink
 					icon={side.icon}
@@ -216,7 +217,7 @@
 				<span slot="labelB" style="color: green">Expand</span>
 			</Toggle>
 		</SideNavItems>
-	</SideNav>
+</SideNav>
 
 	<Content>
 		<Grid condensed={client_width <= 640} noGutter={client_width <= 640}>
@@ -236,3 +237,63 @@
 		</QueryClientProvider>
 	</Content>
 {/if}
+
+<style global>
+    .bx--side-nav {
+        background-color: var(--cds-ui-background);
+        color: var(--cds-text-02);
+        border-right: 1px solid var(--cds-ui-02);
+    }
+    .bx--side-nav__divider {
+        background-color: var(--cds-ui-03);
+    }
+    a.bx--side-nav__link > .bx--side-nav__link-text {
+        color: var(--cds-text-02);
+    }
+    .bx--side-nav__submenu {
+        color: var(--cds-text-02);
+    }
+    .bx--side-nav__menu a.bx--side-nav__link--current,
+    .bx--side-nav__menu a.bx--side-nav__link[aria-current="page"],
+    a.bx--side-nav__link--current {
+        background-color: var(--cds-hover-ui);
+    }
+
+    .bx--side-nav__menu a.bx--side-nav__link--current > span,
+    .bx--side-nav__menu a.bx--side-nav__link[aria-current="page"] > span,
+    a.bx--side-nav__link--current > span {
+        color: var(--cds-text-01);
+    }
+
+    .bx--side-nav__icon > svg {
+        fill: var(--cds-text-02);
+    }
+    a.bx--side-nav__link[aria-current="page"],
+    a.bx--side-nav__link--current {
+        background-color: var(--cds-hover-ui);
+    }
+    a.bx--side-nav__link[aria-current="page"] .bx--side-nav__link-text,
+    a.bx--side-nav__link--current .bx--side-nav__link-text {
+        color: var(--cds-text-01);
+    }
+    .bx--side-nav__item:not(.bx--side-nav__item--active)
+        > .bx--side-nav__link:hover,
+    .bx--side-nav__menu
+        a.bx--side-nav__link:not(.bx--side-nav__link--current):not([aria-current="page"]):hover {
+        color: var(--cds-text-01);
+        background-color: var(--cds-hover-ui);
+    }
+    .bx--side-nav__item:not(.bx--side-nav__item--active)
+        > .bx--side-nav__link:hover
+        > span,
+    .bx--side-nav__item:not(.bx--side-nav__item--active)
+        .bx--side-nav__menu-item
+        > .bx--side-nav__link:hover
+        > span {
+        color: var(--cds-text-01);
+    }
+    .bx--side-nav__submenu:hover {
+        color: var(--cds-text-01);
+        background-color: var(--cds-hover-ui);
+    }
+</style>
