@@ -79,7 +79,6 @@
 		await tick();
 		selectedRowIds = [];
 	}
-
 </script>
 
 <DataTable

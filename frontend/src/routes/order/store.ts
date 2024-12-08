@@ -1,6 +1,7 @@
 import type { iOrder, iOrderDetail } from '$lib/interfaces';
 import { writable } from 'svelte/store';
 import dayjs from 'dayjs';
+import { browser } from '$app/environment';
 
 const dueRange = 7;
 const tgl = dayjs();
@@ -22,7 +23,25 @@ export const initOrder: iOrder = {
 	dueRange: dueRange
 };
 
-export const order = writable<iOrder>({ ...initOrder });
-export const details = writable<iOrderDetail[]>([]);
+let persistedOrder = browser && localStorage.getItem('persistedOrder');
+let persistedDetails = browser && localStorage.getItem('persistedDetails');
+// console.log('ORDER', persistedOrder);
+
+export const order = writable<iOrder>(
+	persistedOrder ? JSON.parse(persistedOrder) : { ...initOrder }
+);
+export const details = writable<iOrderDetail[]>(
+	persistedDetails ? JSON.parse(persistedDetails) : []
+);
 export const isOrderUpdating = writable(false);
 export const isOrderLoading = writable(false);
+
+if (browser) {
+	order.subscribe((o) =>
+		localStorage.setItem('persistedOrder', JSON.stringify(o))
+	);
+
+	details.subscribe((o) =>
+		localStorage.setItem('persistedDetails', JSON.stringify(o))
+	);
+}

@@ -251,7 +251,7 @@ async fn update(
 	}
 }
 
-#[delete("/{id}")]
+#[delete("")]
 async fn delete(
 	body: web::Json<Vec<i32>>,
 	app_state: web::Data<AppState>,

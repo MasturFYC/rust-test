@@ -36,7 +36,7 @@
 		DatePickerInput,
 		Form,
 		Grid,
-		Row,
+		Row
 	} from 'carbon-components-svelte';
 	import dayjs from 'dayjs';
 	// import { formatNumber, getNumber } from '$lib/components/NumberFormat';
@@ -195,9 +195,8 @@
 		}
 	}
 
-
 	let strDate = $state(dayjs($order.createdAt).format('DD-MM-YYYY'));
-	let strTempo = $state(dayjs($order.dueAt).format('DD-MM-YYYY'))
+	let strTempo = $state(dayjs($order.dueAt).format('DD-MM-YYYY'));
 	// let strDp = $derived(formatNumber(toNumber($order.dp)));
 
 	$effect(() => {
@@ -221,89 +220,87 @@
 <Form on:submit>
 	<Grid noGutter={innerWidth > 720} fullWidth>
 		<Row>
-
-			<Column noGutterRight sm={2} md>
-				<DatePicker
-				short
-					datePickerType="single"
-					bind:value={strDate}
-					dateFormat="d-m-Y"
-					on:change={onDateChange}
-				>
-					<DatePickerInput
-						style={'width: 100%'}
-						bind:ref={ref_date}
-						accesskey="t"
-						labelText="Tanggal penjualan"
-						placeholder="mm/dd/yyyy"
-					/>
-				</DatePicker>
-			</Column>
-			<Column noGutterRight sm={2} md>
-				<DatePicker
-					datePickerType="single"
-					bind:value={strTempo}
-					dateFormat="d-m-Y"
-					on:change={onTempoChange}
-				>
-					<DatePickerInput
-						accesskey="t"
-						labelText="Jatuh tempo"
-						placeholder="mm/dd/yyyy"
-					/>
-				</DatePicker>
+			<Column noGutterRight md={2}>
+				<Grid noGutter>
+					<Row>
+						<Column>
+							<DatePicker
+								short
+								datePickerType="single"
+								bind:value={strDate}
+								dateFormat="d-m-Y"
+								on:change={onDateChange}
+							>
+								<DatePickerInput
+									bind:ref={ref_date}
+									style={'width:100%'}
+									accesskey="t"
+									labelText="Tanggal penjualan"
+									placeholder="mm/dd/yyyy"
+								/>
+							</DatePicker>
+						</Column>
+					</Row>
+				</Grid>
 			</Column>
 
-
-			<!--
-			<Column noGutter sm={2} md lg>
-				<TextInput
-					accesskey="n"
-					bind:ref={ref_date}
-					id="invoice-id"
-					labelText="No. faktur"
-					on:change={() => order.update((s) => ({ ...s, isModified: true }))}
-					bind:value={$order.invoiceId}
-				/>
-			</Column> -->
-
-			<Column noGutter md={2} sm={2}>
-				<ComboBox
-					accesskey="s"
-					id="customer-id"
-					titleText="Pelanggan"
-					selectedId={$order.customerId}
-					placeholder="Pilih pelanggan"
-					items={get_customers()}
-					shouldFilterItem={shouldFilterItem}
-					on:select={on_customer_changed}
-					on:clear={on_customer_clear}
-					let:item
-				>
-					<div><strong>{item.text}</strong></div>
-					<div class="customer-info">
-						{get_customer_info(item.id)}
-					</div>
-				</ComboBox>
-			</Column>
-			<Column noGutterLeft md={2} sm={2}>
-				<ComboBox
-					accesskey="g"
-					id="sales-id"
-					titleText="Sales"
-					selectedId={$order.salesId}
-					placeholder="Pilih sales"
-					items={get_sales()}
-					shouldFilterItem={shouldFilterItem}
-					on:select={on_sales_changed}
-					on:clear={on_sales_clear}
-					let:item
-				>
-					<div><strong>{item.text}</strong></div>
-					<div class="customer-info">
-						{get_sales_info(item.id)}
-					</div>
-				</ComboBox>
+			<Column noGutterLeft>
+				<Grid noGutter>
+					<Row>
+							<Column noGutter>
+							<DatePicker
+								datePickerType="single"
+								bind:value={strTempo}
+								dateFormat="d-m-Y"
+								on:change={onTempoChange}
+							>
+								<DatePickerInput
+								accesskey="t"
+									labelText="Jatuh tempo"
+									placeholder="mm/dd/yyyy"
+								/>
+							</DatePicker>
+						</Column>
+					<Column sm={2} noGutter md>
+							<ComboBox
+								accesskey="s"
+								id="customer-id"
+								titleText="Pelanggan"
+								selectedId={$order.customerId}
+								placeholder="Pilih pelanggan"
+								items={get_customers()}
+								shouldFilterItem={shouldFilterItem}
+								on:select={on_customer_changed}
+								on:clear={on_customer_clear}
+								let:item
+							>
+								<div><strong>{item.text}</strong></div>
+								<div class="customer-info">
+									{get_customer_info(item.id)}
+								</div>
+							</ComboBox>
+						</Column>
+						<Column sm={2} md noGutterLeft>
+							<ComboBox
+								accesskey="g"
+								id="sales-id"
+								titleText="Sales"
+								selectedId={$order.salesId}
+								placeholder="Pilih sales"
+								items={get_sales()}
+								shouldFilterItem={shouldFilterItem}
+								on:select={on_sales_changed}
+								on:clear={on_sales_clear}
+								let:item
+							>
+								<div><strong>{item.text}</strong></div>
+								<div class="customer-info">
+									{get_sales_info(item.id)}
+								</div>
+							</ComboBox>
+						</Column>
+					</Row>
+				</Grid>
 			</Column>
 		</Row>
 	</Grid>

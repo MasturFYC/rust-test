@@ -184,9 +184,9 @@
 	// let strDp = formatNumber(toNumber($stock.dp));
 
 	$effect(() => {
-	 	if (ref_invoice) {
-	 		ref_invoice.focus();
-	 	}
+		if (ref_invoice) {
+			ref_invoice.focus();
+		}
 	});
 
 	// function updateDp(str: string) {

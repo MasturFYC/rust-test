@@ -35,7 +35,7 @@
 		TextInput,
 		ToastNotification,
 		Toolbar,
-		ToolbarContent,
+		ToolbarContent
 	} from 'carbon-components-svelte';
 	import { onDestroy, onMount, tick } from 'svelte';
 	import ExpandedRow from './ExpandedRow.svelte';
@@ -47,7 +47,7 @@
 		NewTab,
 		Save,
 		Money,
-	  IbmZOpenEditor as Open
+		IbmZOpenEditor as Open
 	} from 'carbon-icons-svelte';
 	import { toNumber } from './handler';
 	import { order, details } from './store';
@@ -92,9 +92,8 @@
 		{ key: 'price', value: 'Harga', width: '100px' },
 		{ key: 'discount', value: 'Disc', width: '80px' },
 		{ key: 'pot', value: 'Hrg-Pot', width: '90px' },
-		{ key: 'subtotal', value: 'Subtotal', width: '100px' },
+		{ key: 'subtotal', value: 'Subtotal', width: '100px' }
 	];
-
 
 	let items = $state(0);
 	let currentId = $state(0);
@@ -629,9 +628,7 @@
 
 	let isOrderValid = $derived.by(() => {
 		return (
-			$order.customerId > 0 &&
-			$order.salesId > 0 &&
-			$order.total > 0
+			$order.customerId > 0 && $order.salesId > 0 && $order.total > 0
 			// $order.invoiceId.trim().length > 0
 		);
 	});
@@ -654,7 +651,7 @@
 		<span slot="caption">{dayjs().format('DD-MM-YYYY HH:mm:ss')}</span>
 	</ToastNotification>
 {/if}
-	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions (because of reasons) -->
+<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions (because of reasons) -->
 <div
 	bind:this={reform}
 	tabindex={0}

@@ -61,6 +61,7 @@
 		isOrderUpdating,
 		order
 	} from './store';
+	import { writable } from 'svelte/store';
 
 	const title = 'Order';
 	const qKey = 'orders';
@@ -72,7 +73,7 @@
 	let customerId = $state(0);
 	let salesId = $state(0);
 	let opt = $state(0);
-	let orderId = $state(0);
+	let orderId = $state($order.id);
 	let open = $state(false);
 	let innerWidth = $state(0);
 	let timeout: number | undefined = $state(undefined);
@@ -163,6 +164,11 @@
 		}
 	};
 
+	const loadorder = async (p: number) => {
+		return await getOrders(opt, p, pageSize, customerId, salesId, txt);
+	};
+
+
 	const queryOrder = $derived.by(() => {
 		return useQuery({
 			queryKey: [qKey, { id: orderId }],
@@ -171,19 +177,15 @@
 		});
 	});
 
-	const loadorder = async (p: number) => {
-		return await getOrders(opt, p, pageSize, customerId, salesId, txt);
-	};
-
-	const queryOrders = $derived.by(() => {
-		return useQuery({
+	const queryOrders = $derived(
+		useQuery({
 			queryKey: query_key,
 			queryFn: async () => loadorder(page),
 			enabled: browser,
 			onSuccess: prefetchNextPage,
 			keepPreviousData: true
-		});
-	});
+		})
+	);
 
 	// function setQueryOption(
 	// 	p: number,
@@ -226,17 +228,19 @@
 	}
 
 	async function changeOrderSession(id: number, mode: boolean) {
-		orderId = id;
-		await tick();
-		queryOrder.setOptions({
-			queryKey: [qKey, { id: orderId }],
-			queryFn: async () =>
-				getOrderById(orderId, { order: { ...initOrder }, details: [] }),
-			enabled: true
-		});
 
-		// setTimeout(() => {
-		isOrderLoading.update(() => false);
+		if(id !== orderId) {
+			orderId = id;
+			await tick();
+			queryOrder.setOptions({
+				queryKey: [qKey, { id: orderId }],
+				queryFn: async () =>
+					getOrderById(orderId, { order: { ...initOrder }, details: [] }),
+				enabled: true
+			});
+
+			isOrderLoading.update(() => false);
+		}
 		// }, 250);
 		isOpen = mode;
 	}
@@ -293,7 +297,7 @@
 				if ($order.id === 0) {
 					const result = await postCreateOrder(savedOrder, e);
 					if (result) {
-						await client.invalidateQueries([qKey, { id: savedOrder.id }]);
+						await client.invalidateQueries([qKey, { id: orderId }]);
 						await client.invalidateQueries(query_key);
 						// setTimeout(() => {
 						isOrderUpdating.update(() => false);
@@ -302,9 +306,9 @@
 					}
 				} else {
 					//					console.log(e.detail);
-					const result = await postUpdateOrder($order.id, savedOrder, e);
+					const result = await postUpdateOrder(orderId, savedOrder, e);
 					if (result) {
-						await client.invalidateQueries([qKey, { id: $order.id }]);
+						await client.invalidateQueries([qKey, { id: orderId }]);
 						await client.invalidateQueries(query_key);
 						// setTimeout(() => {
 						isOrderUpdating.update(() => false);
@@ -312,6 +316,10 @@
 						// }, 250);
 					}
 				}
+//				orderId = 0;
+				// createNewOrder(0);
+				// editOrder(0);
+				isOpen = false;
 				changeOrderSession(0, false);
 			}
 		} else {
@@ -321,6 +329,8 @@
 	}
 
 	async function deleteOrders(e: number[]) {
+		let i = e.findIndex(f => f === orderId);
+
 		let log = await postDeleteOrder(e);
 		if (log && log.data > 0) {
 			client.invalidateQueries(query_key);
@@ -328,18 +338,22 @@
 		setTimeout(() => {
 			isOrderUpdating.set(false);
 		}, 250);
+
+		if(orderId > 0 && i >= 0) {
+			await tick();
+			order.set({...initOrder});
+			details.set([]);
+		}
 		// console.log(log);
 	}
 
 	const subsribe = () => {
-		queryOrder.subscribe((o) => {
-			order.set(o.data?.order ?? { ...initOrder });
-			details.set(o.data?.details ?? []);
-		});
+			order.set($queryOrder.data?.order ?? { ...initOrder });
+			details.set($queryOrder.data?.details ?? []);
 	};
 
 	let isOrderAvailabel = $derived.by(() => {
-		return $queryOrder.isSuccess && $queryOrder.data;
+		return $queryOrder.isSuccess && $queryOrder.data && $queryOrder.status === 'success' && $queryOrder.isFetchedAfterMount;
 	});
 
 	let customers = $derived.by(() => {
@@ -401,6 +415,8 @@
 	$effect(() => {
 		showNotification = timeout !== undefined;
 	});
+
+	// $inspect($order);
 	// $: setQueryOption(page, pageSize, opt, customerId, salesId, txt);
 </script>
 
@@ -464,8 +480,7 @@
 			</Column>
 		</Row>
 	</Grid>
-
-	{/snippet}
+{/snippet}
 {#snippet orderDetail()}
 <FormOrder
 		customers={customers}

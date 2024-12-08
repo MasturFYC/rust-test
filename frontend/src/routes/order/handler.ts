@@ -19,7 +19,7 @@ type OrderProps = {
 	totalPages: number;
 	count: number;
 	currentPage: number;
-}
+};
 
 export async function getOrderById(
 	id: number,
@@ -39,7 +39,6 @@ export async function getOrderById(
 	// console.log(json);
 	return json;
 }
-
 
 export async function getOrders(
 	opt: number,

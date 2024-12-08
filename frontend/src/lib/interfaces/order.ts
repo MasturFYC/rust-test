@@ -18,7 +18,6 @@ export type iOrder = {
 	isModified?: boolean;
 	isDetailChanged?: boolean;
 	isPayed?: boolean;
-
 };
 
 export type iOrderDetail = {

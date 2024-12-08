@@ -40,7 +40,7 @@
 			</LabelProperty>
 		</Column>
 		<Column sm md noGutter>
-		<LabelProperty right sm>
+			<LabelProperty right sm>
 				<svelte:fragment slot="label">Total</svelte:fragment>
 				<svelte:fragment slot="value"
 					>{formatNumber(data.total)}</svelte:fragment
