@@ -64,6 +64,7 @@
 	disabled={disabled}
 	on:change
 	on:input
+	on:focus
 	on:keydown
 	bind:ref={ref_input}
 	bind:value={value}

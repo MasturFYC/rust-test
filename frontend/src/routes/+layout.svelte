@@ -28,6 +28,7 @@
 		Category,
 		Dashboard,
 		Autoscaling as Next,
+		OrderDetails,
 		Product,
 		GroupAccount as Relation,
 		SendToBack,
@@ -123,6 +124,12 @@
 			href: '/stock',
 			title: 'Stock',
 			icon: SendToBack
+		},
+		{
+			id: 7,
+			href: '/order',
+			title: 'Order',
+			icon: OrderDetails
 		}
 	];
 

@@ -129,6 +129,49 @@ pub struct Order {
 	#[serde(rename = "updatedAt")]
 	pub updated_at: Option<DateTime<Utc>>,
 }
+#[derive(
+	Validate, Default, Debug, Deserialize, sqlx::FromRow, Serialize, Clone,
+)]
+pub struct ResponseOrderDetails {
+	#[serde(rename = "orderId")]
+	pub order_id: i32,
+	#[serde(rename = "id")]
+	pub detail_id: i16,
+	#[serde(rename = "productId")]
+	pub product_id: i16,
+	#[serde(rename = "gudangId")]
+	pub gudang_id: i16,
+	#[serde(rename = "gudangName")]
+	pub gudang_name: String,
+	pub qty: BigDecimal,
+	pub direction: i16,
+	pub unit: String,
+	pub price: BigDecimal,
+	pub discount: BigDecimal,
+	pub hpp: BigDecimal,
+	#[serde(rename = "createdAt")]
+	pub created_at: Option<DateTime<Utc>>,
+	#[serde(rename = "updatedAt")]
+	pub updated_at: Option<DateTime<Utc>>,
+	pub subtotal: BigDecimal,
+	pub name: String,
+	pub barcode: String,
+	#[serde(rename = "oldQty")]
+	pub old_qty: BigDecimal,
+	#[serde(rename = "oldGudangId")]
+	pub old_gudang_id: i16,
+}
+#[derive(Serialize, Deserialize, Validate, Clone)]
+pub struct RequestOrder {
+	#[validate(range(min = 1))]
+	pub page: Option<usize>,
+	#[validate(range(min = 1, max = 50))]
+	pub limit: Option<usize>,
+	pub opt: Option<usize>,
+	pub custid: Option<i16>,
+	pub salesid: Option<i16>,
+	pub txt: Option<String>,
+}
 
 #[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
 pub struct ResponseOrder {

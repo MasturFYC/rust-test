@@ -11,9 +11,10 @@ pub mod db {
 		ledger::LedgerUtil,
 		model::{
 			CreateOrderDetailSchema, LedgerBuilder, LedgerType, Order,
-			OrderBuilder, OrderDtos, OrderType, PaymentType, ResponseOrder,
+			OrderBuilder, OrderDtos, OrderType, PaymentType, RequestOrder,
+			ResponseOrder, ResponseOrderDetails,
 		},
-		stock::model::{ProductQuantity, StockDetails},
+		stock::model::ProductQuantity,
 	};
 	// use crate::{order_detail::{CreateOrderDetailSchema, MatchTrxResult, OrderDetail}, DBClient};
 	#[derive(Debug, Deserialize, sqlx::FromRow, Serialize, Clone)]
@@ -30,7 +31,10 @@ pub mod db {
 		async fn get_order_with_details(
 			&self,
 			id: i32,
-		) -> Result<(Option<Order>, Vec<StockDetails>), sqlx::Error>;
+		) -> Result<
+			(Option<ResponseOrder>, Vec<ResponseOrderDetails>),
+			sqlx::Error,
+		>;
 		async fn order_update_only<S, O>(
 			&self,
 			id: S,
@@ -41,8 +45,7 @@ pub mod db {
 			O: Into<OrderDtos> + Send;
 		async fn get_orders(
 			&self,
-			page: usize,
-			limit: usize,
+			opts: RequestOrder,
 		) -> Result<(Vec<ResponseOrder>, i64), sqlx::Error>;
 		async fn order_create<O, T>(
 			&self,
@@ -71,16 +74,22 @@ pub mod db {
 		async fn get_order_with_details(
 			&self,
 			id: i32,
-		) -> Result<(Option<Order>, Vec<StockDetails>), sqlx::Error> {
+		) -> Result<
+			(Option<ResponseOrder>, Vec<ResponseOrderDetails>),
+			sqlx::Error,
+		> {
 			let mut conn = self.pool.acquire().await?;
 			let mut tx = conn.begin().await?;
 
-			let stock =
-				sqlx::query_file_as!(Order, "sql/order-get-by-id.sql", id)
-					.fetch_optional(&mut *tx)
-					.await?;
+			let order = sqlx::query_file_as!(
+				ResponseOrder,
+				"sql/order-get-by-id-2.sql",
+				id
+			)
+			.fetch_optional(&mut *tx)
+			.await?;
 			let details = sqlx::query_file_as!(
-				StockDetails,
+				ResponseOrderDetails,
 				"sql/order-detail-get-by-order-2.sql",
 				id
 			)
@@ -89,7 +98,7 @@ pub mod db {
 
 			tx.commit().await?;
 
-			Ok((stock, details))
+			Ok((order, details))
 		}
 
 		async fn order_update_only<S, O>(
@@ -262,39 +271,119 @@ pub mod db {
 		/// -H "Authorization: Bearer $(cat token.txt)"
 		async fn get_orders(
 			&self,
-			page: usize,
-			limit: usize,
+			opts: RequestOrder,
 		) -> Result<(Vec<ResponseOrder>, i64), sqlx::Error> {
+			let limit = opts.limit.unwrap_or(10);
+			let page = opts.page.unwrap_or(1);
 			let offset = (page - 1) * limit;
-
+			let opt = opts.opt.unwrap_or(0);
 			// acquire pg connection from current pool
 			let mut conn = self.pool.acquire().await?;
-
 			// get transaction pool from pg connection
 			let mut tx = conn.begin().await?;
 
-			// start transaction
-			// get orders data from database
-			let orders = sqlx::query_file_as!(
-				ResponseOrder,
-				"sql/order-get-all.sql",
-				limit as i64,
-				offset as i64,
-			)
-			.fetch_all(&mut *tx)
-			.await?;
+			let orders = match opt {
+				1 => {
+					let txt = opts.txt.unwrap_or("".to_string()).to_lowercase();
+					let data = sqlx::query_file_as!(
+						ResponseOrder,
+						"sql/order-get-all-by-search.sql",
+						txt,
+						limit as i64,
+						offset as i64
+					)
+					.fetch_all(&mut *tx)
+					.await?;
+					let row = sqlx::query_scalar!(
+					r#"SELECT COUNT(*) FROM	orders AS o 
+                    INNER JOIN relations AS c ON c.id = o.customer_id
+   					INNER JOIN relations AS s ON s.id = o.sales_id
+   					WHERE o.order_type = 'order'::order_enum
+                    AND POSITION($1 IN (o.id::TEXT||' '||LOWER(c.name||' '||s.name))) > 0
+						"#, txt)
+						.fetch_one(&mut *tx)
+						.await?;
 
-			// start transacrion
-			// get total record of orders
-			let row = sqlx::query_file_scalar!("sql/order-count.sql")
-				.fetch_one(&mut *tx)
-				.await?;
-
+					(data, row)
+				}
+				2 => {
+					let custid = opts.custid.unwrap_or(0);
+					let data = sqlx::query_file_as!(
+						ResponseOrder,
+						"sql/order-get-all-by-customer.sql",
+						custid,
+						limit as i64,
+						offset as i64
+					)
+					.fetch_all(&mut *tx)
+					.await?;
+					let row = sqlx::query_scalar!(
+						r#"
+						SELECT
+							COUNT(*)
+						FROM
+							orders AS o
+						WHERE
+							o.order_type = 'order'::order_enum
+							AND o.customer_id = $1
+							"#,
+						custid
+					)
+					.fetch_one(&mut *tx)
+					.await?;
+					(data, row)
+				}
+				3 => {
+					let salesid = opts.salesid.unwrap_or(0);
+					let data = sqlx::query_file_as!(
+						ResponseOrder,
+						"sql/order-get-all-by-sales.sql",
+						salesid,
+						limit as i64,
+						offset as i64
+					)
+					.fetch_all(&mut *tx)
+					.await?;
+					let row = sqlx::query_scalar!(
+						r#"
+						SELECT
+							COUNT(*)
+						FROM
+							orders AS o
+						WHERE
+							o.order_type = 'order'::order_enum
+							AND o.sales_id = $1
+							"#,
+						salesid
+					)
+					.fetch_one(&mut *tx)
+					.await?;
+					(data, row)
+				}
+				_ => {
+					// start transaction
+					// get orders data from database
+					let data = sqlx::query_file_as!(
+						ResponseOrder,
+						"sql/order-get-all.sql",
+						limit as i64,
+						offset as i64
+					)
+					.fetch_all(&mut *tx)
+					.await?;
+					// start transacrion
+					// get total record of orders
+					let row = sqlx::query_file_scalar!("sql/order-count.sql")
+						.fetch_one(&mut *tx)
+						.await?;
+					(data, row)
+				}
+			};
 			// finish transaction
 			tx.commit().await?;
 
 			// return result to caller
-			Ok((orders, row.unwrap_or(0)))
+			Ok((orders.0, orders.1.unwrap_or(0)))
 		}
 
 		async fn order_create<O, T>(
@@ -548,7 +637,7 @@ pub mod db {
                 FROM
                     order_payments
                 WHERE
-                    id = $1
+                    order_id = $1
             "#,
 			)
 			.bind(uid)

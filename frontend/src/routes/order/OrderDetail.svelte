@@ -27,7 +27,7 @@
 		baseURL,
 		credential_include,
 		type iGudang,
-		type iStockDetail
+		type iOrderDetail
 	} from '$lib/interfaces';
 	import {
 		Button,
@@ -36,7 +36,6 @@
 		ToastNotification,
 		Toolbar,
 		ToolbarContent,
-		ComboBox
 	} from 'carbon-components-svelte';
 	import { onDestroy, onMount, tick } from 'svelte';
 	import ExpandedRow from './ExpandedRow.svelte';
@@ -47,12 +46,12 @@
 		Delete,
 		NewTab,
 		Save,
-		Logout,
-		Money
+		Money,
+	  IbmZOpenEditor as Open
 	} from 'carbon-icons-svelte';
 	import { toNumber } from './handler';
-	import { stock, details } from './store';
-	import { isStockUpdating } from './store';
+	import { order, details } from './store';
+	import { isOrderUpdating } from './store';
 	import type {
 		DataTableHeader,
 		DataTableRow
@@ -61,17 +60,17 @@
 	interface Props {
 		barcodes: { barcode: string }[] | undefined;
 		gudangs: iGudang[] | undefined;
-		onclose: (e: number) => void;
+		onopen: (e: number) => void;
 		onadddp: () => void;
 		onnew: (e: number) => void;
-		onsave: (e: iStockDetail[]) => void;
+		onsave: (e: iOrderDetail[]) => void;
 		onnotfound: (e: string) => void;
 	}
 
 	let {
 		barcodes = [],
 		gudangs = [],
-		onclose,
+		onopen,
 		onadddp,
 		onnew,
 		onsave,
@@ -94,23 +93,19 @@
 		{ key: 'discount', value: 'Disc', width: '80px' },
 		{ key: 'pot', value: 'Hrg-Pot', width: '90px' },
 		{ key: 'subtotal', value: 'Subtotal', width: '100px' },
-		{ key: 'gudangId', value: 'Simpan di Gudang', width: 'auto' }
 	];
 
-	const get_gudang = () => {
-		return gudangs.map((m) => ({ id: m.id, text: m.name }));
-	};
 
 	let items = $state(0);
 	let currentId = $state(0);
 	let isAddNew = $state(false);
 
-	// let currentDetail: iStockDetail;
+	// let currentDetail: iOrderDetail;
 	let currentKey = 'barcode';
 	// let strQty = "0";
 	// let strDiscount = "0";
-	const initDetail: iStockDetail = {
-		stockId: 0,
+	const initDetail: iOrderDetail = {
+		orderId: 0,
 		id: 0,
 		productId: 0,
 		barcode: '',
@@ -361,13 +356,13 @@
 		}
 	}
 
-	function updateCurrentDetail(e: iStockDetail) {
+	function updateCurrentDetail(e: iOrderDetail) {
 		const i = $details.findIndex((f) => f.id === e.id);
 		if (i >= 0) {
 			const slices = [...$details];
 			slices.splice(i, 1, e);
 			details.update(() => [...slices]);
-			updateStock();
+			updateOrder();
 		}
 	}
 
@@ -415,7 +410,7 @@
 
 				if (i >= 0) {
 					let d = $details[i];
-					d.price = toNumber(p.hpp);
+					d.price = toNumber(p.price);
 
 					if (found) {
 						d.qty = toNumber(d.qty) + 1;
@@ -430,8 +425,8 @@
 						d.name = p.name;
 						d.barcode = p.barcode;
 						d.hpp = toNumber(p.hpp);
-						d.oldQty = p.oldQty ? 0 : toNumber(p.oldQty);
-						// console.log(p.oldStock);
+						d.oldQty = toNumber(p.oldQty) ? 0 : toNumber(p.oldQty);
+						// console.log(p.oldOrder);
 					}
 					d.subtotal =
 						(toNumber(p.price) - toNumber(d.discount)) * toNumber(d.qty);
@@ -483,21 +478,6 @@
 		}
 	}
 
-	async function gudangChange(gudId: number, rowId: number, name: string) {
-		//		console.log(gudId, rowId);
-		const i = $details.findIndex((f) => f.id === rowId);
-		if (i >= 0) {
-			const d = $details[i];
-			const c = {
-				...d,
-				gudangName: name,
-				gudangId: gudId
-			};
-			updateCurrentDetail(c);
-			isDirty = true;
-		}
-	}
-
 	function qtyOnChange(e: CustomEvent<string | number | null>, id: number) {
 		if (typeof e.detail === 'string') {
 			const i = $details.findIndex((f) => f.id === id);
@@ -539,7 +519,7 @@
 					subtotal: (toNumber(d.price) - discount) * toNumber(d.qty)
 				};
 				updateCurrentDetail(c);
-				isDirty = true;
+				isDirty = false;
 			}
 		}
 	}
@@ -601,9 +581,9 @@
 		items = $details.filter((f) => f.id > 0).length;
 	});
 
-	function updateStock() {
+	function updateOrder() {
 		let total = $details.reduce((o, t) => o + toNumber(t.subtotal), 0);
-		stock.update(
+		order.update(
 			(s) =>
 				(s = {
 					...s,
@@ -619,7 +599,7 @@
 		const slices = $details.filter((f) => !selectedRowIds.includes(f.id));
 		details.update(() => [...slices]);
 
-		updateStock();
+		updateOrder();
 
 		await tick();
 		selectedRowIds = [];
@@ -628,12 +608,12 @@
 	async function saveData(e: MouseEvent) {
 		e.preventDefault();
 
-		isStockUpdating.set(true);
+		isOrderUpdating.set(true);
 		await tick();
 		onsave(
 			$details
 				.filter((f) => f.id !== 0)
-				.map((m) => ({ ...m, stockId: $stock.id }))
+				.map((m) => ({ ...m, orderId: $order.id }))
 		);
 	}
 
@@ -647,16 +627,16 @@
 		return '-';
 	};
 
-	let isStockValid = $derived.by(() => {
+	let isOrderValid = $derived.by(() => {
 		return (
-			$stock.supplierId > 0 &&
-			$stock.warehouseId > 0 &&
-			$stock.total > 0 &&
-			$stock.invoiceId.trim().length > 0
+			$order.customerId > 0 &&
+			$order.salesId > 0 &&
+			$order.total > 0
+			// $order.invoiceId.trim().length > 0
 		);
 	});
 
-	// $inspect($stock);
+	// $inspect($order);
 </script>
 
 {#if showNotification}
@@ -674,7 +654,7 @@
 		<span slot="caption">{dayjs().format('DD-MM-YYYY HH:mm:ss')}</span>
 	</ToastNotification>
 {/if}
-<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions (because of reasons) -->
+	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions (because of reasons) -->
 <div
 	bind:this={reform}
 	tabindex={0}
@@ -701,7 +681,7 @@
 				<Button
 					kind="danger-ghost"
 					size="small"
-					disabled={selectedRowIds.length == 0 || $isStockUpdating}
+					disabled={selectedRowIds.length == 0 || $isOrderUpdating}
 					icon={Delete}
 					on:click={deleteItems}>Hapus item</Button
 				>
@@ -714,8 +694,8 @@
 						onnew(0);
 						selectedRowIds = [];
 					}}
-					disabled={items === 0 || $isStockUpdating || $stock.id === 0}
-					>Buat stock baru</Button
+					disabled={items === 0 || $isOrderUpdating || $order.id === 0}
+					>Buat order baru</Button
 				>
 				<Button
 					icon={Money}
@@ -723,25 +703,24 @@
 					style="border: none;"
 					size="small"
 					on:click={() => onadddp()}
-					disabled={items === 0 || $isStockUpdating}>Pembayaran / Dp</Button
+					disabled={items === 0 || $isOrderUpdating}>Pembayaran / Dp</Button
 				>
 				<Button
 					icon={Save}
-					disabled={!isStockValid}
+					disabled={!isOrderValid}
 					on:click={saveData}
 					size="small"
-					skeleton={$isStockUpdating}>Simpan</Button
+					skeleton={$isOrderUpdating}>Simpan</Button
 				>
 				<Button
-					icon={Logout}
+					icon={Open}
 					kind="danger-ghost"
 					size="small"
-					disabled={$isStockUpdating}
-					on:click={() => onclose(0)}>Close</Button
+					disabled={$isOrderUpdating}
+					on:click={() => onopen(0)}>Open</Button
 				>
 			</ToolbarContent>
 		</Toolbar>
-
 		<svelte:fragment slot="cell-header" let:header>
 			{#if header.key === 'price' || header.key === 'qty' || header.key === 'discount' || header.key === 'subtotal' || header.key === 'pot'}
 				<div class="cell-right">{header.value}</div>
@@ -765,31 +744,13 @@
 						on:focus={() => (currentKey = cell.key)}
 						on:keydown={(e) => barcodeOnKeyDown(e, row.id)}
 					/>
-				{:else if cell.key === 'gudangId'}
-					<ComboBox
-						id="gudang-id"
-						size={'sm'}
-						placeholder="Pilih gudang"
-						selectedId={row['gudangId']}
-						style={'margin: 0;padding:0'}
-						items={get_gudang()}
-						on:select={(e) => {
-							if (e.detail.selectedId > 0) {
-								gudangChange(
-									e.detail.selectedId,
-									row.id,
-									e.detail.selectedItem.text
-								);
-							}
-						}}
-					/>
 				{:else if cell.key === 'qty'}
 					<NumberPercent
 						value={formatNumber(cell.value, 2)}
 						size="sm"
 						clasess="cell-edit input-number"
 						id="qty-id"
-						on:change={(e) => qtyOnChange(e, row.id)}
+						on:input={(e) => qtyOnChange(e, row.id)}
 						on:focus={() => (currentKey = cell.key)}
 						on:keydown={(e) => qtyOnKeyDown(e, row.id)}
 					/>
@@ -799,9 +760,10 @@
 						size="sm"
 						classes="cell-edit input-number"
 						id="discount-id"
-						on:input={(e) =>
-							discountOnInput(e, toNumber(row['price']), toNumber(row['hpp']))}
-						on:change={(e) => discountOnChange(e, row.id)}
+						on:input={(e) => {
+							discountOnChange(e, row.id);
+							discountOnInput(e, toNumber(row['price']), toNumber(row['hpp']));
+						}}
 						on:focus={() => (currentKey = cell.key)}
 						on:keydown={(e) => discountOnKeyDown(e, row.id)}
 					/>
@@ -872,8 +834,6 @@
 				>
 					{formatNumber(cell.value, 2)}
 				</div>
-			{:else if cell.key === 'gudangId'}
-				{row['gudangName'] ?? ''}
 			{:else if cell.key === 'pot'}
 				<div
 					role="button"
@@ -916,7 +876,7 @@
 		icon={Add}
 		kind="tertiary"
 		onclick={totalItemClick}
-		disabled={$isStockUpdating}
+		disabled={$isOrderUpdating}
 		>Total: {items} item{items > 1 ? 's' : ''}</Button
 	>
 </div>

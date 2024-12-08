@@ -1,13 +1,10 @@
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use serde_json::json;
 
-use crate::{
-	dtos::RequestQueryDto, extractors::auth::RequireAuth, AppState,
-	error::HttpError,
-};
+use crate::{extractors::auth::RequireAuth, AppState, error::HttpError};
 
 use resdb::{
-	model::{OrderDtos, RequestQueryOrderDtos, UserRole},
+	model::{OrderDtos, RequestOrder, RequestQueryOrderDtos, UserRole},
 	order::db::OrderExt,
 };
 
@@ -80,10 +77,10 @@ async fn get_order_with_details(
 		.get_order_with_details(order_id)
 		.await
 		.map_err(|e| HttpError::server_error(e.to_string()))?;
-	let (stock, details) = result;
+	let (order, details) = result;
 	let response = json!(
 		{"status": "success",
-		"stock": stock,
+		"order": order,
 		"details": details
 	});
 	Ok(HttpResponse::Ok().json(response))
@@ -122,11 +119,11 @@ async fn update_only_order(
 		.await;
 	match query_result {
 		Ok(result) => {
-			let stock_response = json!({
+			let response = json!({
 			"status": "success",
 			"id": result,
 			});
-			HttpResponse::Ok().json(stock_response)
+			HttpResponse::Ok().json(response)
 		}
 		Err(err) => {
 			let message = format!("Error: {:?}", err);
@@ -140,13 +137,13 @@ async fn update_only_order(
 
 #[get("")]
 async fn get_orders(
-	qp: web::Query<RequestQueryDto>,
+	qp: web::Query<RequestOrder>,
 	app_state: web::Data<AppState>,
 ) -> impl Responder {
 	let query_params = qp.into_inner();
 	let limit = query_params.limit.unwrap_or(10);
 	let page = query_params.page.unwrap_or(1);
-	let query_result = app_state.db_client.get_orders(page, limit).await;
+	let query_result = app_state.db_client.get_orders(query_params).await;
 	if query_result.is_err() {
 		let message = "Something bad happened while fetching all order items";
 		return HttpResponse::InternalServerError().json(json!({

@@ -18,7 +18,7 @@
 		height: auto;
 	}
 
-	.supplier-info {
+	.customer-info {
 		height: auto;
 		font-size: x-small;
 		margin-top: 3px;
@@ -37,25 +37,24 @@
 		Form,
 		Grid,
 		Row,
-		TextInput
 	} from 'carbon-components-svelte';
 	import dayjs from 'dayjs';
 	// import { formatNumber, getNumber } from '$lib/components/NumberFormat';
-	import { stock } from './store';
+	import { order } from './store';
 	// import { toNumber } from './handler';
 	import type { ComboBoxItem } from 'carbon-components-svelte/src/ComboBox/ComboBox.svelte';
 
 	// const dispatch = createEventDispatcher();
 
 	interface Props {
-		suppliers: iRelationProp[] | undefined;
-		employees: iRelationProp[] | undefined;
+		customers: iRelationProp[] | undefined;
+		sales: iRelationProp[] | undefined;
 		innerWidth: number;
 	}
 
 	let {
-		suppliers = [],
-		employees = [],
+		customers = [],
+		sales = [],
 		innerWidth = $bindable(0)
 	}: Props = $props();
 
@@ -71,14 +70,14 @@
 					  };
 		  };
 
-	let ref_invoice: HTMLInputElement | undefined = $state(undefined);
+	let ref_date: HTMLInputElement | undefined = $state(undefined);
 
-	function get_suppliers() {
-		return suppliers.map((m) => ({ id: m.id, text: m.text }));
+	function get_customers() {
+		return customers.map((m) => ({ id: m.id, text: m.text }));
 	}
 
-	function get_employees() {
-		return employees.map((m) => ({ id: m.id, text: m.text }));
+	function get_sales() {
+		return sales.map((m) => ({ id: m.id, text: m.text }));
 	}
 
 	function shouldFilterItem(item: ComboBoxItem, value: string) {
@@ -86,8 +85,8 @@
 		return item.text.toLowerCase().includes(value.toLowerCase());
 	}
 
-	function get_employee_info(id: number): string {
-		let item = suppliers.filter((f) => f.id === id)[0];
+	function get_sales_info(id: number): string {
+		let item = customers.filter((f) => f.id === id)[0];
 
 		if (item) {
 			let info: string;
@@ -107,8 +106,8 @@
 		return '-';
 	}
 
-	function get_supplier_info(id: number): string {
-		let item = suppliers.filter((f) => f.id === id)[0];
+	function get_customer_info(id: number): string {
+		let item = customers.filter((f) => f.id === id)[0];
 
 		if (item) {
 			let info: string;
@@ -128,39 +127,39 @@
 		return '-';
 	}
 
-	function on_employee_changed(
+	function on_sales_changed(
 		e: CustomEvent<{ selectedId: any; selectedItem: ComboBoxItem }>
 	): void {
-		const empl = employees.filter((f) => f.id === e.detail.selectedId)[0];
+		const empl = sales.filter((f) => f.id === e.detail.selectedId)[0];
 		if (empl) {
-			stock.update((s) => ({
+			order.update((s) => ({
 				...s,
-				warehouseId: empl.id,
-				warehouseName: empl.text,
+				salesId: empl.id,
+				salesName: empl.text,
 				isModified: true
 			}));
 		}
 	}
 
-	function on_supplier_changed(
+	function on_customer_changed(
 		e: CustomEvent<{ selectedId: any; selectedItem: ComboBoxItem }>
 	): void {
-		const empl = suppliers.filter((f) => f.id === e.detail.selectedId)[0];
-		if (empl) {
-			stock.update((s) => ({
+		const cust = customers.filter((f) => f.id === e.detail.selectedId)[0];
+		if (cust) {
+			order.update((s) => ({
 				...s,
-				supplierId: empl.id,
-				supplierName: empl.text,
+				customerId: cust.id,
+				customerName: cust.text,
 				isModified: true
 			}));
 		}
 	}
-	function on_employee_clear(_e: any): void {
-		stock.update((s) => ({ ...s, warehouseId: 0, warehouseName: undefined }));
+	function on_sales_clear(_e: any): void {
+		order.update((s) => ({ ...s, salesId: 0, salesName: undefined }));
 	}
 
-	function on_supplier_clear(_e: any): void {
-		stock.update((s) => ({ ...s, supplierId: 0, supplierName: undefined }));
+	function on_customer_clear(_e: any): void {
+		order.update((s) => ({ ...s, customerId: 0, customerName: undefined }));
 	}
 
 	function onDateChange(e: CustomEvent<DatePict>) {
@@ -172,26 +171,44 @@
 			date = date.set('date', d.getDate());
 			date = date.set('month', d.getMonth());
 			date = date.set('year', d.getFullYear());
-			stock.update((s) => ({
+			order.update((s) => ({
 				...s,
 				createdAt: date.format(),
 				isModified: true
 			}));
 		}
 	}
+	function onTempoChange(e: CustomEvent<DatePict>) {
+		e.preventDefault();
+		if (typeof e.detail === 'string') {
+		} else {
+			let d = e.detail.selectedDates[0];
+			let date = dayjs();
+			date = date.set('date', d.getDate());
+			date = date.set('month', d.getMonth());
+			date = date.set('year', d.getFullYear());
+			order.update((s) => ({
+				...s,
+				dueAt: date.format(),
+				isModified: true
+			}));
+		}
+	}
 
-	let strDate = $state(dayjs($stock.createdAt).format('DD-MM-YYYY'));
-	// let strDp = formatNumber(toNumber($stock.dp));
+
+	let strDate = $state(dayjs($order.createdAt).format('DD-MM-YYYY'));
+	let strTempo = $state(dayjs($order.dueAt).format('DD-MM-YYYY'))
+	// let strDp = $derived(formatNumber(toNumber($order.dp)));
 
 	$effect(() => {
-	 	if (ref_invoice) {
-	 		ref_invoice.focus();
-	 	}
+		if (ref_date) {
+			ref_date.focus();
+		}
 	});
 
 	// function updateDp(str: string) {
 	// 	const dp = getNumber(str);
-	// 	stock.update((s) => ({
+	// 	order.update((s) => ({
 	// 		...s,
 	// 		dp: dp,
 	// 		total: toNumber(s.total) - (toNumber(s.payment) + dp)
@@ -201,69 +218,90 @@
 	// $effect(() => updateDp(strDp));
 </script>
 
-<Form on:submit style="margin: 24px 0 0 0;">
+<Form on:submit>
 	<Grid noGutter={innerWidth > 720} fullWidth>
 		<Row>
+
 			<Column noGutterRight sm={2} md>
 				<DatePicker
+				short
 					datePickerType="single"
 					bind:value={strDate}
 					dateFormat="d-m-Y"
 					on:change={onDateChange}
 				>
 					<DatePickerInput
+						style={'width: 100%'}
+						bind:ref={ref_date}
 						accesskey="t"
-						style="max-width: 100%;min-width:150px"
-						labelText="Tanggal pembelian"
+						labelText="Tanggal penjualan"
 						placeholder="mm/dd/yyyy"
 					/>
 				</DatePicker>
 			</Column>
+			<Column noGutterRight sm={2} md>
+				<DatePicker
+					datePickerType="single"
+					bind:value={strTempo}
+					dateFormat="d-m-Y"
+					on:change={onTempoChange}
+				>
+					<DatePickerInput
+						accesskey="t"
+						labelText="Jatuh tempo"
+						placeholder="mm/dd/yyyy"
+					/>
+				</DatePicker>
+			</Column>
+
+
+			<!--
 			<Column noGutter sm={2} md lg>
 				<TextInput
 					accesskey="n"
-					bind:ref={ref_invoice}
+					bind:ref={ref_date}
 					id="invoice-id"
 					labelText="No. faktur"
-					on:change={() => stock.update((s) => ({ ...s, isModified: true }))}
-					bind:value={$stock.invoiceId}
+					on:change={() => order.update((s) => ({ ...s, isModified: true }))}
+					bind:value={$order.invoiceId}
 				/>
-			</Column>
+			</Column> -->
+
 			<Column noGutter md={2} sm={2}>
 				<ComboBox
 					accesskey="s"
-					id="supplier-id"
-					titleText="Supplier"
-					selectedId={$stock.supplierId}
-					placeholder="Pilih supplier"
-					items={get_suppliers()}
+					id="customer-id"
+					titleText="Pelanggan"
+					selectedId={$order.customerId}
+					placeholder="Pilih pelanggan"
+					items={get_customers()}
 					shouldFilterItem={shouldFilterItem}
-					on:select={on_supplier_changed}
-					on:clear={on_supplier_clear}
+					on:select={on_customer_changed}
+					on:clear={on_customer_clear}
 					let:item
 				>
 					<div><strong>{item.text}</strong></div>
-					<div class="supplier-info">
-						{get_supplier_info(item.id)}
+					<div class="customer-info">
+						{get_customer_info(item.id)}
 					</div>
 				</ComboBox>
 			</Column>
 			<Column noGutterLeft md={2} sm={2}>
 				<ComboBox
 					accesskey="g"
-					id="warehouse-id"
-					titleText="Checker"
-					selectedId={$stock.warehouseId}
-					placeholder="Nama pengechek"
-					items={get_employees()}
+					id="sales-id"
+					titleText="Sales"
+					selectedId={$order.salesId}
+					placeholder="Pilih sales"
+					items={get_sales()}
 					shouldFilterItem={shouldFilterItem}
-					on:select={on_employee_changed}
-					on:clear={on_employee_clear}
+					on:select={on_sales_changed}
+					on:clear={on_sales_clear}
 					let:item
 				>
 					<div><strong>{item.text}</strong></div>
-					<div class="supplier-info">
-						{get_employee_info(item.id)}
+					<div class="customer-info">
+						{get_sales_info(item.id)}
 					</div>
 				</ComboBox>
 			</Column>
