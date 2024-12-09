@@ -1,23 +1,9 @@
-<style lang="scss">
-	.col-parent {
-		display: flex;
-		flex-direction: column;
-	}
-	.col-child {
-		display: inline-block;
-		align-self: flex-end;
-	}
-	.num-right {
-		text-align: right;
-	}
-</style>
-
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { formatNumber } from '$lib/components/NumberFormat';
 	import { getBarcodes, getRelationProp } from '$lib/fetchers';
 	import type { iCurrentUser, iOrder, iOrderDetail } from '$lib/interfaces';
-	import { SendToBack } from 'carbon-icons-svelte';
+	import { OrderDetails as SendToBack } from 'carbon-icons-svelte';
 	import { numberToText } from '$lib/number-to-string';
 	import {
 		useQuery,
@@ -61,7 +47,6 @@
 		isOrderUpdating,
 		order
 	} from './store';
-	import { writable } from 'svelte/store';
 
 	const title = 'Order';
 	const qKey = 'orders';
@@ -216,7 +201,10 @@
 
 	function createNewOrder(_e: number): void {
 		isOpen = false;
-		changeOrderSession(0, false);
+        orderId = 0;
+        order.set({...initOrder});
+        details.set([]);
+		//changeOrderSession(0, false);
 	}
 
 	function editOrder(e: number) {
@@ -291,36 +279,29 @@
 				delete savedOrder.isDetailChanged;
 				delete savedOrder.isModified;
 				delete savedOrder.isPayed;
+                let updateSuccess = false;
 
-				// console.log(savedOrder);
-
-				if ($order.id === 0) {
+				if (orderId === 0) {
 					const result = await postCreateOrder(savedOrder, e);
 					if (result) {
-						await client.invalidateQueries([qKey, { id: orderId }]);
-						await client.invalidateQueries(query_key);
-						// setTimeout(() => {
-						isOrderUpdating.update(() => false);
-						isOpen = false;
-						// }, 250);
+                        updateSuccess = true;
 					}
 				} else {
-					//					console.log(e.detail);
 					const result = await postUpdateOrder(orderId, savedOrder, e);
 					if (result) {
-						await client.invalidateQueries([qKey, { id: orderId }]);
-						await client.invalidateQueries(query_key);
-						// setTimeout(() => {
-						isOrderUpdating.update(() => false);
-						isOpen = false;
-						// }, 250);
+                       updateSuccess = true;
 					}
 				}
-//				orderId = 0;
-				// createNewOrder(0);
 				// editOrder(0);
-				isOpen = false;
-				changeOrderSession(0, false);
+                if(updateSuccess) {
+					await client.invalidateQueries([qKey, { id: orderId }]);
+					await client.invalidateQueries(query_key);
+ 			        isOrderUpdating.update(() => false);
+			        isOpen = false;
+                    await tick();
+                    createNewOrder(0);
+                }
+				//changeOrderSession(0, false);
 			}
 		} else {
 			// console.log("UDPATE-ONLY-STOCK");
@@ -450,7 +431,6 @@
 	<Grid noGutter={innerWidth > 720}>
 		<Row>
 			<Column noGutterRight>
-				<h4>Nota #{$order.id}</h4>
 				<Grid noGutter>
 					<Row>
 						<Column>Bayar:</Column>
@@ -542,10 +522,11 @@
 {/snippet}
 
 <LocalStorage key="__user_info" bind:value={profile} />
+
 <Grid noGutter>
 	<Row>
 		<Column>
-			<h2><SendToBack size={24} /> {title}</h2>
+			<h2><SendToBack size={24} /> {title}{isOpen && orderId === 0 ? "" : ` #${orderId}`}</h2>
 		</Column>
 		<Column
 			>{#if $customerQuery.isLoading || $salesQuery.isLoading || $queryBarcode.isLoading || $queryOrders.isLoading || $gudangQuery.isLoading}
@@ -581,3 +562,19 @@
 {#if showNotification}
 	{@render toas()}
 {/if}
+
+<style lang="scss">
+.col-parent {
+    display: flex;
+    flex-direction: column;
+}
+.col-child {
+    display: inline-block;
+    align-self: flex-end;
+}
+.num-right {
+    text-align: right;
+}
+</style>
+
+

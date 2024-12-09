@@ -110,24 +110,24 @@
 						{#if selectedGudangId === stock.gudangId}
 							{#if oldGudangId === selectedGudangId}
 								<strong>
-									{getStockByGudang(oldGudangId, product.stocks) - oldQty} + {newQty}
+									{getStockByGudang(oldGudangId, product.stocks) + oldQty} - {newQty}
 									=
-									{getStockByGudang(oldGudangId, product.stocks) -
-										oldQty +
+									{getStockByGudang(oldGudangId, product.stocks) +
+										oldQty -
 										newQty}
 									{product.unit}
 								</strong>
 							{:else}
 								<strong>
-									{getStockByGudang(selectedGudangId, product.stocks)} + {newQty}
+									{getStockByGudang(selectedGudangId, product.stocks)} - {newQty}
 									=
-									{getStockByGudang(selectedGudangId, product.stocks) + newQty}
+									{getStockByGudang(selectedGudangId, product.stocks) - newQty}
 									{product.unit}
 								</strong>
 							{/if}
 						{:else if oldGudangId === stock.gudangId}
 							<!-- {getStockByGudang(oldGudangId, product.stocks)} - {oldQty} = -->
-							{getStockByGudang(oldGudangId, product.stocks) - oldQty}
+							{getStockByGudang(oldGudangId, product.stocks) + oldQty}
 							{product.unit}
 						{:else}
 							{stock.qty} {product.unit}
