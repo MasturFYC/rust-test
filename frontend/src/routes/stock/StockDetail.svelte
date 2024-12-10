@@ -84,8 +84,8 @@
 	let timeout: number | undefined = $state(undefined);
 	let notifyTitle = $state('Error');
 	let notifySubtitle = $state('');
-    let isQtyChanged = $state(false);
-    let isDiscountChanged = $state(false);
+	let isQtyChanged = $state(false);
+	let isDiscountChanged = $state(false);
 
 	let headers: DataTableHeader[] = [
 		{ key: 'barcode', value: 'Barcode', width: '12%' },
@@ -205,10 +205,10 @@
 		}
 	}
 
-    function change_qty (e: string, id: number) {
+	function change_qty(e: string, id: number) {
 		const i = $details.findIndex((f) => f.id === id);
-        if (i >= 0) {
-            const qty = getPercent(e);
+		if (i >= 0) {
+			const qty = getPercent(e);
 			const d = $details[i];
 			const c = {
 				...d,
@@ -217,40 +217,40 @@
 			};
 			updateCurrentDetail(c);
 			isDirty = false;
-	        isQtyChanged = false;
-        }
-    }
+			isQtyChanged = false;
+		}
+	}
 
 	function qtyOnChange(e: CustomEvent<string | number | null>, id: number) {
 		if (typeof e.detail === 'string') {
-            change_qty(e.detail, id);
+			change_qty(e.detail, id);
 		}
 	}
 
 	function qtyOnKeyDown(e: KeyboardEvent, id: number) {
 		if (e.key === 'Enter') {
-		    e.preventDefault();
-	    	currentKey = 'discount';
+			e.preventDefault();
+			currentKey = 'discount';
 			const ctlId = '#' + currentKey + '-id';
 			setFocuse(ctlId);
 		} else if (e.key === 'Tab' && e.shiftKey) {
 			currentKey = 'barcode';
-		} else if(isQtyChanged && (e.key ==='ArrowDown' || e.key === 'ArrowUp')) {
-           e.preventDefault();
-           const el = e.currentTarget as HTMLInputElement;
-           if(el) {
-               currentKey = "qty";
-               change_qty(el.value, id);
-            }
-        }
+		} else if (isQtyChanged && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+			e.preventDefault();
+			const el = e.currentTarget as HTMLInputElement;
+			if (el) {
+				currentKey = 'qty';
+				change_qty(el.value, id);
+			}
+		}
 	}
 
-    function change_discount(e: string, id: number) {
+	function change_discount(e: string, id: number) {
 		const i = $details.findIndex((f) => f.id === id);
-        if (i >= 0) {
-            const discount = getNumber(e);
-            const d = $details[i];
-            if (toNumber(d.price) - discount <= toNumber(d.hpp)) {
+		if (i >= 0) {
+			const discount = getNumber(e);
+			const d = $details[i];
+			if (toNumber(d.price) - discount <= toNumber(d.hpp)) {
 				return true;
 			}
 			const c = {
@@ -260,20 +260,20 @@
 			};
 			updateCurrentDetail(c);
 			isDirty = false;
-            isDiscountChanged = false;
-        }
-    }
+			isDiscountChanged = false;
+		}
+	}
 
 	function discountOnChange(
 		e: CustomEvent<string | number | null>,
 		id: number
 	) {
 		if (typeof e.detail === 'string') {
-            change_discount(e.detail, id);
+			change_discount(e.detail, id);
 		}
 	}
 
-    function discountOnInput(
+	function discountOnInput(
 		e: CustomEvent<string | number | null>,
 		price: number,
 		hpp: number
@@ -295,11 +295,11 @@
 		if ((e.key === 'Tab' && !e.shiftKey) || e.key === 'Enter') {
 			e.preventDefault();
 
- 		    currentKey = 'barcode';
+			currentKey = 'barcode';
 			const ctlId = '#' + currentKey + '-id';
 			setFocuse(ctlId);
 
-            await tick();
+			await tick();
 
 			let i = $details.findIndex((f) => f.id === id);
 
@@ -319,20 +319,21 @@
 			let d = $details[i];
 			currentId = d.id;
 			isDirty = false;
-            await tick();
-            setFocuse(ctlId);
-
-		} else if (e.key ==='Tab' && e.shiftKey) {
+			await tick();
+			setFocuse(ctlId);
+		} else if (e.key === 'Tab' && e.shiftKey) {
 			currentKey = 'qty';
-		} else if(isDiscountChanged && (e.key === 'ArrowUp' || e.key === 'ArrowDown')){
-            if(e.currentTarget) {
-                currentKey = "discount";
-                const el = e.currentTarget as HTMLInputElement;
-                change_discount(el.value, id);
-            }
-        }
+		} else if (
+			isDiscountChanged &&
+			(e.key === 'ArrowUp' || e.key === 'ArrowDown')
+		) {
+			if (e.currentTarget) {
+				currentKey = 'discount';
+				const el = e.currentTarget as HTMLInputElement;
+				change_discount(el.value, id);
+			}
+		}
 	}
-
 
 	async function onTablePointerEnter(_e: Event) {
 		const i = $details.findIndex((f) => f.id === 0);
@@ -371,7 +372,7 @@
 			return true;
 		}
 
-        e.preventDefault();
+		e.preventDefault();
 
 		if (e.key === 'Escape') {
 			if (isBarcodeDirty) {
@@ -584,7 +585,7 @@
 		}
 	}
 
- 	// function setStringValue(qty: number, discount: number) {
+	// function setStringValue(qty: number, discount: number) {
 	//   strQty = formatNumber(qty);
 	//   strDiscount = formatNumber(discount);
 	// }
@@ -812,8 +813,8 @@
 						size="sm"
 						clasess="cell-edit input-number"
 						id="qty-id"
-	                    on:input={() => (isQtyChanged = true) }
-					    on:change={(e) => qtyOnChange(e, row.id) }
+						on:input={() => (isQtyChanged = true)}
+						on:change={(e) => qtyOnChange(e, row.id)}
 						on:focus={() => (currentKey = cell.key)}
 						on:keydown={(e) => qtyOnKeyDown(e, row.id)}
 					/>
@@ -823,11 +824,11 @@
 						size="sm"
 						classes="cell-edit input-number"
 						id="discount-id"
-                        on:change={(e) => discountOnChange(e, row.id)}
+						on:change={(e) => discountOnChange(e, row.id)}
 						on:input={(e) => {
-                            isDiscountChanged = true;
+							isDiscountChanged = true;
 							discountOnInput(e, toNumber(row['price']), toNumber(row['hpp']));
-                        }}
+						}}
 						on:focus={() => (currentKey = cell.key)}
 						on:keydown={(e) => discountOnKeyDown(e, row.id)}
 					/>

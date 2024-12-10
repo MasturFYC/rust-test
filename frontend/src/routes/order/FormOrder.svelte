@@ -247,7 +247,7 @@
 			<Column noGutterLeft>
 				<Grid noGutter>
 					<Row>
-							<Column noGutter>
+						<Column noGutter>
 							<DatePicker
 								datePickerType="single"
 								bind:value={strTempo}
@@ -255,13 +255,13 @@
 								on:change={onTempoChange}
 							>
 								<DatePickerInput
-								accesskey="t"
+									accesskey="t"
 									labelText="Jatuh tempo"
 									placeholder="mm/dd/yyyy"
 								/>
 							</DatePicker>
 						</Column>
-					<Column sm={2} noGutter md>
+						<Column sm={2} noGutter md>
 							<ComboBox
 								accesskey="s"
 								id="customer-id"

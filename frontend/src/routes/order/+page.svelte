@@ -1,3 +1,17 @@
+<style lang="scss">
+	.col-parent {
+		display: flex;
+		flex-direction: column;
+	}
+	.col-child {
+		display: inline-block;
+		align-self: flex-end;
+	}
+	.num-right {
+		text-align: right;
+	}
+</style>
+
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { formatNumber } from '$lib/components/NumberFormat';
@@ -26,9 +40,7 @@
 	import ProductNotFound from './ProductNotFound.svelte';
 	import OrderDetail from './OrderDetail.svelte';
 	import OrderList from './OrderList.svelte';
-	import type {
-		iGudangResult
-	} from './handler'
+	import type { iGudangResult } from './handler';
 
 	import {
 		fetchGudangs,
@@ -76,14 +88,7 @@
 	});
 
 	let pageNext = $derived(page + 1);
-	let query_key = $derived([
-		qKey,
-		page,
-		pageSize,
-		customerId,
-		salesId,
-		txt
-	]);
+	let query_key = $derived([qKey, page, pageSize, customerId, salesId, txt]);
 	const query_next = $derived([
 		qKey,
 		pageNext,
@@ -153,7 +158,6 @@
 		return await getOrders(opt, p, pageSize, customerId, salesId, txt);
 	};
 
-
 	const queryOrder = $derived.by(() => {
 		return useQuery({
 			queryKey: [qKey, { id: orderId }],
@@ -196,19 +200,19 @@
 		isOrderLoading.update(() => false);
 		await tick();
 		isOpen = true;
-	//changeOrderSession(0, true);
+		//changeOrderSession(0, true);
 	}
 
 	function createNewOrder(_e: number): void {
 		isOpen = false;
-        orderId = 0;
-        order.set({...initOrder});
-        details.set([]);
+		orderId = 0;
+		order.set({ ...initOrder });
+		details.set([]);
 		//changeOrderSession(0, false);
 	}
 
 	function editOrder(e: number) {
-		if(e === 0) {
+		if (e === 0) {
 			isOpen = false;
 			return;
 		}
@@ -216,8 +220,7 @@
 	}
 
 	async function changeOrderSession(id: number, mode: boolean) {
-
-		if(id !== orderId) {
+		if (id !== orderId) {
 			orderId = id;
 			await tick();
 			queryOrder.setOptions({
@@ -279,28 +282,28 @@
 				delete savedOrder.isDetailChanged;
 				delete savedOrder.isModified;
 				delete savedOrder.isPayed;
-                let updateSuccess = false;
+				let updateSuccess = false;
 
 				if (orderId === 0) {
 					const result = await postCreateOrder(savedOrder, e);
 					if (result) {
-                        updateSuccess = true;
+						updateSuccess = true;
 					}
 				} else {
 					const result = await postUpdateOrder(orderId, savedOrder, e);
 					if (result) {
-                       updateSuccess = true;
+						updateSuccess = true;
 					}
 				}
 				// editOrder(0);
-                if(updateSuccess) {
+				if (updateSuccess) {
 					await client.invalidateQueries([qKey, { id: orderId }]);
 					await client.invalidateQueries(query_key);
- 			        isOrderUpdating.update(() => false);
-			        isOpen = false;
-                    await tick();
-                    createNewOrder(0);
-                }
+					isOrderUpdating.update(() => false);
+					isOpen = false;
+					await tick();
+					createNewOrder(0);
+				}
 				//changeOrderSession(0, false);
 			}
 		} else {
@@ -310,7 +313,7 @@
 	}
 
 	async function deleteOrders(e: number[]) {
-		let i = e.findIndex(f => f === orderId);
+		let i = e.findIndex((f) => f === orderId);
 
 		let log = await postDeleteOrder(e);
 		if (log && log.data > 0) {
@@ -320,21 +323,26 @@
 			isOrderUpdating.set(false);
 		}, 250);
 
-		if(orderId > 0 && i >= 0) {
+		if (orderId > 0 && i >= 0) {
 			await tick();
-			order.set({...initOrder});
+			order.set({ ...initOrder });
 			details.set([]);
 		}
 		// console.log(log);
 	}
 
 	const subsribe = () => {
-			order.set($queryOrder.data?.order ?? { ...initOrder });
-			details.set($queryOrder.data?.details ?? []);
+		order.set($queryOrder.data?.order ?? { ...initOrder });
+		details.set($queryOrder.data?.details ?? []);
 	};
 
 	let isOrderAvailabel = $derived.by(() => {
-		return $queryOrder.isSuccess && $queryOrder.data && $queryOrder.status === 'success' && $queryOrder.isFetchedAfterMount;
+		return (
+			$queryOrder.isSuccess &&
+			$queryOrder.data &&
+			$queryOrder.status === 'success' &&
+			$queryOrder.isFetchedAfterMount
+		);
 	});
 
 	let customers = $derived.by(() => {
@@ -462,12 +470,8 @@
 	</Grid>
 {/snippet}
 {#snippet orderDetail()}
-<FormOrder
-		customers={customers}
-		sales={sales}
-		bind:innerWidth={innerWidth}
-	/>
-<OrderDetail
+	<FormOrder customers={customers} sales={sales} bind:innerWidth={innerWidth} />
+	<OrderDetail
 		barcodes={barcodes}
 		gudangs={gudangs}
 		onnotfound={onProductNotFound}
@@ -526,7 +530,10 @@
 <Grid noGutter>
 	<Row>
 		<Column>
-			<h2><SendToBack size={24} /> {title}{isOpen && orderId === 0 ? "" : ` #${orderId}`}</h2>
+			<h2>
+				<SendToBack size={24} />
+				{title}{isOpen && orderId === 0 ? '' : ` #${orderId}`}
+			</h2>
 		</Column>
 		<Column
 			>{#if $customerQuery.isLoading || $salesQuery.isLoading || $queryBarcode.isLoading || $queryOrders.isLoading || $gudangQuery.isLoading}
@@ -562,19 +569,3 @@
 {#if showNotification}
 	{@render toas()}
 {/if}
-
-<style lang="scss">
-.col-parent {
-    display: flex;
-    flex-direction: column;
-}
-.col-child {
-    display: inline-block;
-    align-self: flex-end;
-}
-.num-right {
-    text-align: right;
-}
-</style>
-
-

@@ -83,12 +83,12 @@
 	let timeout: number | undefined = $state(undefined);
 	let notifyTitle = $state('Error');
 	let notifySubtitle = $state('');
-    let isQtyChanged = $state(false);
-    let isDiscountChanged = $state(false);
+	let isQtyChanged = $state(false);
+	let isDiscountChanged = $state(false);
 
 	let headers: DataTableHeader[] = [
 		{ key: 'barcode', value: 'Barcode', width: '12%' },
-		{ key: 'name', value: 'Nama barang', width: 'auto'  },
+		{ key: 'name', value: 'Nama barang', width: 'auto' },
 		{ key: 'qty', value: 'Qty', width: '70px' },
 		{ key: 'unit', value: 'Unit', width: '50px' },
 		{ key: 'price', value: 'Harga', width: '100px' },
@@ -124,10 +124,10 @@
 		gudangName: ''
 	};
 
-    function change_qty (e: string, id: number) {
+	function change_qty(e: string, id: number) {
 		const i = $details.findIndex((f) => f.id === id);
-        if (i >= 0) {
-            const qty = getPercent(e);
+		if (i >= 0) {
+			const qty = getPercent(e);
 			const d = $details[i];
 			const c = {
 				...d,
@@ -135,17 +135,17 @@
 				subtotal: (toNumber(d.price) - toNumber(d.discount)) * qty
 			};
 			// isDirty = false;
-	        isQtyChanged = false;
-		    updateCurrentDetail(c);
-        }
-    }
+			isQtyChanged = false;
+			updateCurrentDetail(c);
+		}
+	}
 
-    function change_discount(e: string, id: number) {
+	function change_discount(e: string, id: number) {
 		const i = $details.findIndex((f) => f.id === id);
-        if (i >= 0) {
-            const discount = getNumber(e);
-            const d = $details[i];
-            if (toNumber(d.price) - discount <= toNumber(d.hpp)) {
+		if (i >= 0) {
+			const discount = getNumber(e);
+			const d = $details[i];
+			if (toNumber(d.price) - discount <= toNumber(d.hpp)) {
 				return true;
 			}
 			const c = {
@@ -154,12 +154,10 @@
 				subtotal: (toNumber(d.price) - discount) * toNumber(d.qty)
 			};
 			// isDirty = false;
-            isDiscountChanged = false;
-            updateCurrentDetail(c);
-        }
-    }
-
-
+			isDiscountChanged = false;
+			updateCurrentDetail(c);
+		}
+	}
 
 	function onRowClick(e: CustomEvent<DataTableRow>) {
 		e.preventDefault();
@@ -244,9 +242,9 @@
 			const ctlId = '#' + currentKey + '-id';
 			setFocuse(ctlId);
 
-            await tick();
+			await tick();
 
-            let i = $details.findIndex((f) => f.id === id);
+			let i = $details.findIndex((f) => f.id === id);
 
 			i++;
 
@@ -265,18 +263,20 @@
 			currentId = d.id;
 			// isDirty = false;
 
-            await tick();
-            setFocuse(ctlId);
-
-        } else if (e.key && e.shiftKey) {
+			await tick();
+			setFocuse(ctlId);
+		} else if (e.key && e.shiftKey) {
 			currentKey = 'qty';
-		} else if(isDiscountChanged && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
-            const el = e.currentTarget as HTMLInputElement;
-            if(el) {
-                currentKey = "discount";
-                change_discount(el.value, id)
-            }
-        }
+		} else if (
+			isDiscountChanged &&
+			(e.key === 'ArrowDown' || e.key === 'ArrowUp')
+		) {
+			const el = e.currentTarget as HTMLInputElement;
+			if (el) {
+				currentKey = 'discount';
+				change_discount(el.value, id);
+			}
+		}
 	}
 
 	function qtyOnKeyDown(e: KeyboardEvent, id: number) {
@@ -289,19 +289,19 @@
 			}
 		} else if (e.key === 'Tab' && e.shiftKey) {
 			currentKey = 'barcode';
-		} else if(isQtyChanged && (e.key ==='ArrowDown' || e.key === 'ArrowUp')) {
-           e.preventDefault();
-           const el = e.currentTarget as HTMLInputElement;
-           if(el) {
-               currentKey = "qty";
-               change_qty(el.value, id);
-            }
-        }
+		} else if (isQtyChanged && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+			e.preventDefault();
+			const el = e.currentTarget as HTMLInputElement;
+			if (el) {
+				currentKey = 'qty';
+				change_qty(el.value, id);
+			}
+		}
 	}
 
 	function qtyOnChange(e: CustomEvent<string | number | null>, id: number) {
 		if (typeof e.detail === 'string') {
-            change_qty(e.detail, id);
+			change_qty(e.detail, id);
 
 			// const i = $details.findIndex((f) => f.id === id);
 			// if (i >= 0) {
@@ -316,7 +316,6 @@
 			// 	updateCurrentDetail(c);
 			// 	isDirty = true;
 			// }
-
 		}
 	}
 
@@ -325,7 +324,7 @@
 		id: number
 	) {
 		if (typeof e.detail === 'string') {
-            change_discount(e.detail, id);
+			change_discount(e.detail, id);
 
 			// const i = $details.findIndex((f) => f.id === id);
 			// if (i >= 0) {
@@ -345,7 +344,6 @@
 			// 	updateCurrentDetail(c);
 			// 	isDirty = false;
 			// }
-
 		}
 	}
 
@@ -366,7 +364,6 @@
 			}
 		}
 	}
-
 
 	async function onTablePointerEnter(_e: Event) {
 		const i = $details.findIndex((f) => f.id === 0);
@@ -501,7 +498,19 @@
 		e: CustomEvent<string | number | null>,
 		id: number
 	) {
-		if (typeof e.detail === 'string' && isBarcodeDirty) {
+		if (typeof e.detail === 'string') {
+
+		const x = $details.findIndex(f => f.id === id);
+			if(x >= 0) {
+				const d = $details[x];
+				const test = d.barcode.toLowerCase() === e.detail.toLowerCase();
+				if (test) {
+					currentKey = 'qty';
+					setFocuse('#qty-id');
+				return;
+				}
+			}
+
 			const strCode = e.detail;
 			const url = `${baseURL}/products/barcode/${strCode}`;
 
@@ -520,58 +529,65 @@
 			// isDirty = true;
 
 			if (result.ok) {
-				isBarcodeDirty = false;
 				let json = await result.json();
 				let p = json.data;
 				let found = true;
 
 				let i = $details.findIndex((f) => f.productId === p.id);
+				const x = $details.findIndex((f) => f.id === id);
 
 				if (i < 0) {
-					i = $details.findIndex((f) => f.id === id);
+					i = x;
 					found = false;
 				}
 
 				let d = $details[i];
 
-                if(found) {
-                    const el = document.querySelector("#barcode-id") as HTMLInputElement;
-                    if(el) {
-                        el.value = '';
-                        // console.log(p.barcode);
-                        // el.selectionStart = 0;
-                        el.placeholder = p.barcode;
-                        // el.selectionEnd = p.barcode.length;
-                        // el.select();
-                    }
-                    await tick();
-                    d.qty = toNumber(d.qty) + 1;
-                    isBarcodeDirty = true;
-                    // isDirty = true;
-                } else{
-                    d.id = createNewId();
-  				    d.price = toNumber(p.price);
-                    d.unit = p.unit;
-                    d.productId = p.id;
-                    d.direction = 1;
-                    d.name = p.name;
-                    d.barcode = p.barcode;
-                    d.hpp = toNumber(p.hpp);
-                    d.oldQty = toNumber(p.oldQty) ? 0 : toNumber(p.oldQty);
-                }
-						// console.log(p.oldOrder);
-				d.subtotal = (toNumber(p.price) - toNumber(d.discount)) * toNumber(d.qty);
+				if (found) {
+					const el = document.querySelector('#barcode-id') as HTMLInputElement;
+					if (el) {
+						// el.value = $details[x].barcode;
+						el.value = '';
+						// console.log(p.barcode);
+						// el.selectionStart = 0;
+						el.placeholder = p.barcode;
+						// el.selectionEnd = p.barcode.length;
+						// el.select();
+					}
+					await tick();
+					d.qty = toNumber(d.qty) + 1;
+					// isBarcodeDirty = true;
+					// isDirty = true;
+				} else {
+					d.id = createNewId();
+					d.price = toNumber(p.price);
+					d.unit = p.unit;
+					d.productId = p.id;
+					d.direction = 1;
+					d.name = p.name;
+					d.barcode = p.barcode;
+					d.hpp = toNumber(p.hpp);
+					d.oldQty = toNumber(p.oldQty) ? 0 : toNumber(p.oldQty);
+				}
+				// console.log(p.oldOrder);
+				d.subtotal =
+					(toNumber(p.price) - toNumber(d.discount)) * toNumber(d.qty);
 
 				updateCurrentDetail(d);
 
-                if (!found) {
+				if (!found) {
 					currentId = d.id;
 					await tick();
 					currentKey = 'qty';
 					setFocuse('#qty-id');
+					isBarcodeDirty = false;
+				} else {
+					await tick();
+					currentKey = 'barcode';
+					setFocuse('#barcode-id');
 				}
-
 			} else {
+				isBarcodeDirty = true;
 				await tick();
 				currentKey = 'barcode';
 				setFocuse('#barcode-id');
@@ -580,17 +596,110 @@
 		}
 	}
 
+	async function findProduct(e: string,	id: number): Promise<number> {
+
+		// const x = $details.findIndex(f => f.id === id);
+
+		// if(x >= 0) {
+		// 	const d = $details[x];
+		// 	const test = d.barcode.toLowerCase() === e.toLowerCase();
+		// 	if (test) {
+		// 		return -1;
+		// 	}
+		// }
+
+			const url = `${baseURL}/products/barcode/${e}`;
+
+			const options = {
+				headers: {
+					'content-type': 'application/json'
+				},
+				method: 'GET',
+				credentials: credential_include
+			};
+
+			const request = new Request(url, options);
+
+			let result = await fetch(request);
+
+			if (result.ok) {
+				let json = await result.json();
+				let p = json.data;
+				let found = true;
+
+				let i = $details.findIndex((f) => f.productId === p.id);
+				const x = $details.findIndex((f) => f.id === id);
+
+				if (i < 0) {
+					i = x;
+					found = false;
+				}
+
+				let d = $details[i];
+
+				if (found) {
+					d.qty = toNumber(d.qty) + 1;
+				} else {
+					d.id = createNewId();
+					d.price = toNumber(p.price);
+					d.unit = p.unit;
+					d.productId = p.id;
+					d.direction = 1;
+					d.name = p.name;
+					d.barcode = p.barcode;
+					d.hpp = toNumber(p.hpp);
+					d.oldQty = toNumber(p.oldQty) ? 0 : toNumber(p.oldQty);
+				}
+				d.subtotal =
+					(toNumber(p.price) - toNumber(d.discount)) * toNumber(d.qty);
+
+				updateCurrentDetail(d);
+
+				if(found) {
+					return id;
+				}
+				return d.id;
+			} else {
+				onnotfound(e);
+				return -1;
+			}
+	}
+
 	async function barcodeOnKeyDown(e: KeyboardEvent, id: number) {
 		if (e.key === 'Enter' || (e.key === 'Tab' && !e.shiftKey)) {
-		    if (isBarcodeDirty) return true;
-			currentKey = 'qty';
-			if (e.key === 'Enter') {
-				e.preventDefault();
-                const ctlId = '#' + currentKey + '-id';
-				setFocuse(ctlId);
-			}
-		} else if (e.key === 'Tab' && e.shiftKey) {
 			e.preventDefault();
+			isBarcodeDirty = false;
+			const el = e.currentTarget! as HTMLInputElement;
+			const code = el.value;
+			const i = $details.findIndex(f => f.id === id);
+			let letMeFind = true;
+
+			if(i >= 0) {
+				const dup = $details[i].barcode;
+				if(dup.toLowerCase() === code.toLowerCase()) {
+					letMeFind = false;
+				}
+			}
+
+			currentKey = 'qty';
+
+			if(letMeFind) {
+				const test = await findProduct(code, id);
+				if(test > 0 && test !== id) {
+					const i = $details.findIndex((f) => f.id === test);
+					currentId = $details[i].id;
+				} else {
+					currentKey = 'barcode';
+				}
+				isBarcodeDirty = test === -1;
+			}
+
+			console.log(currentKey)
+			const ctlId = '#' + currentKey + '-id';
+			await tick();
+			setFocuse(ctlId);
+		} else if (e.key === 'Tab' && e.shiftKey) {
+			 e.preventDefault();
 			let i = $details.findIndex((f) => f.id === id);
 			currentKey = 'discount';
 			if (i === 0) {
@@ -606,7 +715,7 @@
 			// setTimeout(() => {
 			setFocuse('#' + currentKey + '-id');
 			// }, 100);
-        }
+		}
 	}
 	// function setStringValue(qty: number, discount: number) {
 	//   strQty = formatNumber(qty);
@@ -737,7 +846,7 @@
 		nonExpandableRowIds={[0]}
 		nonSelectableRowIds={[0]}
 		expandable
-        zebra
+		zebra
 		bind:selectedRowIds={selectedRowIds}
 		size="short"
 		on:click:row={onRowClick}
@@ -806,7 +915,6 @@
 						class="cell-edit"
 						id="barcode-id"
 						on:input={() => (isBarcodeDirty = true)}
-						on:change={(e) => barcodeOnChange(e, row.id)}
 						on:focus={() => (currentKey = cell.key)}
 						on:keydown={(e) => barcodeOnKeyDown(e, row.id)}
 					/>
@@ -816,8 +924,8 @@
 						size="sm"
 						clasess="cell-edit input-number"
 						id="qty-id"
-						on:input={() => (isQtyChanged = true) }
-                        on:change={(e) => qtyOnChange(e, row.id) }
+						on:input={() => (isQtyChanged = true)}
+						on:change={(e) => qtyOnChange(e, row.id)}
 						on:focus={() => (currentKey = cell.key)}
 						on:keydown={(e) => qtyOnKeyDown(e, row.id)}
 					/>
@@ -827,9 +935,9 @@
 						size="sm"
 						classes="cell-edit input-number"
 						id="discount-id"
-                        on:change={(e) => discountOnChange(e, row.id) }
+						on:change={(e) => discountOnChange(e, row.id)}
 						on:input={(e) => {
-                            isDiscountChanged = true;
+							isDiscountChanged = true;
 							discountOnInput(e, toNumber(row['price']), toNumber(row['hpp']));
 						}}
 						on:focus={() => (currentKey = cell.key)}
