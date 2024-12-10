@@ -3,21 +3,35 @@
 	import { TextInput } from 'carbon-components-svelte';
 	import { onDestroy } from 'svelte';
 
-	export let value = '11.0';
-	export let inline = false;
-	export let labelText = '';
-	export let size: 'sm' | 'xl' = 'sm';
-	export let placeholder = '';
-	export let hideLabel = false;
-	export let clasess = 'input-number';
-	export let id = '';
-	let ref_input: HTMLInputElement;
+    interface Props {
+        value: string;
+        inline?: boolean;
+        labelText?: string;
+        size?: 'sm' | 'xl';
+        placeholder?: string;
+        hideLabel?: boolean;
+        clasess?: string;
+        id?: string;
+    }
+
+    let {
+        value = $bindable('11.0'),
+        inline = false,
+        labelText = '',
+        size  = 'sm',
+        placeholder = '',
+        hideLabel = false,
+        clasess = 'input-number',
+        id = ''
+    } : Props = $props();
+
+    let ref_input: HTMLInputElement | undefined = $state(undefined);
 
 	function updateValue(_e: Event) {
 		// e.preventDefault();
 		if (ref_input) {
 			// str_value = cardPercent(ref_input.value);
-			// value = getPercent(str_value);
+		    	// value = getPercent(str_value);
 			ref_input.value = cardPercent(ref_input.value);
 		}
 	}
@@ -29,11 +43,12 @@
 		}
 	});
 
-	$: if (ref_input) {
-		ref_input.addEventListener('input', updateValue);
-		ref_input.addEventListener('paste', updateValue);
-	}
-
+	$effect(() => {
+        if (ref_input) {
+		    ref_input.addEventListener('input', updateValue);
+		    ref_input.addEventListener('paste', updateValue);
+	    }
+    })
 	// $: value = getPercent(str_value);
 </script>
 

@@ -430,7 +430,7 @@
 {#snippet formOrder()}
 	<Grid noGutter={innerWidth > 720}>
 		<Row>
-			<Column noGutterRight>
+			<Column noGutterRight md={2}>
 				<Grid noGutter>
 					<Row>
 						<Column>Bayar:</Column>

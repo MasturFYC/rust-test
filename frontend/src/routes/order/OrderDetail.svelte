@@ -78,17 +78,19 @@
 	}: Props = $props();
 
 	let reform: HTMLDivElement;
-	let isDirty = $state(false);
+	// let isDirty = $state(false);
 	let isBarcodeDirty = $state(false);
 	let timeout: number | undefined = $state(undefined);
 	let notifyTitle = $state('Error');
 	let notifySubtitle = $state('');
+    let isQtyChanged = $state(false);
+    let isDiscountChanged = $state(false);
 
 	let headers: DataTableHeader[] = [
 		{ key: 'barcode', value: 'Barcode', width: '12%' },
-		{ key: 'name', value: 'Nama barang', width: 'auto' },
+		{ key: 'name', value: 'Nama barang', width: 'auto'  },
 		{ key: 'qty', value: 'Qty', width: '70px' },
-		{ key: 'unit', value: 'Unit', width: '40px' },
+		{ key: 'unit', value: 'Unit', width: '50px' },
 		{ key: 'price', value: 'Harga', width: '100px' },
 		{ key: 'discount', value: 'Disc', width: '80px' },
 		{ key: 'pot', value: 'Hrg-Pot', width: '90px' },
@@ -121,6 +123,43 @@
 		gudangId: 1,
 		gudangName: ''
 	};
+
+    function change_qty (e: string, id: number) {
+		const i = $details.findIndex((f) => f.id === id);
+        if (i >= 0) {
+            const qty = getPercent(e);
+			const d = $details[i];
+			const c = {
+				...d,
+				qty: qty,
+				subtotal: (toNumber(d.price) - toNumber(d.discount)) * qty
+			};
+			// isDirty = false;
+	        isQtyChanged = false;
+		    updateCurrentDetail(c);
+        }
+    }
+
+    function change_discount(e: string, id: number) {
+		const i = $details.findIndex((f) => f.id === id);
+        if (i >= 0) {
+            const discount = getNumber(e);
+            const d = $details[i];
+            if (toNumber(d.price) - discount <= toNumber(d.hpp)) {
+				return true;
+			}
+			const c = {
+				...d,
+				discount: discount,
+				subtotal: (toNumber(d.price) - discount) * toNumber(d.qty)
+			};
+			// isDirty = false;
+            isDiscountChanged = false;
+            updateCurrentDetail(c);
+        }
+    }
+
+
 
 	function onRowClick(e: CustomEvent<DataTableRow>) {
 		e.preventDefault();
@@ -197,16 +236,22 @@
 		}
 	}
 
-	function discountOnKeyDown(e: KeyboardEvent, id: number) {
+	async function discountOnKeyDown(e: KeyboardEvent, id: number) {
 		if ((e.key === 'Tab' && !e.shiftKey) || e.key === 'Enter') {
 			e.preventDefault();
 
-			let i = $details.findIndex((f) => f.id === id);
+			currentKey = 'barcode';
+			const ctlId = '#' + currentKey + '-id';
+			setFocuse(ctlId);
+
+            await tick();
+
+            let i = $details.findIndex((f) => f.id === id);
 
 			i++;
 
 			if (i === $details.length) {
-				if (id > 0 && isDirty) {
+				if (id > 0) {
 					details.update((o) => [
 						...o,
 						{ ...initDetail, gudangName: getDefaultGudangName() }
@@ -218,19 +263,23 @@
 
 			let d = $details[i];
 			currentId = d.id;
-			isDirty = false;
-			currentKey = 'barcode';
+			// isDirty = false;
 
-			setTimeout(() => {
-				const ctlId = '#' + currentKey + '-id';
-				setFocuse(ctlId);
-			}, 100);
-		} else if (e.key && e.shiftKey) {
+            await tick();
+            setFocuse(ctlId);
+
+        } else if (e.key && e.shiftKey) {
 			currentKey = 'qty';
-		}
+		} else if(isDiscountChanged && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+            const el = e.currentTarget as HTMLInputElement;
+            if(el) {
+                currentKey = "discount";
+                change_discount(el.value, id)
+            }
+        }
 	}
 
-	function qtyOnKeyDown(e: KeyboardEvent, _id: number) {
+	function qtyOnKeyDown(e: KeyboardEvent, id: number) {
 		if (e.key === 'Enter' || e.key === 'Tab') {
 			currentKey = 'discount';
 			if (e.key === 'Enter') {
@@ -240,8 +289,84 @@
 			}
 		} else if (e.key === 'Tab' && e.shiftKey) {
 			currentKey = 'barcode';
+		} else if(isQtyChanged && (e.key ==='ArrowDown' || e.key === 'ArrowUp')) {
+           e.preventDefault();
+           const el = e.currentTarget as HTMLInputElement;
+           if(el) {
+               currentKey = "qty";
+               change_qty(el.value, id);
+            }
+        }
+	}
+
+	function qtyOnChange(e: CustomEvent<string | number | null>, id: number) {
+		if (typeof e.detail === 'string') {
+            change_qty(e.detail, id);
+
+			// const i = $details.findIndex((f) => f.id === id);
+			// if (i >= 0) {
+			// 	const qty = getPercent(e.detail);
+			// 	//	console.log(qty);
+			// 	const d = $details[i];
+			// 	const c = {
+			// 		...d,
+			// 		qty: qty,
+			// 		subtotal: (toNumber(d.price) - toNumber(d.discount)) * qty
+			// 	};
+			// 	updateCurrentDetail(c);
+			// 	isDirty = true;
+			// }
+
 		}
 	}
+
+	function discountOnChange(
+		e: CustomEvent<string | number | null>,
+		id: number
+	) {
+		if (typeof e.detail === 'string') {
+            change_discount(e.detail, id);
+
+			// const i = $details.findIndex((f) => f.id === id);
+			// if (i >= 0) {
+			// 	const discount = getNumber(e.detail);
+			// 	const d = $details[i];
+			// 	if (toNumber(d.price) - discount <= toNumber(d.hpp)) {
+			// 		// showNotification = true;
+			// 		// timeout = 3_000;
+			// 		// notifySubtitle = "Discount " + e.detail + " terlalu besar!";
+			// 		return true;
+			// 	}
+			// 	const c = {
+			// 		...d,
+			// 		discount: discount,
+			// 		subtotal: (toNumber(d.price) - discount) * toNumber(d.qty)
+			// 	};
+			// 	updateCurrentDetail(c);
+			// 	isDirty = false;
+			// }
+
+		}
+	}
+
+	function discountOnInput(
+		e: CustomEvent<string | number | null>,
+		price: number,
+		hpp: number
+	): void {
+		if (typeof e.detail === 'string') {
+			e.preventDefault();
+			const discount = getNumber(e.detail);
+			if (price - discount <= hpp) {
+				timeout = 3_000;
+				notifyTitle = 'Maaf';
+				notifySubtitle =
+					'Discount ' + formatNumber(discount) + ' terlalu besar!';
+				showNotification = true;
+			}
+		}
+	}
+
 
 	async function onTablePointerEnter(_e: Event) {
 		const i = $details.findIndex((f) => f.id === 0);
@@ -392,7 +517,7 @@
 
 			let result = await fetch(request);
 
-			isDirty = true;
+			// isDirty = true;
 
 			if (result.ok) {
 				isBarcodeDirty = false;
@@ -407,38 +532,45 @@
 					found = false;
 				}
 
-				if (i >= 0) {
-					let d = $details[i];
-					d.price = toNumber(p.price);
+				let d = $details[i];
 
-					if (found) {
-						d.qty = toNumber(d.qty) + 1;
-					} else {
-						if (toNumber(d.qty) === 0) {
-							d.qty = 1;
-						}
-						d.id = createNewId();
-						d.unit = p.unit;
-						d.productId = p.id;
-						d.direction = 1;
-						d.name = p.name;
-						d.barcode = p.barcode;
-						d.hpp = toNumber(p.hpp);
-						d.oldQty = toNumber(p.oldQty) ? 0 : toNumber(p.oldQty);
+                if(found) {
+                    const el = document.querySelector("#barcode-id") as HTMLInputElement;
+                    if(el) {
+                        el.value = '';
+                        // console.log(p.barcode);
+                        // el.selectionStart = 0;
+                        el.placeholder = p.barcode;
+                        // el.selectionEnd = p.barcode.length;
+                        // el.select();
+                    }
+                    await tick();
+                    d.qty = toNumber(d.qty) + 1;
+                    isBarcodeDirty = true;
+                    // isDirty = true;
+                } else{
+                    d.id = createNewId();
+  				    d.price = toNumber(p.price);
+                    d.unit = p.unit;
+                    d.productId = p.id;
+                    d.direction = 1;
+                    d.name = p.name;
+                    d.barcode = p.barcode;
+                    d.hpp = toNumber(p.hpp);
+                    d.oldQty = toNumber(p.oldQty) ? 0 : toNumber(p.oldQty);
+                }
 						// console.log(p.oldOrder);
-					}
-					d.subtotal =
-						(toNumber(p.price) - toNumber(d.discount)) * toNumber(d.qty);
+				d.subtotal = (toNumber(p.price) - toNumber(d.discount)) * toNumber(d.qty);
 
-					updateCurrentDetail(d);
+				updateCurrentDetail(d);
 
-					if (!found) {
-						currentId = d.id;
-						await tick();
-						currentKey = 'qty';
-						setFocuse('#qty-id');
-					}
+                if (!found) {
+					currentId = d.id;
+					await tick();
+					currentKey = 'qty';
+					setFocuse('#qty-id');
 				}
+
 			} else {
 				await tick();
 				currentKey = 'barcode';
@@ -450,11 +582,11 @@
 
 	async function barcodeOnKeyDown(e: KeyboardEvent, id: number) {
 		if (e.key === 'Enter' || (e.key === 'Tab' && !e.shiftKey)) {
-			if (isBarcodeDirty) return;
+		    if (isBarcodeDirty) return true;
 			currentKey = 'qty';
 			if (e.key === 'Enter') {
 				e.preventDefault();
-				const ctlId = '#' + currentKey + '-id';
+                const ctlId = '#' + currentKey + '-id';
 				setFocuse(ctlId);
 			}
 		} else if (e.key === 'Tab' && e.shiftKey) {
@@ -474,72 +606,8 @@
 			// setTimeout(() => {
 			setFocuse('#' + currentKey + '-id');
 			// }, 100);
-		}
+        }
 	}
-
-	function qtyOnChange(e: CustomEvent<string | number | null>, id: number) {
-		if (typeof e.detail === 'string') {
-			const i = $details.findIndex((f) => f.id === id);
-			if (i >= 0) {
-				const qty = getPercent(e.detail);
-				//	console.log(qty);
-
-				const d = $details[i];
-
-				const c = {
-					...d,
-					qty: qty,
-					subtotal: (toNumber(d.price) - toNumber(d.discount)) * qty
-				};
-				updateCurrentDetail(c);
-				isDirty = true;
-			}
-		}
-	}
-
-	function discountOnChange(
-		e: CustomEvent<string | number | null>,
-		id: number
-	) {
-		if (typeof e.detail === 'string') {
-			const i = $details.findIndex((f) => f.id === id);
-			if (i >= 0) {
-				const discount = getNumber(e.detail);
-				const d = $details[i];
-				if (toNumber(d.price) - discount <= toNumber(d.hpp)) {
-					// showNotification = true;
-					// timeout = 3_000;
-					// notifySubtitle = "Discount " + e.detail + " terlalu besar!";
-					return true;
-				}
-				const c = {
-					...d,
-					discount: discount,
-					subtotal: (toNumber(d.price) - discount) * toNumber(d.qty)
-				};
-				updateCurrentDetail(c);
-				isDirty = false;
-			}
-		}
-	}
-	function discountOnInput(
-		e: CustomEvent<string | number | null>,
-		price: number,
-		hpp: number
-	): void {
-		if (typeof e.detail === 'string') {
-			e.preventDefault();
-			const discount = getNumber(e.detail);
-			if (price - discount <= hpp) {
-				timeout = 3_000;
-				notifyTitle = 'Maaf';
-				notifySubtitle =
-					'Discount ' + formatNumber(discount) + ' terlalu besar!';
-				showNotification = true;
-			}
-		}
-	}
-
 	// function setStringValue(qty: number, discount: number) {
 	//   strQty = formatNumber(qty);
 	//   strDiscount = formatNumber(discount);
@@ -669,8 +737,9 @@
 		nonExpandableRowIds={[0]}
 		nonSelectableRowIds={[0]}
 		expandable
+        zebra
 		bind:selectedRowIds={selectedRowIds}
-		size="medium"
+		size="short"
 		on:click:row={onRowClick}
 	>
 		<Toolbar size="sm">
@@ -747,7 +816,8 @@
 						size="sm"
 						clasess="cell-edit input-number"
 						id="qty-id"
-						on:input={(e) => qtyOnChange(e, row.id)}
+						on:input={() => (isQtyChanged = true) }
+                        on:change={(e) => qtyOnChange(e, row.id) }
 						on:focus={() => (currentKey = cell.key)}
 						on:keydown={(e) => qtyOnKeyDown(e, row.id)}
 					/>
@@ -757,8 +827,9 @@
 						size="sm"
 						classes="cell-edit input-number"
 						id="discount-id"
+                        on:change={(e) => discountOnChange(e, row.id) }
 						on:input={(e) => {
-							discountOnChange(e, row.id);
+                            isDiscountChanged = true;
 							discountOnInput(e, toNumber(row['price']), toNumber(row['hpp']));
 						}}
 						on:focus={() => (currentKey = cell.key)}

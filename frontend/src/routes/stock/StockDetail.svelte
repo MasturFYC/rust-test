@@ -84,6 +84,8 @@
 	let timeout: number | undefined = $state(undefined);
 	let notifyTitle = $state('Error');
 	let notifySubtitle = $state('');
+    let isQtyChanged = $state(false);
+    let isDiscountChanged = $state(false);
 
 	let headers: DataTableHeader[] = [
 		{ key: 'barcode', value: 'Barcode', width: '12%' },
@@ -203,16 +205,108 @@
 		}
 	}
 
-	function discountOnKeyDown(e: KeyboardEvent, id: number) {
+    function change_qty (e: string, id: number) {
+		const i = $details.findIndex((f) => f.id === id);
+        if (i >= 0) {
+            const qty = getPercent(e);
+			const d = $details[i];
+			const c = {
+				...d,
+				qty: qty,
+				subtotal: (toNumber(d.price) - toNumber(d.discount)) * qty
+			};
+			updateCurrentDetail(c);
+			isDirty = false;
+	        isQtyChanged = false;
+        }
+    }
+
+	function qtyOnChange(e: CustomEvent<string | number | null>, id: number) {
+		if (typeof e.detail === 'string') {
+            change_qty(e.detail, id);
+		}
+	}
+
+	function qtyOnKeyDown(e: KeyboardEvent, id: number) {
+		if (e.key === 'Enter') {
+		    e.preventDefault();
+	    	currentKey = 'discount';
+			const ctlId = '#' + currentKey + '-id';
+			setFocuse(ctlId);
+		} else if (e.key === 'Tab' && e.shiftKey) {
+			currentKey = 'barcode';
+		} else if(isQtyChanged && (e.key ==='ArrowDown' || e.key === 'ArrowUp')) {
+           e.preventDefault();
+           const el = e.currentTarget as HTMLInputElement;
+           if(el) {
+               currentKey = "qty";
+               change_qty(el.value, id);
+            }
+        }
+	}
+
+    function change_discount(e: string, id: number) {
+		const i = $details.findIndex((f) => f.id === id);
+        if (i >= 0) {
+            const discount = getNumber(e);
+            const d = $details[i];
+            if (toNumber(d.price) - discount <= toNumber(d.hpp)) {
+				return true;
+			}
+			const c = {
+				...d,
+				discount: discount,
+				subtotal: (toNumber(d.price) - discount) * toNumber(d.qty)
+			};
+			updateCurrentDetail(c);
+			isDirty = false;
+            isDiscountChanged = false;
+        }
+    }
+
+	function discountOnChange(
+		e: CustomEvent<string | number | null>,
+		id: number
+	) {
+		if (typeof e.detail === 'string') {
+            change_discount(e.detail, id);
+		}
+	}
+
+    function discountOnInput(
+		e: CustomEvent<string | number | null>,
+		price: number,
+		hpp: number
+	): void {
+		if (typeof e.detail === 'string') {
+			e.preventDefault();
+			const discount = getNumber(e.detail);
+			if (price - discount <= hpp) {
+				timeout = 3_000;
+				notifyTitle = 'Maaf';
+				notifySubtitle =
+					'Discount ' + formatNumber(discount) + ' terlalu besar!';
+				showNotification = true;
+			}
+		}
+	}
+
+	async function discountOnKeyDown(e: KeyboardEvent, id: number) {
 		if ((e.key === 'Tab' && !e.shiftKey) || e.key === 'Enter') {
 			e.preventDefault();
+
+ 		    currentKey = 'barcode';
+			const ctlId = '#' + currentKey + '-id';
+			setFocuse(ctlId);
+
+            await tick();
 
 			let i = $details.findIndex((f) => f.id === id);
 
 			i++;
 
 			if (i === $details.length) {
-				if (id > 0 && isDirty) {
+				if (id > 0) {
 					details.update((o) => [
 						...o,
 						{ ...initDetail, gudangName: getDefaultGudangName() }
@@ -225,29 +319,20 @@
 			let d = $details[i];
 			currentId = d.id;
 			isDirty = false;
-			currentKey = 'barcode';
+            await tick();
+            setFocuse(ctlId);
 
-			setTimeout(() => {
-				const ctlId = '#' + currentKey + '-id';
-				setFocuse(ctlId);
-			}, 100);
-		} else if (e.key && e.shiftKey) {
+		} else if (e.key ==='Tab' && e.shiftKey) {
 			currentKey = 'qty';
-		}
+		} else if(isDiscountChanged && (e.key === 'ArrowUp' || e.key === 'ArrowDown')){
+            if(e.currentTarget) {
+                currentKey = "discount";
+                const el = e.currentTarget as HTMLInputElement;
+                change_discount(el.value, id);
+            }
+        }
 	}
 
-	function qtyOnKeyDown(e: KeyboardEvent, _id: number) {
-		if (e.key === 'Enter' || e.key === 'Tab') {
-			currentKey = 'discount';
-			if (e.key === 'Enter') {
-				e.preventDefault();
-				const ctlId = '#' + currentKey + '-id';
-				setFocuse(ctlId);
-			}
-		} else if (e.key === 'Tab' && e.shiftKey) {
-			currentKey = 'barcode';
-		}
-	}
 
 	async function onTablePointerEnter(_e: Event) {
 		const i = $details.findIndex((f) => f.id === 0);
@@ -285,7 +370,8 @@
 		) {
 			return true;
 		}
-		e.preventDefault();
+
+        e.preventDefault();
 
 		if (e.key === 'Escape') {
 			if (isBarcodeDirty) {
@@ -498,70 +584,7 @@
 		}
 	}
 
-	function qtyOnChange(e: CustomEvent<string | number | null>, id: number) {
-		if (typeof e.detail === 'string') {
-			const i = $details.findIndex((f) => f.id === id);
-			if (i >= 0) {
-				const qty = getPercent(e.detail);
-				//	console.log(qty);
-
-				const d = $details[i];
-
-				const c = {
-					...d,
-					qty: qty,
-					subtotal: (toNumber(d.price) - toNumber(d.discount)) * qty
-				};
-				updateCurrentDetail(c);
-				isDirty = true;
-			}
-		}
-	}
-
-	function discountOnChange(
-		e: CustomEvent<string | number | null>,
-		id: number
-	) {
-		if (typeof e.detail === 'string') {
-			const i = $details.findIndex((f) => f.id === id);
-			if (i >= 0) {
-				const discount = getNumber(e.detail);
-				const d = $details[i];
-				if (toNumber(d.price) - discount <= toNumber(d.hpp)) {
-					// showNotification = true;
-					// timeout = 3_000;
-					// notifySubtitle = "Discount " + e.detail + " terlalu besar!";
-					return true;
-				}
-				const c = {
-					...d,
-					discount: discount,
-					subtotal: (toNumber(d.price) - discount) * toNumber(d.qty)
-				};
-				updateCurrentDetail(c);
-				isDirty = true;
-			}
-		}
-	}
-	function discountOnInput(
-		e: CustomEvent<string | number | null>,
-		price: number,
-		hpp: number
-	): void {
-		if (typeof e.detail === 'string') {
-			e.preventDefault();
-			const discount = getNumber(e.detail);
-			if (price - discount <= hpp) {
-				timeout = 3_000;
-				notifyTitle = 'Maaf';
-				notifySubtitle =
-					'Discount ' + formatNumber(discount) + ' terlalu besar!';
-				showNotification = true;
-			}
-		}
-	}
-
-	// function setStringValue(qty: number, discount: number) {
+ 	// function setStringValue(qty: number, discount: number) {
 	//   strQty = formatNumber(qty);
 	//   strDiscount = formatNumber(discount);
 	// }
@@ -789,7 +812,8 @@
 						size="sm"
 						clasess="cell-edit input-number"
 						id="qty-id"
-						on:change={(e) => qtyOnChange(e, row.id)}
+	                    on:input={() => (isQtyChanged = true) }
+					    on:change={(e) => qtyOnChange(e, row.id) }
 						on:focus={() => (currentKey = cell.key)}
 						on:keydown={(e) => qtyOnKeyDown(e, row.id)}
 					/>
@@ -799,9 +823,11 @@
 						size="sm"
 						classes="cell-edit input-number"
 						id="discount-id"
-						on:input={(e) =>
-							discountOnInput(e, toNumber(row['price']), toNumber(row['hpp']))}
-						on:change={(e) => discountOnChange(e, row.id)}
+                        on:change={(e) => discountOnChange(e, row.id)}
+						on:input={(e) => {
+                            isDiscountChanged = true;
+							discountOnInput(e, toNumber(row['price']), toNumber(row['hpp']));
+                        }}
 						on:focus={() => (currentKey = cell.key)}
 						on:keydown={(e) => discountOnKeyDown(e, row.id)}
 					/>
