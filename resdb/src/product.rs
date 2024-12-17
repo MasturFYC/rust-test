@@ -365,7 +365,7 @@ pub mod db {
 				.trim()
 				.to_lowercase();
 			//get supplier id
-			let op = opt.unwrap_or(0_18);
+			let op = opt.unwrap_or(0_i8);
 
 			// get total count of product
 			let count = match op {

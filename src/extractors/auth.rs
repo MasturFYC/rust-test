@@ -28,6 +28,7 @@ impl FromRequest for Authenticated {
 		let value = req.extensions().get::<User>().cloned();
 		let result = match value {
 			Some(user) => Ok(Authenticated(user)),
+			#[allow(non_snake_case)]
 			None => Err(ErrorInternalServerError(HttpError::server_error(
 				"Authentication Error",
 			))),
@@ -123,7 +124,7 @@ where
 
 		let app_state = req.app_data::<web::Data<AppState>>().unwrap();
 		let user_id = match utils::token::decode_token(
-			&token.unwrap(),
+			token.unwrap(),
 			app_state.env.jwt_secret.as_bytes(),
 		) {
 			Ok(id) => id,
@@ -143,7 +144,7 @@ where
 			let user_id = uuid::Uuid::parse_str(user_id.as_str()).unwrap();
 			let result = cloned_app_state
 				.db_client
-				.get_user(Some(user_id.clone()), None, None)
+				.get_user(Some(user_id), None, None)
 				.await
 				.map_err(|e| {
 					ErrorInternalServerError(HttpError::server_error(

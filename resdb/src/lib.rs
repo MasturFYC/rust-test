@@ -21,13 +21,12 @@ pub struct PageOptions {
 }
 
 pub async fn load_pool(
-	database_url: &String,
+	database_url: &str,
 ) -> Result<Pool<Postgres>, sqlx::Error> {
-	let pool = PgPoolOptions::new()
+	PgPoolOptions::new()
 		.max_connections(10)
 		.connect(database_url)
-		.await;
-	pool
+		.await
 }
 
 pub async fn migrate(pool: &Pool<Postgres>) {

@@ -302,7 +302,7 @@ pub mod db {
 					.fetch_all(&mut *tx)
 					.await?;
 					let row = sqlx::query_scalar!(
-					r#"SELECT COUNT(*) FROM	orders AS o 
+					r#"SELECT COUNT(*) FROM	orders AS o
                     INNER JOIN relations AS c ON c.id = o.customer_id
    					INNER JOIN relations AS s ON s.id = o.sales_id
    					WHERE o.order_type = 'stock'::order_enum
@@ -402,8 +402,8 @@ pub mod db {
 			O: Into<Stock> + Send,
 			T: Into<Vec<StockDetail>> + Send,
 		{
-			let details: Vec<StockDetail> = details.try_into().unwrap();
-			let dto: Stock = data.try_into().unwrap();
+			let details: Vec<StockDetail> = details.into();
+			let dto: Stock = data.into();
 			let o = OrderBuilder::new(
 				OrderType::Stock,
 				dto.updated_by,
@@ -810,8 +810,8 @@ pub mod db {
 			S: Into<i32> + Send,
 			O: Into<Stock> + Send,
 		{
-			let pid: i32 = id.try_into().unwrap();
-			let dto: Stock = data.try_into().unwrap();
+			let pid: i32 = id.into();
+			let dto: Stock = data.into();
 
 			let total = dto.total.to_owned();
 
@@ -964,11 +964,11 @@ pub mod db {
 			let details = sqlx::query_as!(
 				ProductQuantity,
 				r#"
-                SELECT 
-                    product_id, gudang_id, qty 
-                FROM 
-                    order_details 
-                WHERE 
+                SELECT
+                    product_id, gudang_id, qty
+                FROM
+                    order_details
+                WHERE
                     order_id IN (SELECT unnest($1::INT[]))"#,
 				&ids[..]
 			)
@@ -983,7 +983,7 @@ pub mod db {
 					let _ = sqlx::query!(
 						r#"
                     UPDATE
-                       stocks 
+                       stocks
                     SET
                         qty = (qty - $3)
                     WHERE

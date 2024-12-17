@@ -120,7 +120,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 	println!(
 		"{}",
-		format!("Server is running on http://localhost:{}", config.port)
+		format_args!("Server is running on http://localhost:{}", config.port)
 	);
 
 	let openapi = ApiDoc::openapi();
@@ -179,7 +179,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     path = "/api/healthchecker",
     tag = "Health Checker Endpoint",
     responses(
-        (status = 200, description= "Authenticated User", body = Response),       
+        (status = 200, description= "Authenticated User", body = Response),
     )
 )]
 #[get("/api/healthchecker")]

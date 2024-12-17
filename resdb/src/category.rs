@@ -63,40 +63,68 @@ pub mod db {
 
 	#[async_trait]
 	pub trait CategoryExt {
-		async fn get_category(&self, id: i16) -> Result<Option<Categories>, sqlx::Error>;
+		async fn get_category(
+			&self,
+			id: i16,
+		) -> Result<Option<Categories>, sqlx::Error>;
 		async fn get_categories(&self) -> Result<Vec<Categories>, sqlx::Error>;
-		async fn get_category_property(&self) -> Result<Vec<PropertyWithId>, sqlx::Error>;
-		async fn get_category_with_products(&self, id: i16) -> Result<Option<CategoryWithProduct>, sqlx::Error>;
+		async fn get_category_property(
+			&self,
+		) -> Result<Vec<PropertyWithId>, sqlx::Error>;
+		async fn get_category_with_products(
+			&self,
+			id: i16,
+		) -> Result<Option<CategoryWithProduct>, sqlx::Error>;
 		// async fn get_products(&self, page: u32, limit: usize) -> Result<(Vec<Products>, i64), sqlx::Error>;
 		// async fn get_products_by_category(&self, category_id: i16, page: u32, limit: usize) -> Result<(Vec<Products>, i64), sqlx::Error>;
 		// async fn get_products_by_supplier(&self, supplier_id: Uuid, page: u32, limit: usize) -> Result<(Vec<Products>, i64), sqlx::Error>;
-		async fn category_create<T>(&self, data: T) -> Result<Option<Categories>, sqlx::Error>
+		async fn category_create<T>(
+			&self,
+			data: T,
+		) -> Result<Option<Categories>, sqlx::Error>
 		where
 			T: Into<Category> + Send;
-		async fn category_update<T>(&self, id: i16, data: T) -> Result<Option<Categories>, sqlx::Error>
+		async fn category_update<T>(
+			&self,
+			id: i16,
+			data: T,
+		) -> Result<Option<Categories>, sqlx::Error>
 		where
 			T: Into<Category> + Send;
-		async fn category_delete(&self, id: i16) -> Result<Option<u64>, sqlx::Error>;
+		async fn category_delete(
+			&self,
+			id: i16,
+		) -> Result<Option<u64>, sqlx::Error>;
 	}
 
 	#[async_trait]
 	impl CategoryExt for DBClient {
-		async fn get_category(&self, id: i16) -> Result<Option<Categories>, sqlx::Error> {
-			let query_result = sqlx::query_file_as!(Categories, "sql/category-get-by-id.sql", id)
-				.fetch_optional(&self.pool)
-				.await?;
+		async fn get_category(
+			&self,
+			id: i16,
+		) -> Result<Option<Categories>, sqlx::Error> {
+			let query_result = sqlx::query_file_as!(
+				Categories,
+				"sql/category-get-by-id.sql",
+				id
+			)
+			.fetch_optional(&self.pool)
+			.await?;
 			Ok(query_result)
 		}
 
 		async fn get_categories(&self) -> Result<Vec<Categories>, sqlx::Error> {
-			let query_result = sqlx::query_file_as!(Categories, "sql/category-get-all.sql")
-				.fetch_all(&self.pool)
-				.await?;
+			let query_result =
+				sqlx::query_file_as!(Categories, "sql/category-get-all.sql")
+					.fetch_all(&self.pool)
+					.await?;
 
 			Ok(query_result)
 		}
 
-		async fn get_category_property(&self) -> Result<Vec<PropertyWithId>, sqlx::Error> {
+		async fn get_category_property(
+			&self,
+		) -> Result<Vec<PropertyWithId>, sqlx::Error> {
 			let query_result = sqlx::query_as!(
 				PropertyWithId,
 				r#"
@@ -115,43 +143,70 @@ pub mod db {
 			Ok(query_result)
 		}
 
-		async fn category_create<T>(&self, data: T) -> Result<Option<Categories>, sqlx::Error>
+		async fn category_create<T>(
+			&self,
+			data: T,
+		) -> Result<Option<Categories>, sqlx::Error>
 		where
 			T: Into<Category> + Send,
 		{
-			let cat: Category = data.try_into().unwrap();
-			let query_result = sqlx::query_file_as!(Categories, "sql/category-insert.sql", cat.name)
-				.fetch_optional(&self.pool)
-				.await?;
+			let cat: Category = data.into();
+			let query_result = sqlx::query_file_as!(
+				Categories,
+				"sql/category-insert.sql",
+				cat.name
+			)
+			.fetch_optional(&self.pool)
+			.await?;
 
 			Ok(query_result)
 		}
 
-		async fn category_update<T>(&self, id: i16, data: T) -> Result<Option<Categories>, sqlx::Error>
+		async fn category_update<T>(
+			&self,
+			id: i16,
+			data: T,
+		) -> Result<Option<Categories>, sqlx::Error>
 		where
 			T: Into<Category> + Send,
 		{
-			let cat: Category = data.try_into().unwrap();
-			let query_result = sqlx::query_file_as!(Categories, "sql/category-update.sql", id, cat.name)
-				.fetch_optional(&self.pool)
-				.await?;
+			let cat: Category = data.into();
+			let query_result = sqlx::query_file_as!(
+				Categories,
+				"sql/category-update.sql",
+				id,
+				cat.name
+			)
+			.fetch_optional(&self.pool)
+			.await?;
 
 			Ok(query_result)
 		}
 
-		async fn category_delete(&self, id: i16) -> Result<Option<u64>, sqlx::Error> {
-			let rows_affected = sqlx::query_file!("sql/category-delete.sql", id)
-				.execute(&self.pool)
-				.await?
-				.rows_affected();
+		async fn category_delete(
+			&self,
+			id: i16,
+		) -> Result<Option<u64>, sqlx::Error> {
+			let rows_affected =
+				sqlx::query_file!("sql/category-delete.sql", id)
+					.execute(&self.pool)
+					.await?
+					.rows_affected();
 
 			Ok(Some(rows_affected))
 		}
 
-		async fn get_category_with_products(&self, id: i16) -> Result<Option<CategoryWithProduct>, sqlx::Error> {
-			let query_result = sqlx::query_file_as!(CategoryWithProduct, "sql/category-with-product.sql", id)
-				.fetch_optional(&self.pool)
-				.await?;
+		async fn get_category_with_products(
+			&self,
+			id: i16,
+		) -> Result<Option<CategoryWithProduct>, sqlx::Error> {
+			let query_result = sqlx::query_file_as!(
+				CategoryWithProduct,
+				"sql/category-with-product.sql",
+				id
+			)
+			.fetch_optional(&self.pool)
+			.await?;
 			Ok(query_result)
 		}
 	}

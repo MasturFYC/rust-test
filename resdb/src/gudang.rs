@@ -65,8 +65,9 @@ pub mod model {
 			//     .unwrap_or(None);
 			let products = row
 				.try_get::<sqlx::types::Json<Vec<GudangProduct>>, _>("products")
-				.map(|x| Some(x))
-				.unwrap(); // serde_json::from_value(row.get("products")).unwrap_or(None);
+				.map(Some)
+				.unwrap();
+			// serde_json::from_value(row.get("products")).unwrap_or(None);
 
 			Ok(Self {
 				id,
@@ -152,7 +153,7 @@ pub mod db {
 		{
 			let mut cnn = self.pool.acquire().await?;
 			let mut tx = cnn.begin().await?;
-			let g: Gudang = data.try_into().unwrap();
+			let g: Gudang = data.into();
 			let products = sqlx::query_as!(
 				ProductIds,
 				"SELECT id FROM products ORDER BY id;"
@@ -206,7 +207,7 @@ pub mod db {
 		where
 			T: Into<Gudang> + Send,
 		{
-			let g: Gudang = data.try_into().unwrap();
+			let g: Gudang = data.into();
 			let query_result = sqlx::query_file_as!(
 				Gudangs,
 				"sql/gudang-update.sql",

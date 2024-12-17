@@ -8,9 +8,15 @@ pub mod db {
 
 	#[async_trait]
 	pub trait AccountExt {
-		async fn get_account(&self, id: i16) -> Result<Option<Accounts>, sqlx::Error>;
-		async fn get_accounts(&self, page: u32, limit: usize)
-			-> Result<Vec<Accounts>, sqlx::Error>;
+		async fn get_account(
+			&self,
+			id: i16,
+		) -> Result<Option<Accounts>, sqlx::Error>;
+		async fn get_accounts(
+			&self,
+			page: u32,
+			limit: usize,
+		) -> Result<Vec<Accounts>, sqlx::Error>;
 		async fn account_create<T: Into<Account> + Send>(
 			&self,
 			data: T,
@@ -25,10 +31,14 @@ pub mod db {
 
 	#[async_trait]
 	impl AccountExt for DBClient {
-		async fn get_account(&self, id: i16) -> Result<Option<Accounts>, sqlx::Error> {
-			let account = sqlx::query_file_as!(Accounts, "sql/account-get-by-id.sql", id)
-				.fetch_optional(&self.pool)
-				.await?;
+		async fn get_account(
+			&self,
+			id: i16,
+		) -> Result<Option<Accounts>, sqlx::Error> {
+			let account =
+				sqlx::query_file_as!(Accounts, "sql/account-get-by-id.sql", id)
+					.fetch_optional(&self.pool)
+					.await?;
 			Ok(account)
 		}
 
@@ -54,7 +64,7 @@ pub mod db {
 			&self,
 			data: T,
 		) -> Result<Option<Accounts>, sqlx::Error> {
-			let t: Account = data.try_into().unwrap(); // as CreateAccountSchema;
+			let t: Account = data.into(); // as CreateAccountSchema;
 			let account = sqlx::query_file_as!(
 				Accounts,
 				"sql/account-insert.sql",
@@ -78,7 +88,7 @@ pub mod db {
 			id: i16,
 			data: T,
 		) -> Result<Option<Accounts>, sqlx::Error> {
-			let t: Account = data.try_into().unwrap();
+			let t: Account = data.into();
 			let account = sqlx::query_file_as!(
 				Accounts,
 				"sql/account-update.sql",
@@ -99,11 +109,12 @@ pub mod db {
 		}
 
 		async fn account_delete(&self, id: i16) -> Result<u64, sqlx::Error> {
-			let rows_affected: u64 = sqlx::query_file!("sql/account-delete.sql", id)
-				.execute(&self.pool)
-				.await
-				.unwrap()
-				.rows_affected();
+			let rows_affected: u64 =
+				sqlx::query_file!("sql/account-delete.sql", id)
+					.execute(&self.pool)
+					.await
+					.unwrap()
+					.rows_affected();
 
 			Ok(rows_affected)
 		}

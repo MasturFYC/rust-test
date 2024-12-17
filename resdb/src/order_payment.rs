@@ -58,7 +58,7 @@ pub mod db {
                 r#"
             SELECT
                 order_id, payment_id, amount, updated_by, via_by, descriptions, created_at, updated_at
-            FROM 
+            FROM
                 order_payments
             WHERE
                 order_id = $1
@@ -123,7 +123,7 @@ pub mod db {
 		where
 			T: Into<OrderPayment> + Send,
 		{
-			let op: OrderPayment = data.try_into().unwrap();
+			let op: OrderPayment = data.into();
 
 			let mut cnn: PoolConnection<Postgres> = self.pool.acquire().await?;
 			let mut tx: Transaction<Postgres> = cnn.begin().await?;
@@ -150,7 +150,7 @@ pub mod db {
 			let query = sqlx::query_as!(
 				OrderPayments,
 				r#"
-            INSERT INTO 
+            INSERT INTO
                 order_payments (
                     order_id,
                     amount,
@@ -271,7 +271,7 @@ pub mod db {
 		where
 			T: Into<OrderPayment> + Send,
 		{
-			let op: OrderPayment = data.try_into().unwrap();
+			let op: OrderPayment = data.into();
 
 			let mut cnn: PoolConnection<Postgres> = self.pool.acquire().await?;
 			let mut tx: Transaction<Postgres> = cnn.begin().await?;
@@ -349,7 +349,7 @@ pub mod db {
                 updated_by = $5,
                 is_valid = $6
             WHERE
-                id = $1                
+                id = $1
             "#,
 				pid,
 				order.customer_id,
@@ -429,7 +429,7 @@ pub mod db {
                         WHEN (dp - $2 + $3) > 0 AND (dp - $2 + $3) < total THEN 'pending'::payment_enum
                         ELSE 'lunas'::payment_enum
                     END
-                    ) 
+                    )
                 WHERE
                 id = $1
             "#,
@@ -492,7 +492,7 @@ pub mod db {
                         WHEN (dp - $2) > 0 AND (dp - $2) < total THEN 'pending'::payment_enum
                         ELSE 'lunas'::payment_enum
                     END
-                    ) 
+                    )
                 WHERE
                 id = $1
             "#,

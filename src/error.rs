@@ -35,12 +35,14 @@ pub enum ErrorMessage {
 	DataNotFound,
 }
 
+#[allow(clippy::to_string_trait_impl)]
 impl ToString for ErrorMessage {
 	fn to_string(&self) -> String {
 		self.to_str().to_owned()
 	}
 }
 
+#[allow(clippy::from_over_into)]
 impl Into<String> for ErrorMessage {
 	fn into(self) -> String {
 		self.to_string()
@@ -142,23 +144,23 @@ impl HttpError {
 		match self.status {
 			400 => HttpResponse::BadRequest().json(Response {
 				status: "fail",
-				message: self.message.into(),
+				message: self.message,
 			}),
 			404 => HttpResponse::NotFound().json(Response {
 				status: "fail",
-				message: self.message.into(),
+				message: self.message,
 			}),
 			401 => HttpResponse::Unauthorized().json(Response {
 				status: "fail",
-				message: self.message.into(),
+				message: self.message,
 			}),
 			409 => HttpResponse::Conflict().json(Response {
 				status: "fail",
-				message: self.message.into(),
+				message: self.message,
 			}),
 			500 => HttpResponse::InternalServerError().json(Response {
 				status: "error",
-				message: self.message.into(),
+				message: self.message,
 			}),
 			_ => {
 				eprintln!(

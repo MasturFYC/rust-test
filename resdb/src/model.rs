@@ -45,9 +45,12 @@ pub struct Account {
 	pub payable: bool,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, Copy, sqlx::Type, PartialEq)]
+#[derive(
+	Default, Debug, Deserialize, Serialize, Clone, Copy, sqlx::Type, PartialEq,
+)]
 #[sqlx(type_name = "order_enum", rename_all = "snake_case")]
 pub enum OrderType {
+	#[default]
 	Order,
 	Stock,
 	OrderReturn,
@@ -55,11 +58,11 @@ pub enum OrderType {
 	Mutation,
 }
 
-impl Default for OrderType {
-	fn default() -> Self {
-		OrderType::Order
-	}
-}
+// impl Default for OrderType {
+// 	fn default() -> Self {
+// 		OrderType::Order
+// 	}
+// }
 
 #[allow(dead_code)]
 impl OrderType {
@@ -74,20 +77,23 @@ impl OrderType {
 	}
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, Copy, sqlx::Type, PartialEq)]
+#[derive(
+	Default, Debug, Deserialize, Serialize, Clone, Copy, sqlx::Type, PartialEq,
+)]
 #[sqlx(type_name = "payment_enum", rename_all = "lowercase")]
 pub enum PaymentType {
 	Cash,
 	Pending,
 	Loans,
+	#[default]
 	Lunas,
 }
 
-impl Default for PaymentType {
-	fn default() -> Self {
-		PaymentType::Lunas
-	}
-}
+// impl Default for PaymentType {
+// 	fn default() -> Self {
+// 		PaymentType::Lunas
+// 	}
+// }
 
 #[allow(dead_code)]
 impl PaymentType {
@@ -318,6 +324,7 @@ pub struct OrderBuilder {
 	pub created_at: Option<DateTime<Utc>>,
 }
 
+#[allow(clippy::too_many_arguments)]
 impl OrderBuilder {
 	pub fn new(
 		order_type: OrderType,
@@ -492,8 +499,8 @@ pub struct RelationProperty {
 * @var bool
 * #[derive(Serialize, Deserialize, Debug)]
 * pub struct Categories {
-*	pub id: i16,
-*	pub name: String,
+* pub id: i16,
+* pub name: String,
 *}
 **/
 
@@ -585,9 +592,12 @@ pub struct User {
 	pub updated_at: Option<DateTime<Utc>>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, Copy, sqlx::Type, PartialEq)]
+#[derive(
+	Default, Debug, Deserialize, Serialize, Clone, Copy, sqlx::Type, PartialEq,
+)]
 #[sqlx(type_name = "ledger_enum", rename_all = "snake_case")]
 pub enum LedgerType {
+	#[default]
 	Order,
 	Stock,
 	OrderReturn,
@@ -597,11 +607,11 @@ pub enum LedgerType {
 	StockPaymnent,
 }
 
-impl Default for LedgerType {
-	fn default() -> Self {
-		LedgerType::Order
-	}
-}
+// impl Default for LedgerType {
+// 	fn default() -> Self {
+// 		LedgerType::Order
+// 	}
+// }
 
 #[derive(Clone, Default)]
 pub struct LedgerBuilder {
@@ -675,17 +685,17 @@ pub struct LedgerDetail {
 // }
 
 pub trait Direction {
-	fn into_i16(&self) -> i16;
+	fn to_i16(&self) -> i16;
 }
 
 impl Direction for i32 {
-	fn into_i16(&self) -> i16 {
+	fn to_i16(&self) -> i16 {
 		*self as i16
 	}
 }
 
 impl Direction for i16 {
-	fn into_i16(&self) -> i16 {
+	fn to_i16(&self) -> i16 {
 		*self
 	}
 }

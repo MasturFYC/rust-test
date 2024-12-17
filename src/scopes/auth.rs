@@ -177,7 +177,7 @@ pub async fn login(
 	if password_matches {
 		let token = token::create_token(
 			&user.id.to_string(),
-			&app_state.env.jwt_secret.as_bytes(),
+			app_state.env.jwt_secret.as_bytes(),
 			app_state.env.jwt_maxage,
 		)
 		.map_err(|e| HttpError::server_error(e.to_string()))?;
@@ -189,13 +189,10 @@ pub async fn login(
 			.secure(true)
 			.finish();
 
-
-		Ok(HttpResponse::Ok()
-			.cookie(cookie)
-			.json(json!({
-				"status": "success".to_string(),
-				"token" : token,
-			})))
+		Ok(HttpResponse::Ok().cookie(cookie).json(json!({
+			"status": "success".to_string(),
+			"token" : token,
+		})))
 	} else {
 		Err(HttpError::unauthorized(ErrorMessage::WrongCredentials))
 	}

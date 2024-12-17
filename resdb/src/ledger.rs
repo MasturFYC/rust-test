@@ -1,34 +1,55 @@
 use bigdecimal::BigDecimal;
 
-use crate::model::{Coa, LedgerBuilder, LedgerDetail, LedgerDetailBuilder, LedgerSchema, LedgerType};
+use crate::model::{
+	Coa, LedgerBuilder, LedgerDetail, LedgerDetailBuilder, LedgerSchema,
+	LedgerType,
+};
 
 // #[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq)]
 // #[serde(rename_all = "snake_case")]
 
 impl LedgerDetailBuilder {
-	pub fn with_ledger_id<T: Into<i32>>(mut self, value: T) -> LedgerDetailBuilder {
+	pub fn with_ledger_id<T: Into<i32>>(
+		mut self,
+		value: T,
+	) -> LedgerDetailBuilder {
 		self.ledger_id = Some(value.into());
 		self
 	}
-	pub fn with_detail_id<T: Into<i16>>(mut self, value: T) -> LedgerDetailBuilder {
+	pub fn with_detail_id<T: Into<i16>>(
+		mut self,
+		value: T,
+	) -> LedgerDetailBuilder {
 		// let mi: MixedInts = Into::into(value);
 		self.detail_id = Some(value.into());
 		self
 	}
-	pub fn with_account_id<T: Into<i16>>(mut self, value: T) -> LedgerDetailBuilder {
+	pub fn with_account_id<T: Into<i16>>(
+		mut self,
+		value: T,
+	) -> LedgerDetailBuilder {
 		self.account_id = Some(value.into());
 		self
 	}
-	pub fn with_descriptions<T: Into<String>>(mut self, value: T) -> LedgerDetailBuilder {
+	pub fn with_descriptions<T: Into<String>>(
+		mut self,
+		value: T,
+	) -> LedgerDetailBuilder {
 		self.descriptions = Some(value.into());
 		self
 	}
-	pub fn with_amount<T: Into<BigDecimal>>(mut self, value: T) -> LedgerDetailBuilder {
+	pub fn with_amount<T: Into<BigDecimal>>(
+		mut self,
+		value: T,
+	) -> LedgerDetailBuilder {
 		self.amount = Some(value.into());
 		self
 	}
 
-	pub fn with_direction<T: Into<i16>>(mut self, value: T) -> LedgerDetailBuilder
+	pub fn with_direction<T: Into<i16>>(
+		mut self,
+		value: T,
+	) -> LedgerDetailBuilder
 // where
 	// 	T: Direction,
 	{
@@ -37,7 +58,10 @@ impl LedgerDetailBuilder {
 		self.direction = Some(value.into());
 		self
 	}
-	pub fn with_ref_id<T: Into<i32>>(mut self, value: T) -> LedgerDetailBuilder {
+	pub fn with_ref_id<T: Into<i32>>(
+		mut self,
+		value: T,
+	) -> LedgerDetailBuilder {
 		self.ref_id = Some(value.into());
 		self
 	}
@@ -62,7 +86,10 @@ impl LedgerBuilder {
 		self.relation_id = Some(value.into());
 		self
 	}
-	pub fn ledger_type<T: Into<LedgerType>>(mut self, value: T) -> LedgerBuilder {
+	pub fn ledger_type<T: Into<LedgerType>>(
+		mut self,
+		value: T,
+	) -> LedgerBuilder {
 		self.ledger_type = Some(value.into());
 		self
 	}
@@ -232,8 +259,6 @@ impl LedgerUtil {
 	/// **`ref_id`** payment id
 	///
 	/// **`ledger_id`** ledger id biasanya sama dengan payment id
-	///
-
 	pub fn from_order_payment(
 		amount: &BigDecimal,
 		ref_id: i32,
@@ -380,12 +405,26 @@ pub mod db {
 
 	#[async_trait]
 	pub trait LedgerExt {
-		async fn get_ledger(&self, id: i32) -> Result<Option<LedgerWithDetails>, Error>;
-		async fn get_ledgers(&self, page: usize, limit: usize) -> Result<MatchResult, Error>;
-		async fn ledger_create<T>(&self, data: T) -> Result<Option<LedgerResult>, Error>
+		async fn get_ledger(
+			&self,
+			id: i32,
+		) -> Result<Option<LedgerWithDetails>, Error>;
+		async fn get_ledgers(
+			&self,
+			page: usize,
+			limit: usize,
+		) -> Result<MatchResult, Error>;
+		async fn ledger_create<T>(
+			&self,
+			data: T,
+		) -> Result<Option<LedgerResult>, Error>
 		where
 			T: Into<LedgerSchema> + Send;
-		async fn ledger_update<T>(&self, id: i32, data: T) -> Result<Option<LedgerResult>, Error>
+		async fn ledger_update<T>(
+			&self,
+			id: i32,
+			data: T,
+		) -> Result<Option<LedgerResult>, Error>
 		where
 			T: Into<LedgerSchema> + Send;
 		async fn ledger_delete(&self, id: i32) -> Result<u64, Error>;
@@ -393,14 +432,25 @@ pub mod db {
 
 	#[async_trait]
 	impl LedgerExt for DBClient {
-		async fn get_ledger(&self, id: i32) -> Result<Option<LedgerWithDetails>, Error> {
-			let query = sqlx::query_file_as!(LedgerWithDetails, "sql/ledger-get-by-id.sql", id);
+		async fn get_ledger(
+			&self,
+			id: i32,
+		) -> Result<Option<LedgerWithDetails>, Error> {
+			let query = sqlx::query_file_as!(
+				LedgerWithDetails,
+				"sql/ledger-get-by-id.sql",
+				id
+			);
 			let ledger = query.fetch_optional(&self.pool).await?;
 
 			Ok(ledger)
 		}
 
-		async fn get_ledgers(&self, page: usize, limit: usize) -> Result<MatchResult, Error> {
+		async fn get_ledgers(
+			&self,
+			page: usize,
+			limit: usize,
+		) -> Result<MatchResult, Error> {
 			let x: usize = 1;
 			let offset = (page - x) * limit;
 
@@ -431,11 +481,14 @@ pub mod db {
 			Ok((ledgers, row.unwrap_or(0)))
 		}
 
-		async fn ledger_create<T>(&self, data: T) -> Result<Option<LedgerResult>, Error>
+		async fn ledger_create<T>(
+			&self,
+			data: T,
+		) -> Result<Option<LedgerResult>, Error>
 		where
 			T: Into<LedgerSchema> + Send,
 		{
-			let t: LedgerSchema = data.try_into().unwrap();
+			let t: LedgerSchema = data.into();
 			let ledger = sqlx::query_file_as!(
 				LedgerResult,
 				"sql/ledger-insert.sql",
@@ -459,7 +512,7 @@ pub mod db {
 		where
 			T: Into<LedgerSchema> + Send,
 		{
-			let t: LedgerSchema = data.try_into().unwrap();
+			let t: LedgerSchema = data.into();
 			let ledger = sqlx::query_file_as!(
 				LedgerResult,
 				"sql/ledger-update.sql",
@@ -477,11 +530,12 @@ pub mod db {
 		}
 
 		async fn ledger_delete(&self, id: i32) -> Result<u64, Error> {
-			let rows_affected: u64 = sqlx::query_file!("sql/ledger-delete.sql", id)
-				.execute(&self.pool)
-				.await
-				.unwrap()
-				.rows_affected();
+			let rows_affected: u64 =
+				sqlx::query_file!("sql/ledger-delete.sql", id)
+					.execute(&self.pool)
+					.await
+					.unwrap()
+					.rows_affected();
 
 			Ok(rows_affected)
 		}

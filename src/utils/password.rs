@@ -71,14 +71,17 @@ mod tests {
 	fn test_compare_hashed_passwords_should_return_true() {
 		let (password, hashed_password) = setup_test();
 
-		assert_eq!(compare(&password, &hashed_password).unwrap(), true);
+		assert!(compare(&password, &hashed_password).unwrap(), "true");
 	}
 
 	#[test]
 	fn test_compare_hashed_passwords_should_return_false() {
 		let (_, hashed_password) = setup_test();
 
-		assert_eq!(compare("wrongpassword", &hashed_password).unwrap(), false);
+		assert!(
+			!compare("wrongpassword", &hashed_password).unwrap(),
+			"false"
+		);
 	}
 
 	#[test]

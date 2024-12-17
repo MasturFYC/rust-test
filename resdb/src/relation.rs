@@ -95,11 +95,11 @@ pub mod db {
 
 					let row = sqlx::query_scalar!(
 						r#"
-					SELECT 
+					SELECT
 						COUNT(*)
 					FROM
 						relations
-					WHERE 
+					WHERE
 						POSITION($1 IN LOWER(name||' '||city||' '||COALESCE(region, ' ')||' '||COALESCE(phone,' ')||' '||COALESCE(street,' '))) > 0
 					"#,
 						search_text
@@ -126,10 +126,10 @@ pub mod db {
 
 					let row = sqlx::query_scalar!(
 						r#"
-					SELECT 
+					SELECT
 						COUNT(*)
 					FROM
-						relations					
+						relations
 					WHERE
 						relation_type::TEXT[] = $1
 					"#,
@@ -152,7 +152,7 @@ pub mod db {
 
 					let row = sqlx::query_scalar!(
 						r#"
-					SELECT 
+					SELECT
 						COUNT(*)
 					FROM
 						relations
@@ -205,7 +205,7 @@ pub mod db {
 
 			let row = sqlx::query_scalar!(
 				r#"
-            SELECT 
+            SELECT
                 COUNT(*)
             FROM
                 relations
@@ -234,8 +234,8 @@ pub mod db {
 			let properties = sqlx::query_as!(
 				RelationProperty,
 				r#"
-                SELECT 
-                    id, 
+                SELECT
+                    id,
                     name,
                     city,
 					region,
@@ -243,9 +243,9 @@ pub mod db {
                     phone,
                     is_special,
                     photo
-                FROM 
+                FROM
                     relations
-                WHERE 
+                WHERE
                     relation_type::TEXT[] && $1
                     AND is_active = true
                 ORDER
@@ -263,7 +263,7 @@ pub mod db {
 			&self,
 			t: T,
 		) -> Result<Option<Relation>, sqlx::Error> {
-			let data: CreateRelationSchema = t.try_into().unwrap();
+			let data: CreateRelationSchema = t.into();
 			let test: Vec<String> = data
 				.relation_type
 				.into_iter()
@@ -294,7 +294,7 @@ pub mod db {
 			id: i16,
 			t: T,
 		) -> Result<Option<Relation>, sqlx::Error> {
-			let data: CreateRelationSchema = t.try_into().unwrap();
+			let data: CreateRelationSchema = t.into();
 
 			let test: Vec<String> = data
 				.relation_type
