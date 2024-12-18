@@ -96,12 +96,9 @@ pub mod db {
             let mut conn: sqlx::pool::PoolConnection<sqlx::Postgres> = self.pool.acquire().await?;
             let mut tx: sqlx::Transaction<sqlx::Postgres> = conn.begin().await?;
 
-            let test = sqlx::query_scalar(
-                r#"SELECT COALESCE(SUM(amount), 0) FROM order_payments WHERE order_id = $1"#,
-            )
-            .bind(pid)
-            .fetch_optional(&mut *tx)
-            .await?;
+            let test = sqlx::query_file_scalar!("sql/order/sum-payment.sql", pid)
+                .fetch_one(&mut *tx)
+                .await?;
 
             let payment = test.unwrap_or(BigDecimal::from(0));
 
@@ -121,7 +118,7 @@ pub mod db {
             .build();
 
             let _ = sqlx::query_file!(
-                "sql/stock-update.sql",
+                "sql/order/update.sql",
                 pid,
                 o.customer_id,
                 o.sales_id,
@@ -138,22 +135,14 @@ pub mod db {
             .execute(&mut *tx)
             .await?;
 
-            let _ = sqlx::query!(
-                r#"
-            UPDATE  ledgers
-            SET     relation_id = $2,
-                    descriptions = $3,
-                    updated_by = $4,
-                    updated_at = $5
-            WHERE   id = $1
-            "#,
+            let _ = sqlx::query_file!(
+                "sql/ledger/update.sql",
                 pid,
                 o.customer_id,
                 format!(
                     "Stock {} by {}",
-                    dto.customer_id,
-                    dto.sales_id // dto.customer_name.to_owned().unwrap_or("".to_string()),
-                                 // dto.sales_name.to_owned().unwrap_or("".to_string())
+                    dto.customer_name.unwrap_or("".to_string()),
+                    dto.sales_name.unwrap_or("".to_string()) // dto.customer_name.to_owned().unwrap_or("".to_string()),
                 ),
                 o.updated_by.to_owned(),
                 Utc::now()
@@ -161,7 +150,7 @@ pub mod db {
             .execute(&mut *tx)
             .await?;
 
-            let _ = sqlx::query!(r#"DELETE FROM ledger_details WHERE ledger_id = $1"#, pid)
+            let _ = sqlx::query_file!("sql/ledger/delete.sql", pid)
                 .execute(&mut *tx)
                 .await?;
 
@@ -172,20 +161,8 @@ pub mod db {
             loop {
                 let d = ledger_details.get(i).unwrap();
 
-                let _ = sqlx::query!(
-                    r#"
-                    INSERT INTO ledger_details (
-                        ledger_id,
-                        detail_id,
-                        account_id,
-                        descriptions,
-                        amount,
-                        direction,
-                        ref_id
-                    )
-                    VALUES
-                    ($1, $2, $3, $4, $5, $6, $7)
-                    "#,
+                let _ = sqlx::query_file!(
+                    "sql/ledger/details/insert.sql",
                     d.ledger_id,
                     d.detail_id,
                     d.account_id,
@@ -247,18 +224,9 @@ pub mod db {
                     .fetch_all(&mut *tx)
                     .await?;
 
-                    let row = sqlx::query_scalar!(
-                        r#"
-                        SELECT COUNT(*) FROM orders AS o
-                        INNER JOIN relations AS c ON c.id = o.customer_id
-                        INNER JOIN relations AS s ON s.id = o.sales_id
-                        WHERE o.order_type = 'order'::order_enum
-                        AND POSITION($1 IN (o.id::TEXT||' '||LOWER(c.name||' '||s.name))) > 0
-                        "#,
-                        txt,
-                    )
-                    .fetch_one(&mut *tx)
-                    .await?;
+                    let row = sqlx::query_file_scalar!("sql/order/count.sql", txt,)
+                        .fetch_one(&mut *tx)
+                        .await?;
 
                     (data, row)
                 }
@@ -273,20 +241,10 @@ pub mod db {
                     )
                     .fetch_all(&mut *tx)
                     .await?;
-                    let row = sqlx::query_scalar!(
-                        r#"
-						SELECT
-							COUNT(*)
-						FROM
-							orders AS o
-						WHERE
-							o.order_type = 'order'::order_enum
-							AND o.customer_id = $1
-							"#,
-                        custid
-                    )
-                    .fetch_one(&mut *tx)
-                    .await?;
+
+                    let row = sqlx::query_file_scalar!("sql/order/count-by-customer.sql", custid)
+                        .fetch_one(&mut *tx)
+                        .await?;
                     (data, row)
                 }
                 3 => {
@@ -300,20 +258,9 @@ pub mod db {
                     )
                     .fetch_all(&mut *tx)
                     .await?;
-                    let row = sqlx::query_scalar!(
-                        r#"
-						SELECT
-							COUNT(*)
-						FROM
-							orders AS o
-						WHERE
-							o.order_type = 'order'::order_enum
-							AND o.sales_id = $1
-							"#,
-                        salesid
-                    )
-                    .fetch_one(&mut *tx)
-                    .await?;
+                    let row = sqlx::query_file_scalar!("sql/order/count-by-sales.sql", salesid)
+                        .fetch_one(&mut *tx)
+                        .await?;
                     (data, row)
                 }
                 _ => {
