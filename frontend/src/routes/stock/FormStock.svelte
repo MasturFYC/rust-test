@@ -205,83 +205,81 @@
 	<Grid fullWidth noGutter={innerWidth > 720}>
 		<Row>
 			<Column noGutterRight as>
-        <Grid>
-          <Row>
-            <Column as noGutterRight>
-				<DatePicker
-					datePickerType="single"
-					bind:value={strDate}
-					dateFormat="d-m-Y"
-					on:change={onDateChange}
-				>
-					<DatePickerInput
-						accesskey="t"
-            style={"width:100%"}
-						labelText="Tanggal pembelian"
-						placeholder="mm/dd/yyyy"
-					/>
-				</DatePicker>
-
-            </Column>
-  			<Column noGutter as>
-				<TextInput
-					accesskey="n"
-					bind:ref={ref_invoice}
-					id="invoice-id"
-					labelText="No. faktur"
-					on:change={() => stock.update((s) => ({ ...s, isModified: true }))}
-					bind:value={$stock.invoiceId}
-				/>
+				<Grid>
+					<Row>
+						<Column as noGutterRight>
+							<DatePicker
+								datePickerType="single"
+								bind:value={strDate}
+								dateFormat="d-m-Y"
+								on:change={onDateChange}
+							>
+								<DatePickerInput
+									accesskey="t"
+									style={'width:100%'}
+									labelText="Tanggal pembelian"
+									placeholder="mm/dd/yyyy"
+								/>
+							</DatePicker>
+						</Column>
+						<Column noGutter as>
+							<TextInput
+								accesskey="n"
+								bind:ref={ref_invoice}
+								id="invoice-id"
+								labelText="No. faktur"
+								on:change={() =>
+									stock.update((s) => ({ ...s, isModified: true }))}
+								bind:value={$stock.invoiceId}
+							/>
+						</Column>
+					</Row>
+				</Grid>
 			</Column>
-	        </Row>
-        </Grid>
+			<Column noGutterLeft>
+				<Grid noGutter={innerWidth > 720}>
+					<Row>
+						<Column noGutter>
+							<ComboBox
+								accesskey="s"
+								id="supplier-id"
+								titleText="Supplier"
+								selectedId={$stock.supplierId}
+								placeholder="Pilih supplier"
+								items={get_suppliers()}
+								shouldFilterItem={shouldFilterItem}
+								on:select={on_supplier_changed}
+								on:clear={on_supplier_clear}
+								let:item
+							>
+								<div><strong>{item.text}</strong></div>
+								<div class="supplier-info">
+									{get_supplier_info(item.id)}
+								</div>
+							</ComboBox>
+						</Column>
+						<Column noGutterLeft>
+							<ComboBox
+								accesskey="g"
+								id="warehouse-id"
+								titleText="Checker"
+								selectedId={$stock.warehouseId}
+								placeholder="Nama pengechek"
+								items={get_employees()}
+								shouldFilterItem={shouldFilterItem}
+								on:select={on_employee_changed}
+								on:clear={on_employee_clear}
+								let:item
+							>
+								<div><strong>{item.text}</strong></div>
+								<div class="supplier-info">
+									{get_employee_info(item.id)}
+								</div>
+							</ComboBox>
+						</Column>
+					</Row>
+				</Grid>
 			</Column>
-		<Column noGutterLeft>
-        <Grid noGutter={innerWidth > 720}>
-          <Row>
-            <Column noGutter>
-				<ComboBox
-					accesskey="s"
-					id="supplier-id"
-					titleText="Supplier"
-					selectedId={$stock.supplierId}
-					placeholder="Pilih supplier"
-					items={get_suppliers()}
-					shouldFilterItem={shouldFilterItem}
-					on:select={on_supplier_changed}
-					on:clear={on_supplier_clear}
-					let:item
-				>
-					<div><strong>{item.text}</strong></div>
-					<div class="supplier-info">
-						{get_supplier_info(item.id)}
-					</div>
-				</ComboBox>
-	
-            </Column>
-            <Column noGutterLeft>
-				<ComboBox
-					accesskey="g"
-					id="warehouse-id"
-					titleText="Checker"
-					selectedId={$stock.warehouseId}
-					placeholder="Nama pengechek"
-					items={get_employees()}
-					shouldFilterItem={shouldFilterItem}
-					on:select={on_employee_changed}
-					on:clear={on_employee_clear}
-					let:item
-				>
-					<div><strong>{item.text}</strong></div>
-					<div class="supplier-info">
-						{get_employee_info(item.id)}
-					</div>
-				</ComboBox>
-	
-            </Column>
-          </Row>
-        </Grid>
-		</Column>
 		</Row>
 	</Grid>
 </Form>

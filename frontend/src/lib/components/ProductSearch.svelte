@@ -18,7 +18,7 @@
 
 	interface Props {
 		value: string;
-    showHpp?: boolean,
+		showHpp?: boolean;
 		onselect: (p: iProduct, q: number) => void;
 		onclear: () => void;
 	}
@@ -50,7 +50,12 @@
 		return Promise.resolve(initResult);
 	}
 
-	let { value = $bindable(''), onselect, onclear, showHpp = false }: Props = $props();
+	let {
+		value = $bindable(''),
+		onselect,
+		onclear,
+		showHpp = false
+	}: Props = $props();
 
 	const query = $derived.by(() => {
 		return useQuery<iResult, Error>({
@@ -85,6 +90,6 @@
 
 <Grid>
 	{#each products as p}
-		<Product product={p} onadd={(p, q) => onselect(p, q)} {showHpp} />
+		<Product product={p} onadd={(p, q) => onselect(p, q)} showHpp={showHpp} />
 	{/each}
 </Grid>

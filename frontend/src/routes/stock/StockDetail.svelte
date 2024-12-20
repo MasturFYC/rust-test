@@ -700,7 +700,7 @@
 {/if}
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions (because of reasons) -->
 <div
-  style="margin-top: -14px"
+	style="margin-top: -14px"
 	bind:this={reform}
 	tabindex={0}
 	role="row"
@@ -709,7 +709,7 @@
 	onfocus={onTablePointerEnter}
 >
 	<DataTable
-    zebra
+		zebra
 		selectable
 		batchSelection
 		batchExpansion

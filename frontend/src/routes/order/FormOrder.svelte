@@ -70,7 +70,7 @@
 					  };
 		  };
 
-  let refCombo: null | HTMLInputElement = $state(null);
+	let refCombo: null | HTMLInputElement = $state(null);
 
 	function get_customers() {
 		return customers.map((m) => ({ id: m.id, text: m.text }));
@@ -205,7 +205,7 @@
 		}
 	});
 
-  $inspect(refCombo);
+	$inspect(refCombo);
 	// function updateDp(str: string) {
 	// 	const dp = getNumber(str);
 	// 	order.update((s) => ({
@@ -217,6 +217,7 @@
 
 	// $effect(() => updateDp(strDp));
 </script>
+
 <Form on:submit>
 	<Grid noGutter={innerWidth > 720} fullWidth>
 		<Row>
@@ -239,7 +240,7 @@
 								/>
 							</DatePicker>
 						</Column>
-					  <Column noGutter as>
+						<Column noGutter as>
 							<DatePicker
 								datePickerType="single"
 								bind:value={strTempo}
@@ -248,23 +249,23 @@
 							>
 								<DatePickerInput
 									accesskey="t"
-                  style={"width:100%"}
+									style={'width:100%'}
 									labelText="Jatuh tempo"
 									placeholder="mm/dd/yyyy"
 								/>
 							</DatePicker>
 						</Column>
-  				</Row>
+					</Row>
 				</Grid>
 			</Column>
 
-      <Column noGutterLeft sm={8} md>
-				<Grid noGutter={innerWidth>720}>
+			<Column noGutterLeft sm={8} md>
+				<Grid noGutter={innerWidth > 720}>
 					<Row>
 						<Column sm={2} noGutter>
 							<ComboBox
 								accesskey="s"
-                bind:ref={refCombo}
+								bind:ref={refCombo}
 								id="customer-id"
 								titleText="Pelanggan"
 								selectedId={$order.customerId}

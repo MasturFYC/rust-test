@@ -16,10 +16,16 @@
 	import { browser } from '$app/environment';
 	import { formatNumber } from '$lib/components/NumberFormat';
 	import { getBarcodes, getRelationProp } from '$lib/fetchers';
-	import type { iCurrentUser, iProduct, iProductStock, iStock, iStockDetail } from '$lib/interfaces';
+	import type {
+		iCurrentUser,
+		iProduct,
+		iProductStock,
+		iStock,
+		iStockDetail
+	} from '$lib/interfaces';
 	import { SendToBack } from 'carbon-icons-svelte';
 	import { numberToText } from '$lib/number-to-string';
-  import ProductSearch from '$lib/components/ProductSearch.svelte';
+	import ProductSearch from '$lib/components/ProductSearch.svelte';
 	import {
 		useQuery,
 		useQueryClient,
@@ -76,8 +82,8 @@
 	let timeout: number | undefined = $state(undefined);
 	let showNotification = $state(false);
 	let isEdit = $state(false);
-  let strNotFound = $state('');
-  let isSearch = $state(false);
+	let strNotFound = $state('');
+	let isSearch = $state(false);
 	let profile: iCurrentUser = $state({
 		id: '',
 		name: '',
@@ -110,18 +116,18 @@
 
 	function onProductNotFound(e: string) {
 		// showNotification = false;
-		
-  //   setTimeout(() => {
+
+		//   setTimeout(() => {
 		// 	showNotification = true;
 		// }, 250);
 		// txt = e;
 		// timeout = 6_000;
 
-    isSearch = true;
-    strNotFound = e;
+		isSearch = true;
+		strNotFound = e;
 	}
 
-  function createNewId(): number {
+	function createNewId(): number {
 		console.log($details.length);
 		if ($details.length >= 1) {
 			let test = $details.reduce((prev, cur) =>
@@ -618,7 +624,7 @@
 {/if}
 {#if isSearch && isEdit}
 	<ProductSearch
-    showHpp
+		showHpp
 		value={strNotFound}
 		onselect={(p, q) => selectProduct(p, q)}
 		onclear={() => {

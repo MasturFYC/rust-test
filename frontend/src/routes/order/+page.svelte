@@ -214,16 +214,16 @@
 		//changeOrderSession(0, true);
 	}
 
-  let isHide = $state(false);
+	let isHide = $state(false);
 	async function createNewOrder(_e: number) {
-    isHide = true;
+		isHide = true;
 		orderId = 0;
 		order.set({ ...initOrder });
 		details.set([]);
-    await tick();
-    isHide = false;
-  	isOpen = false;
-    isSearch = false;
+		await tick();
+		isHide = false;
+		isOpen = false;
+		isSearch = false;
 		//changeOrderSession(0, false);
 	}
 
@@ -250,7 +250,7 @@
 		}
 		// }, 250);
 		isOpen = mode;
-    isSearch = false;
+		isSearch = false;
 	}
 	async function updateOnlyOrder() {
 		const x = dayjs($order.createdAt);

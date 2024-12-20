@@ -9,15 +9,15 @@
 	.min-60 {
 		min-width: 90px;
 	}
-  :global(div.row-odd.bx--row) {
-    border-bottom: 1px solid var(--cds-ui-03);
-    margin: 0 -32px;
-    padding: 0;
-  }
-.text-right {
-text-align: right;
-min-width: 90px;
-}
+	:global(div.row-odd.bx--row) {
+		border-bottom: 1px solid var(--cds-ui-03);
+		margin: 0 -32px;
+		padding: 0;
+	}
+	.text-right {
+		text-align: right;
+		min-width: 90px;
+	}
 </style>
 
 <script lang="ts">
@@ -28,7 +28,7 @@ min-width: 90px;
 	import { Add } from 'carbon-icons-svelte';
 
 	interface Props {
-    showHpp?: boolean,
+		showHpp?: boolean;
 		onadd: (p: iProduct, qty: number) => void;
 		product: iProduct;
 	}
@@ -60,17 +60,15 @@ min-width: 90px;
 </script>
 
 <Row class="row-odd">
-	<Column noGutter md={2}
-		><div class="top-16">{product.barcode}</div></Column
-	>
+	<Column noGutter md={2}><div class="top-16">{product.barcode}</div></Column>
 	<Column><div class="top-16">{product.name}</div></Column>
-  {#if showHpp}
-	<Column as><div class="top-16">{formatNumber(product.hpp)}</div></Column>
-  {:else}
-    <Column as><div class="top-16">{formatNumber(product.price)}</div></Column>
-  {/if}
-	<Column
-		as><div class="top-16 text-right">
+	{#if showHpp}
+		<Column as><div class="top-16">{formatNumber(product.hpp)}</div></Column>
+	{:else}
+		<Column as><div class="top-16">{formatNumber(product.price)}</div></Column>
+	{/if}
+	<Column as
+		><div class="top-16 text-right">
 			{product.stocks[0].qty}
 			{product.unit}
 		</div></Column
