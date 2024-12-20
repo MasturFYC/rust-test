@@ -226,7 +226,7 @@
 
 <svelte:window bind:innerWidth={client_width} />
 
-<Header bind:isSideNavOpen={isSideNavOpen} platformName="Carbon">
+<Header bind:isSideNavOpen={isSideNavOpen}>
 	<span slot="company"
 		><img
 			src="https://static.sapulidi.site/pixel.svg?raw=true"

@@ -24,7 +24,7 @@ export const initOrder: iOrder = {
 };
 
 let persistedOrder = browser && localStorage.getItem('persistedOrder');
-let persistedDetails = browser && localStorage.getItem('persistedDetails');
+let persistedDetails = browser && localStorage.getItem('orderDetails');
 // console.log('ORDER', persistedOrder);
 
 export const order = writable<iOrder>(
@@ -42,6 +42,6 @@ if (browser) {
 	);
 
 	details.subscribe((o) =>
-		localStorage.setItem('persistedDetails', JSON.stringify(o))
+		localStorage.setItem('orderDetails', JSON.stringify(o))
 	);
 }

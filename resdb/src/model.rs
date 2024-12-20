@@ -206,7 +206,7 @@ pub struct ResponseOrder {
     pub sales_name: String,
 }
 
-#[derive(Display, Validate, Debug, Default, Clone, Serialize, Deserialize)]
+#[derive(Validate, Debug, Default, Clone, Serialize, Deserialize)]
 pub struct OrderDtos {
     #[serde(rename = "orderType")]
     pub order_type: Option<OrderType>,
@@ -320,6 +320,8 @@ pub struct OrderBuilder {
     pub due_at: Option<DateTime<Utc>>,
     pub is_protected: bool,
     pub created_at: Option<DateTime<Utc>>,
+    pub customer_name: Option<String>,
+    pub sales_name: Option<String>,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -334,6 +336,8 @@ impl OrderBuilder {
         invoice_id: Option<String>,
         customer_id: i16,
         sales_id: i16,
+        customer_name: Option<String>,
+        sales_name: Option<String>,
     ) -> OrderBuilder {
         OrderBuilder {
             order_type,
@@ -350,6 +354,8 @@ impl OrderBuilder {
             customer_id,
             sales_id,
             is_protected,
+            customer_name,
+            sales_name,
         }
     }
 
@@ -404,6 +410,8 @@ impl OrderBuilder {
             sales_id: self.sales_id,
             invoice_id: self.invoice_id.to_owned(),
             is_protected: self.is_protected,
+            customer_name: self.customer_name.to_owned(),
+            sales_name: self.sales_name.to_owned(),
         }
     }
 }

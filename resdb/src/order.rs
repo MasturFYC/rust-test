@@ -112,6 +112,8 @@ pub mod db {
                 dto.invoice_id,
                 dto.customer_id,
                 dto.sales_id,
+                dto.customer_name.to_owned(),
+                dto.sales_name.to_owned(),
             )
             .with_dp(dto.dp)
             .with_due_range(dto.due_range.unwrap_or(0))
@@ -306,6 +308,8 @@ pub mod db {
                 dtos.invoice_id,
                 dtos.customer_id,
                 dtos.sales_id,
+                dtos.customer_name,
+                dtos.sales_name,
             )
             .with_dp(dtos.dp)
             .with_due_range(dtos.due_range.unwrap_or(0))
@@ -543,6 +547,8 @@ pub mod db {
                 dtos.invoice_id,
                 dtos.customer_id,
                 dtos.sales_id,
+                dtos.customer_name,
+                dtos.sales_name,
             )
             .with_dp(dtos.dp)
             .with_due_range(dtos.due_range.unwrap_or(0))

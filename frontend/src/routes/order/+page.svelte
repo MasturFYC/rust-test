@@ -16,8 +16,9 @@
 	import { browser } from '$app/environment';
 	import { formatNumber } from '$lib/components/NumberFormat';
 	import { getBarcodes, getRelationProp } from '$lib/fetchers';
-	import type { iCurrentUser, iOrder, iOrderDetail } from '$lib/interfaces';
+	import type { iCurrentUser, iOrder, iOrderDetail, iProduct, iProductStock  } from '$lib/interfaces';
 	import { OrderDetails as SendToBack } from 'carbon-icons-svelte';
+    import ProductSearch from './ProductSearch.svelte';
 	import { numberToText } from '$lib/number-to-string';
 	import {
 		useQuery,
@@ -76,6 +77,8 @@
 	let timeout: number | undefined = $state(undefined);
 	let showNotification = $state(false);
 	let isOpen = $state(false);
+    let isSearch = $state(false);
+    let strNotFound = $state('');
 	let profile: iCurrentUser = $state({
 		id: '',
 		name: '',
@@ -100,12 +103,14 @@
 	let isFetching = $derived(useIsFetching(query_key));
 
 	function onProductNotFound(e: string) {
-		showNotification = false;
-		setTimeout(() => {
-			showNotification = true;
-		}, 250);
-		txt = e;
-		timeout = 6_000;
+		// showNotification = false;
+		// setTimeout(() => {
+			// showNotification = true;
+		// }, 250);
+		// txt = e;
+		// timeout = 6_000;
+        strNotFound = e;
+        isSearch = true;
 	}
 
 	const customerQuery = useQuery(
@@ -325,11 +330,70 @@
 
 		if (orderId > 0 && i >= 0) {
 			await tick();
+            orderId = 0;
 			order.set({ ...initOrder });
 			details.set([]);
 		}
 		// console.log(log);
 	}
+
+    function createNewId(): number {
+        console.log($details.length);
+        if($details.length >= 1) {
+	    	let test = $details.reduce((prev, cur) =>
+		    	prev.id > cur.id ? prev : cur
+		    ).id;
+		    return test + 1;
+        }
+        return 1;
+	}
+
+    function selectProduct(p: iProduct, q: number) {
+        const i = $details.findIndex(f => f.productId === p.id);
+        const n = p.stocks.findIndex(f => f.gudangId === 1);
+        const stock: iProductStock = p.stocks[n];
+       
+        if(i >= 0) {
+            const slices = [...$details];
+            const d = slices[i];
+            d.qty = toNumber(d.qty) + q;
+            d.subtotal = (toNumber(d.price) - toNumber(d.discount)) * d.qty
+            slices.splice(i, 1, d);
+            details.update(() => [...slices]);
+        } else {
+            const d: iOrderDetail = {
+                orderId: $order.id,
+ 			    id: createNewId(),
+				price: toNumber(p.price),
+                qty: q,
+				unit: p.unit,
+				productId: p.id,
+				direction: -1,
+                discount: 0,
+                subtotal: toNumber(p.price) * q,
+				name: p.name,
+				barcode: p.barcode,
+				hpp: toNumber(p.hpp),
+				oldQty: 0, // stock.qty,
+                oldGudangId: stock.gudangId,
+                gudangName: stock.name,
+                gudangId: stock.gudangId 
+            }
+            details.update((o) => ([...o, d]));
+        }
+
+        const total = $details.reduce((o,t) => o + toNumber(t.subtotal), 0);
+ 		order.update(
+			(s) =>
+				(s = {
+					...s,
+					total: total,
+					remain: total - (toNumber(s.dp) + toNumber(s.payment)),
+					isModified: true,
+					isDetailChanged: true
+				})
+		);
+    }
 
 	const subsribe = () => {
 		order.set($queryOrder.data?.order ?? { ...initOrder });
@@ -568,4 +632,8 @@
 {/if}
 {#if showNotification}
 	{@render toas()}
+{/if}
+
+{#if isSearch && !isOpen}
+    <ProductSearch value={strNotFound} onselect={(p, q) => selectProduct(p, q)} onclear={() => {isSearch=false;}} />
 {/if}

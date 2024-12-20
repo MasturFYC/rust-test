@@ -27,7 +27,13 @@
 		baseURL,
 		credential_include,
 		type iGudang,
-		type iOrderDetail
+		type iOrderDetail,
+
+		type iProduct,
+
+		type iProductStock
+
+
 	} from '$lib/interfaces';
 	import {
 		Button,
@@ -47,7 +53,7 @@
 		NewTab,
 		Save,
 		Money,
-		IbmZOpenEditor as Open
+		IbmCloudDatabases as Open
 	} from 'carbon-icons-svelte';
 	import { toNumber } from './handler';
 	import { order, details } from './store';
@@ -61,8 +67,8 @@
 		barcodes: { barcode: string }[] | undefined;
 		gudangs: iGudang[] | undefined;
 		onopen: (e: number) => void;
-		onadddp: () => void;
-		onnew: (e: number) => void;
+        onadddp: () => void;
+        onnew: (e: number) => void;
 		onsave: (e: iOrderDetail[]) => void;
 		onnotfound: (e: string) => void;
 	}
@@ -206,8 +212,10 @@
 	//   currentKey = e.detail.key;
 	// }
 
-	function clickOutSize(event: any) {
+	function clickOutSide(event: any) {
 		const withinBoundaries = event.composedPath().includes(reform);
+        isBarcodeDirty = false;
+
 
 		if (isAddNew) return true;
 		// isDirty = false;
@@ -563,7 +571,7 @@
 					d.price = toNumber(p.price);
 					d.unit = p.unit;
 					d.productId = p.id;
-					d.direction = 1;
+					d.direction = -1;
 					d.name = p.name;
 					d.barcode = p.barcode;
 					d.hpp = toNumber(p.hpp);
@@ -596,7 +604,7 @@
 		}
 	}
 
-	async function findProduct(e: string,	id: number): Promise<number> {
+	async function findProduct(e: string, id: number): Promise<number> {
 
 		// const x = $details.findIndex(f => f.id === id);
 
@@ -624,7 +632,7 @@
 
 			if (result.ok) {
 				let json = await result.json();
-				let p = json.data;
+				let p = json.data as iProduct;
 				let found = true;
 
 				let i = $details.findIndex((f) => f.productId === p.id);
@@ -635,7 +643,9 @@
 					found = false;
 				}
 
-				let d = $details[i];
+				const d = $details[i];
+                const n = p.stocks.findIndex(f => f.gudangId === 1);
+                const stock: iProductStock = p.stocks[n];
 
 				if (found) {
 					d.qty = toNumber(d.qty) + 1;
@@ -648,7 +658,10 @@
 					d.name = p.name;
 					d.barcode = p.barcode;
 					d.hpp = toNumber(p.hpp);
-					d.oldQty = toNumber(p.oldQty) ? 0 : toNumber(p.oldQty);
+					d.oldQty = 0; //toNumber(stock.qty);
+                    d.gudangId = stock.gudangId;
+                    d.gudangName = stock.name;
+                    d.oldGudangId = stock.gudangId;
 				}
 				d.subtotal =
 					(toNumber(p.price) - toNumber(d.discount)) * toNumber(d.qty);
@@ -694,7 +707,7 @@
 				isBarcodeDirty = test === -1;
 			}
 
-			console.log(currentKey)
+			// console.log(currentKey)
 			const ctlId = '#' + currentKey + '-id';
 			await tick();
 			setFocuse(ctlId);
@@ -725,7 +738,7 @@
 	onDestroy(() => {
 		try {
 			if (document) {
-				document.removeEventListener('click', clickOutSize);
+				document.removeEventListener('click', clickOutSide);
 			}
 		} catch (ex: any) {
 			console.log(ex.message);
@@ -733,7 +746,7 @@
 	});
 
 	onMount(() => {
-		document.addEventListener('click', clickOutSize);
+		document.addEventListener('click', clickOutSide);
 	});
 
 	async function totalItemClick(e: MouseEvent) {
@@ -847,8 +860,8 @@
 		nonSelectableRowIds={[0]}
 		expandable
 		zebra
+        size="medium"
 		bind:selectedRowIds={selectedRowIds}
-		size="short"
 		on:click:row={onRowClick}
 	>
 		<Toolbar size="sm">
