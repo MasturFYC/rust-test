@@ -365,8 +365,8 @@ pub mod db {
                 Some(dto.invoice_id),
                 dto.customer_id,
                 dto.sales_id,
-                dto.supplier_name.to_owned(),
-                dto.warehouse_name.to_owned(),
+                // dto.supplier_name.to_owned(),
+                // dto.warehouse_name.to_owned(),
             )
             .with_dp(dto.dp)
             .with_due_range(dto.due_range.unwrap_or(0))
@@ -560,12 +560,23 @@ pub mod db {
                 Some(dto.invoice_id),
                 dto.customer_id,
                 dto.sales_id,
-                dto.supplier_name.to_owned(),
-                dto.warehouse_name.to_owned(),
+                // dto.supplier_name.to_owned(),
+                // dto.warehouse_name.to_owned(),
             )
             .with_dp(dto.dp)
             .with_due_range(dto.due_range.unwrap_or(0))
             .build();
+
+            let sql = "SELECT name FROM relations WHERE id = $1";
+
+            let supplier = sqlx::query_as::<_, (String,)>(sql)
+                .bind(o.customer_id)
+                .fetch_one(&mut *tx)
+                .await?;
+            let warehouse = sqlx::query_as::<_, (String,)>(sql)
+                .bind(o.sales_id)
+                .fetch_one(&mut *tx)
+                .await?;
 
             let old_details = sqlx::query_as!(
                 ProductQuantity,
@@ -626,13 +637,13 @@ pub mod db {
                 if let Some(d) = details.get(i) {
                     let subtotal = (&d.price - &d.discount) * &d.qty;
                     let _ = sqlx::query!(
-						r#"UPDATE stocks SET qty = (qty + $3) WHERE	product_id = $1 AND gudang_id = $2"#,
-						d.product_id,
-						d.gudang_id,
-						d.qty
-					)
-					.execute(&mut *tx)
-					.await?;
+                        r#"UPDATE stocks SET qty = (qty + $3) WHERE	product_id = $1 AND gudang_id = $2"#,
+                        d.product_id,
+                        d.gudang_id,
+                        d.qty
+                    )
+                    .execute(&mut *tx)
+                    .await?;
 
                     let _ = sqlx::query_file!(
                         "sql/order-detail-insert.sql",
@@ -673,11 +684,7 @@ pub mod db {
             "#,
                 pid,
                 o.customer_id,
-                format!(
-                    "Stock {} by {}",
-                    dto.supplier_name.to_owned().unwrap_or("".to_string()),
-                    dto.warehouse_name.to_owned().unwrap_or("".to_string())
-                ),
+                format!("Stock {} by {}", supplier.0, warehouse.0),
                 o.updated_by.to_owned(),
                 Utc::now()
             )
@@ -786,12 +793,24 @@ pub mod db {
                 Some(dto.invoice_id),
                 dto.customer_id,
                 dto.sales_id,
-                dto.supplier_name.to_owned(),
-                dto.warehouse_name.to_owned(),
+                // dto.supplier_name.to_owned(),
+                // dto.warehouse_name.to_owned(),
             )
             .with_dp(dto.dp)
             .with_due_range(dto.due_range.unwrap_or(0))
             .build();
+
+            let sql = "SELECT name FROM relations WHERE id = $1";
+
+            let supplier = sqlx::query_as::<_, (String,)>(sql)
+                .bind(o.customer_id)
+                .fetch_one(&mut *tx)
+                .await?;
+
+            let warehouse = sqlx::query_as::<_, (String,)>(sql)
+                .bind(o.sales_id)
+                .fetch_one(&mut *tx)
+                .await?;
 
             let _ = sqlx::query_file!(
                 "sql/stock-update.sql",
@@ -825,11 +844,7 @@ pub mod db {
             "#,
                 pid,
                 o.customer_id,
-                format!(
-                    "Stock {} by {}",
-                    dto.supplier_name.to_owned().unwrap_or("".to_string()),
-                    dto.warehouse_name.to_owned().unwrap_or("".to_string())
-                ),
+                format!("Stock {} by {}", supplier.0, warehouse.0),
                 o.updated_by.to_owned(),
                 Utc::now()
             )

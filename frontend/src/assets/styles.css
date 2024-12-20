@@ -29,9 +29,9 @@ table td:nth-child(2) {
 .text-number {
 	font-size: 0.75rem;
 	font-style: italic;
-	align-content: center;
-	padding: 6px 16px;
-	border: 1px solid var(--cds-ui-04);
+	align-content: flex-end;
+	padding: 6px 3px;
+	border-top: 1px solid var(--cds-ui-02);
 	box-sizing: border-box;
 }
 .cell-right {

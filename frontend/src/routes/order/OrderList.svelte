@@ -50,7 +50,7 @@
 	const headers: DataTableHeader[] = [
 		{ key: 'id', value: '#ID', width: '10%' },
 		{ key: 'createdAt', value: 'Tanggal', width: 'auto' },
-		{ key: 'customerName', value: 'Customer', width: 'auto' },
+		{ key: 'customerName', value: 'Pelanggan', width: 'auto' },
 		{ key: 'salesName', value: 'Sales', width: 'auto' },
 		{ key: 'total', value: 'Total', width: '110px' },
 		{ key: 'cmd', value: '', width: '60px' }
@@ -137,7 +137,7 @@
 				size="sm"
 				style="width: 165px; border-bottom: none;"
 				class={'supplier'}
-				placeholder="Customer"
+				placeholder="Pelanggan"
 				selectedId={selectedCustomerId}
 				items={customers.map((m) => ({ id: m.id, text: m.text }))}
 				on:select={(e) => {

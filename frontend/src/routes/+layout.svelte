@@ -58,6 +58,14 @@
 		color: var(--cds-text-01);
 		background-color: var(--cds-hover-ui);
 	}
+  .bx--data-table--md thead tr th.bx--table-column-checkbox,
+  .bx--data-table--md thead tr th {
+    background-color: var(--cds-ui-01);
+    border-bottom: 1px solid var(--cds-ui-04);
+    border-top: 1px solid var(--cds-ui-04);
+    color: var(--cds-ui-04);
+  }
+
 </style>
 
 <script lang="ts">

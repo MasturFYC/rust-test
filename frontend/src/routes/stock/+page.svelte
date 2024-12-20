@@ -16,9 +16,10 @@
 	import { browser } from '$app/environment';
 	import { formatNumber } from '$lib/components/NumberFormat';
 	import { getBarcodes, getRelationProp } from '$lib/fetchers';
-	import type { iCurrentUser, iStock, iStockDetail } from '$lib/interfaces';
+	import type { iCurrentUser, iProduct, iProductStock, iStock, iStockDetail } from '$lib/interfaces';
 	import { SendToBack } from 'carbon-icons-svelte';
 	import { numberToText } from '$lib/number-to-string';
+  import ProductSearch from '$lib/components/ProductSearch.svelte';
 	import {
 		useQuery,
 		useQueryClient,
@@ -75,6 +76,8 @@
 	let timeout: number | undefined = $state(undefined);
 	let showNotification = $state(false);
 	let isEdit = $state(false);
+  let strNotFound = $state('');
+  let isSearch = $state(false);
 	let profile: iCurrentUser = $state({
 		id: '',
 		name: '',
@@ -106,12 +109,74 @@
 	let isFetching = $derived(useIsFetching(query_key));
 
 	function onProductNotFound(e: string) {
-		showNotification = false;
-		setTimeout(() => {
-			showNotification = true;
-		}, 250);
-		txt = e;
-		timeout = 6_000;
+		// showNotification = false;
+		
+  //   setTimeout(() => {
+		// 	showNotification = true;
+		// }, 250);
+		// txt = e;
+		// timeout = 6_000;
+
+    isSearch = true;
+    strNotFound = e;
+	}
+
+  function createNewId(): number {
+		console.log($details.length);
+		if ($details.length >= 1) {
+			let test = $details.reduce((prev, cur) =>
+				prev.id > cur.id ? prev : cur
+			).id;
+			return test + 1;
+		}
+		return 1;
+	}
+
+	function selectProduct(p: iProduct, q: number) {
+		const i = $details.findIndex((f) => f.productId === p.id);
+		const n = p.stocks.findIndex((f) => f.gudangId === 1);
+		const stc: iProductStock = p.stocks[n];
+
+		if (i >= 0) {
+			const slices = [...$details];
+			const d = slices[i];
+			d.qty = toNumber(d.qty) + q;
+			d.subtotal = (toNumber(d.price) - toNumber(d.discount)) * d.qty;
+			slices.splice(i, 1, d);
+			details.update(() => [...slices]);
+		} else {
+			const d: iStockDetail = {
+				stockId: $stock.id,
+				id: createNewId(),
+				price: toNumber(p.hpp),
+				qty: q,
+				unit: p.unit,
+				productId: p.id,
+				direction: -1,
+				discount: 0,
+				subtotal: toNumber(p.hpp) * q,
+				name: p.name,
+				barcode: p.barcode,
+				hpp: toNumber(p.hpp),
+				oldQty: 0, // stock.qty,
+				oldGudangId: stc.gudangId,
+				gudangName: stc.name,
+				gudangId: stc.gudangId
+			};
+			details.update((o) => [...o, d]);
+		}
+
+		const total = $details.reduce((o, t) => o + toNumber(t.subtotal), 0);
+		stock.update(
+			(s) =>
+				(s = {
+					...s,
+					total: total,
+					remain: total - (toNumber(s.dp) + toNumber(s.payment)),
+					isModified: true,
+					isDetailChanged: true
+				})
+		);
 	}
 
 	const supplierQuery = useQuery(
@@ -550,4 +615,14 @@
 
 {#if showNotification}
 	{@render toas()}
+{/if}
+{#if isSearch && isEdit}
+	<ProductSearch
+    showHpp
+		value={strNotFound}
+		onselect={(p, q) => selectProduct(p, q)}
+		onclear={() => {
+			isSearch = false;
+		}}
+	/>
 {/if}

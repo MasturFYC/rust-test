@@ -233,10 +233,10 @@ pub struct OrderDtos {
     pub is_protected: bool,
     #[serde(rename = "createdAt")]
     pub created_at: Option<DateTime<Utc>>,
-    #[serde(rename = "customerName")]
-    pub customer_name: Option<String>,
-    #[serde(rename = "salesName")]
-    pub sales_name: Option<String>,
+    // #[serde(rename = "customerName")]
+    // pub customer_name: Option<String>,
+    // #[serde(rename = "salesName")]
+    // pub sales_name: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, Copy)]
@@ -320,8 +320,8 @@ pub struct OrderBuilder {
     pub due_at: Option<DateTime<Utc>>,
     pub is_protected: bool,
     pub created_at: Option<DateTime<Utc>>,
-    pub customer_name: Option<String>,
-    pub sales_name: Option<String>,
+    // pub customer_name: Option<String>,
+    // pub sales_name: Option<String>,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -336,8 +336,8 @@ impl OrderBuilder {
         invoice_id: Option<String>,
         customer_id: i16,
         sales_id: i16,
-        customer_name: Option<String>,
-        sales_name: Option<String>,
+        // customer_name: Option<String>,
+        // sales_name: Option<String>,
     ) -> OrderBuilder {
         OrderBuilder {
             order_type,
@@ -354,8 +354,8 @@ impl OrderBuilder {
             customer_id,
             sales_id,
             is_protected,
-            customer_name,
-            sales_name,
+            // customer_name,
+            // sales_name,
         }
     }
 
@@ -410,8 +410,8 @@ impl OrderBuilder {
             sales_id: self.sales_id,
             invoice_id: self.invoice_id.to_owned(),
             is_protected: self.is_protected,
-            customer_name: self.customer_name.to_owned(),
-            sales_name: self.sales_name.to_owned(),
+            // customer_name: self.customer_name.to_owned(),
+            // sales_name: self.sales_name.to_owned(),
         }
     }
 }

@@ -112,12 +112,23 @@ pub mod db {
                 dto.invoice_id,
                 dto.customer_id,
                 dto.sales_id,
-                dto.customer_name.to_owned(),
-                dto.sales_name.to_owned(),
+                // dto.customer_name.to_owned(),
+                // dto.sales_name.to_owned(),
             )
             .with_dp(dto.dp)
             .with_due_range(dto.due_range.unwrap_or(0))
             .build();
+
+            let sql = "SELECT name FROM relations WHERE id = $1";
+
+            let sales = sqlx::query_as::<_, (String,)>(sql)
+                .bind(o.sales_id)
+                .fetch_one(&mut *tx)
+                .await?;
+            let customer = sqlx::query_as::<_, (String,)>(sql)
+                .bind(o.customer_id)
+                .fetch_one(&mut *tx)
+                .await?;
 
             let _ = sqlx::query_file!(
                 "sql/order/update.sql",
@@ -143,8 +154,8 @@ pub mod db {
                 o.customer_id,
                 format!(
                     "Stock {} by {}",
-                    dto.customer_name.unwrap_or("".to_string()),
-                    dto.sales_name.unwrap_or("".to_string()) // dto.customer_name.to_owned().unwrap_or("".to_string()),
+                    customer.0,
+                    sales.0 // dto.customer_name.to_owned().unwrap_or("".to_string()),
                 ),
                 o.updated_by.to_owned(),
                 Utc::now()
@@ -308,8 +319,8 @@ pub mod db {
                 dtos.invoice_id,
                 dtos.customer_id,
                 dtos.sales_id,
-                dtos.customer_name,
-                dtos.sales_name,
+                // dtos.customer_name,
+                // dtos.sales_name,
             )
             .with_dp(dtos.dp)
             .with_due_range(dtos.due_range.unwrap_or(0))
@@ -393,13 +404,13 @@ pub mod db {
                     .await?;
 
                     let _ = sqlx::query!(
-						r#"UPDATE stocks SET qty = (qty - $3) WHERE product_id = $1 AND gudang_id = $2"#,
-						d.product_id,
-						d.gudang_id,
-						d.qty
-					)
-					.execute(&mut *tx)
-					.await?;
+                        r#"UPDATE stocks SET qty = (qty - $3) WHERE product_id = $1 AND gudang_id = $2"#,
+                        d.product_id,
+                        d.gudang_id,
+                        d.qty
+                    )
+                    .execute(&mut *tx)
+                    .await?;
 
                     i = i.checked_add(1).unwrap();
                 }
@@ -547,8 +558,8 @@ pub mod db {
                 dtos.invoice_id,
                 dtos.customer_id,
                 dtos.sales_id,
-                dtos.customer_name,
-                dtos.sales_name,
+                // dtos.customer_name,
+                // dtos.sales_name,
             )
             .with_dp(dtos.dp)
             .with_due_range(dtos.due_range.unwrap_or(0))
@@ -620,7 +631,7 @@ pub mod db {
                         r#"UPDATE stocks SET qty = (qty - $3) WHERE product_id = $1 AND gudang_id = $2"#,
                         d.product_id,
                         d.gudang_id,
-                        d.old_qty
+                        d.qty
                     )
                     .execute(&mut *tx)
                     .await?;
@@ -804,10 +815,7 @@ pub mod db {
             .await?;
 
             let rows_affected: u64 = sqlx::query!(
-                r#"
-				DELETE FROM orders
-				WHERE id IN (SELECT unnest($1::int[]))
-				"#,
+                r#"DELETE FROM orders	WHERE id IN (SELECT unnest($1::int[]))"#,
                 &ids[..]
             )
             .execute(&mut *tx)

@@ -201,10 +201,13 @@
 	// $effect(() => updateDp(strDp));
 </script>
 
-<Form on:submit style="margin: 24px 0 0 0;">
-	<Grid noGutter={innerWidth > 720} fullWidth>
+<Form on:submit>
+	<Grid fullWidth noGutter={innerWidth > 720}>
 		<Row>
-			<Column noGutterRight sm={2} md>
+			<Column noGutterRight as>
+        <Grid>
+          <Row>
+            <Column as noGutterRight>
 				<DatePicker
 					datePickerType="single"
 					bind:value={strDate}
@@ -213,13 +216,14 @@
 				>
 					<DatePickerInput
 						accesskey="t"
-						style="max-width: 100%;min-width:150px"
+            style={"width:100%"}
 						labelText="Tanggal pembelian"
 						placeholder="mm/dd/yyyy"
 					/>
 				</DatePicker>
-			</Column>
-			<Column noGutter sm={2} md lg>
+
+            </Column>
+  			<Column noGutter as>
 				<TextInput
 					accesskey="n"
 					bind:ref={ref_invoice}
@@ -229,7 +233,13 @@
 					bind:value={$stock.invoiceId}
 				/>
 			</Column>
-			<Column noGutter md={2} sm={2}>
+	        </Row>
+        </Grid>
+			</Column>
+		<Column noGutterLeft>
+        <Grid noGutter={innerWidth > 720}>
+          <Row>
+            <Column noGutter>
 				<ComboBox
 					accesskey="s"
 					id="supplier-id"
@@ -247,8 +257,9 @@
 						{get_supplier_info(item.id)}
 					</div>
 				</ComboBox>
-			</Column>
-			<Column noGutterLeft md={2} sm={2}>
+	
+            </Column>
+            <Column noGutterLeft>
 				<ComboBox
 					accesskey="g"
 					id="warehouse-id"
@@ -266,7 +277,11 @@
 						{get_employee_info(item.id)}
 					</div>
 				</ComboBox>
-			</Column>
+	
+            </Column>
+          </Row>
+        </Grid>
+		</Column>
 		</Row>
 	</Grid>
 </Form>

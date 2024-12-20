@@ -70,7 +70,7 @@
 					  };
 		  };
 
-	let ref_date: HTMLInputElement | undefined = $state(undefined);
+  let refCombo: null | HTMLInputElement = $state(null);
 
 	function get_customers() {
 		return customers.map((m) => ({ id: m.id, text: m.text }));
@@ -200,11 +200,12 @@
 	// let strDp = $derived(formatNumber(toNumber($order.dp)));
 
 	$effect(() => {
-		if (ref_date) {
-			ref_date.focus();
+		if (refCombo) {
+			refCombo.focus();
 		}
 	});
 
+  $inspect(refCombo);
 	// function updateDp(str: string) {
 	// 	const dp = getNumber(str);
 	// 	order.update((s) => ({
@@ -216,14 +217,13 @@
 
 	// $effect(() => updateDp(strDp));
 </script>
-
 <Form on:submit>
 	<Grid noGutter={innerWidth > 720} fullWidth>
 		<Row>
-			<Column noGutterRight md={2}>
-				<Grid noGutter>
+			<Column noGutterRight as sm={8} md>
+				<Grid>
 					<Row>
-						<Column>
+						<Column as noGutterLeft>
 							<DatePicker
 								short
 								datePickerType="single"
@@ -232,7 +232,6 @@
 								on:change={onDateChange}
 							>
 								<DatePickerInput
-									bind:ref={ref_date}
 									style={'width:100%'}
 									accesskey="t"
 									labelText="Tanggal penjualan"
@@ -240,14 +239,7 @@
 								/>
 							</DatePicker>
 						</Column>
-					</Row>
-				</Grid>
-			</Column>
-
-			<Column noGutterLeft>
-				<Grid noGutter>
-					<Row>
-						<Column noGutter>
+					  <Column noGutter as>
 							<DatePicker
 								datePickerType="single"
 								bind:value={strTempo}
@@ -256,14 +248,23 @@
 							>
 								<DatePickerInput
 									accesskey="t"
+                  style={"width:100%"}
 									labelText="Jatuh tempo"
 									placeholder="mm/dd/yyyy"
 								/>
 							</DatePicker>
 						</Column>
-						<Column sm={2} noGutter md>
+  				</Row>
+				</Grid>
+			</Column>
+
+      <Column noGutterLeft sm={8} md>
+				<Grid noGutter={innerWidth>720}>
+					<Row>
+						<Column sm={2} noGutter>
 							<ComboBox
 								accesskey="s"
+                bind:ref={refCombo}
 								id="customer-id"
 								titleText="Pelanggan"
 								selectedId={$order.customerId}
@@ -280,7 +281,7 @@
 								</div>
 							</ComboBox>
 						</Column>
-						<Column sm={2} md noGutterLeft>
+						<Column sm={2} noGutterLeft>
 							<ComboBox
 								accesskey="g"
 								id="sales-id"

@@ -1,5 +1,5 @@
 <!-- <div>{JSON.stringify(selectedRowIds, null,  4)}</div> -->
-<style lang="css">
+<style global>
 	:global(#combo-gudang-id.bx--combo-box) {
 		height: auto;
 		border: 0;
@@ -13,6 +13,7 @@
 		padding: 0;
 		margin: 0;
 	}
+
 </style>
 
 <script lang="ts">
@@ -28,12 +29,8 @@
 		credential_include,
 		type iGudang,
 		type iOrderDetail,
-
 		type iProduct,
-
 		type iProductStock
-
-
 	} from '$lib/interfaces';
 	import {
 		Button,
@@ -67,8 +64,8 @@
 		barcodes: { barcode: string }[] | undefined;
 		gudangs: iGudang[] | undefined;
 		onopen: (e: number) => void;
-        onadddp: () => void;
-        onnew: (e: number) => void;
+		onadddp: () => void;
+		onnew: (e: number) => void;
 		onsave: (e: iOrderDetail[]) => void;
 		onnotfound: (e: string) => void;
 	}
@@ -214,8 +211,7 @@
 
 	function clickOutSide(event: any) {
 		const withinBoundaries = event.composedPath().includes(reform);
-        isBarcodeDirty = false;
-
+		isBarcodeDirty = false;
 
 		if (isAddNew) return true;
 		// isDirty = false;
@@ -502,110 +498,96 @@
 		return test + 1;
 	}
 
-	async function barcodeOnChange(
-		e: CustomEvent<string | number | null>,
-		id: number
-	) {
-		if (typeof e.detail === 'string') {
-
-		const x = $details.findIndex(f => f.id === id);
-			if(x >= 0) {
-				const d = $details[x];
-				const test = d.barcode.toLowerCase() === e.detail.toLowerCase();
-				if (test) {
-					currentKey = 'qty';
-					setFocuse('#qty-id');
-				return;
-				}
-			}
-
-			const strCode = e.detail;
-			const url = `${baseURL}/products/barcode/${strCode}`;
-
-			const options = {
-				headers: {
-					'content-type': 'application/json'
-				},
-				method: 'GET',
-				credentials: credential_include
-			};
-
-			const request = new Request(url, options);
-
-			let result = await fetch(request);
-
-			// isDirty = true;
-
-			if (result.ok) {
-				let json = await result.json();
-				let p = json.data;
-				let found = true;
-
-				let i = $details.findIndex((f) => f.productId === p.id);
-				const x = $details.findIndex((f) => f.id === id);
-
-				if (i < 0) {
-					i = x;
-					found = false;
-				}
-
-				let d = $details[i];
-
-				if (found) {
-					const el = document.querySelector('#barcode-id') as HTMLInputElement;
-					if (el) {
-						// el.value = $details[x].barcode;
-						el.value = '';
-						// console.log(p.barcode);
-						// el.selectionStart = 0;
-						el.placeholder = p.barcode;
-						// el.selectionEnd = p.barcode.length;
-						// el.select();
-					}
-					await tick();
-					d.qty = toNumber(d.qty) + 1;
-					// isBarcodeDirty = true;
-					// isDirty = true;
-				} else {
-					d.id = createNewId();
-					d.price = toNumber(p.price);
-					d.unit = p.unit;
-					d.productId = p.id;
-					d.direction = -1;
-					d.name = p.name;
-					d.barcode = p.barcode;
-					d.hpp = toNumber(p.hpp);
-					d.oldQty = toNumber(p.oldQty) ? 0 : toNumber(p.oldQty);
-				}
-				// console.log(p.oldOrder);
-				d.subtotal =
-					(toNumber(p.price) - toNumber(d.discount)) * toNumber(d.qty);
-
-				updateCurrentDetail(d);
-
-				if (!found) {
-					currentId = d.id;
-					await tick();
-					currentKey = 'qty';
-					setFocuse('#qty-id');
-					isBarcodeDirty = false;
-				} else {
-					await tick();
-					currentKey = 'barcode';
-					setFocuse('#barcode-id');
-				}
-			} else {
-				isBarcodeDirty = true;
-				await tick();
-				currentKey = 'barcode';
-				setFocuse('#barcode-id');
-				onnotfound(strCode);
-			}
-		}
-	}
+	// async function barcodeOnChange(
+	// 	e: CustomEvent<string | number | null>,
+	// 	id: number
+	// ) {
+	// 	if (typeof e.detail === 'string') {
+	// 		const x = $details.findIndex((f) => f.id === id);
+	// 		if (x >= 0) {
+	// 			const d = $details[x];
+	// 			const test = d.barcode.toLowerCase() === e.detail.toLowerCase();
+	// 			if (test) {
+	// 				currentKey = 'qty';
+	// 				setFocuse('#qty-id');
+	// 				return;
+	// 			}
+	// 		}
+	// 		const strCode = e.detail;
+	// 		const url = `${baseURL}/products/barcode/${strCode}`;
+	// 		const options = {
+	// 			headers: {
+	// 				'content-type': 'application/json'
+	// 			},
+	// 			method: 'GET',
+	// 			credentials: credential_include
+	// 		};
+	// 		const request = new Request(url, options);
+	// 		let result = await fetch(request);
+	// 		// isDirty = true;
+	// 		if (result.ok) {
+	// 			let json = await result.json();
+	// 			let p = json.data;
+	// 			let found = true;
+	// 			let i = $details.findIndex((f) => f.productId === p.id);
+	// 			const x = $details.findIndex((f) => f.id === id);
+	// 			if (i < 0) {
+	// 				i = x;
+	// 				found = false;
+	// 			}
+	// 			let d = $details[i];
+	// 			if (found) {
+	// 				const el = document.querySelector('#barcode-id') as HTMLInputElement;
+	// 				if (el) {
+	// 					// el.value = $details[x].barcode;
+	// 					el.value = '';
+	// 					// console.log(p.barcode);
+	// 					// el.selectionStart = 0;
+	// 					el.placeholder = p.barcode;
+	// 					// el.selectionEnd = p.barcode.length;
+	// 					// el.select();
+	// 				}
+	// 				await tick();
+	// 				d.qty = toNumber(d.qty) + 1;
+	// 				// isBarcodeDirty = true;
+	// 				// isDirty = true;
+	// 			} else {
+	// 				d.id = createNewId();
+	// 				d.price = toNumber(p.price);
+	// 				d.unit = p.unit;
+	// 				d.productId = p.id;
+	// 				d.direction = -1;
+	// 				d.name = p.name;
+	// 				d.barcode = p.barcode;
+	// 				d.hpp = toNumber(p.hpp);
+	// 				d.oldQty = toNumber(p.oldQty) ? 0 : toNumber(p.oldQty);
+	// 			}
+	// 			// console.log(p.oldOrder);
+	// 			d.subtotal =
+	// 				(toNumber(p.price) - toNumber(d.discount)) * toNumber(d.qty);
+	// 			updateCurrentDetail(d);
+	// 			if (!found) {
+	// 				currentId = d.id;
+	// 				await tick();
+	// 				currentKey = 'qty';
+	// 				setFocuse('#qty-id');
+	// 				isBarcodeDirty = false;
+	// 			} else {
+	// 				await tick();
+	// 				currentKey = 'barcode';
+	// 				setFocuse('#barcode-id');
+	// 			}
+	// 		} else {
+	// 			isBarcodeDirty = true;
+	// 			await tick();
+	// 			currentKey = 'barcode';
+	// 			setFocuse('#barcode-id');
+	// 			onnotfound(strCode);
+	// 		}
+	// 	}
+	// }
 
 	async function findProduct(e: string, id: number): Promise<number> {
-
 		// const x = $details.findIndex(f => f.id === id);
 
 		// if(x >= 0) {
@@ -616,66 +598,65 @@
 		// 	}
 		// }
 
-			const url = `${baseURL}/products/barcode/${e}`;
+		const url = `${baseURL}/products/barcode/${e}`;
 
-			const options = {
-				headers: {
-					'content-type': 'application/json'
-				},
-				method: 'GET',
-				credentials: credential_include
-			};
+		const options = {
+			headers: {
+				'content-type': 'application/json'
+			},
+			method: 'GET',
+			credentials: credential_include
+		};
 
-			const request = new Request(url, options);
+		const request = new Request(url, options);
 
-			let result = await fetch(request);
+		let result = await fetch(request);
 
-			if (result.ok) {
-				let json = await result.json();
-				let p = json.data as iProduct;
-				let found = true;
+		if (result.ok) {
+			let json = await result.json();
+			let p = json.data as iProduct;
+			let found = true;
 
-				let i = $details.findIndex((f) => f.productId === p.id);
-				const x = $details.findIndex((f) => f.id === id);
+			let i = $details.findIndex((f) => f.productId === p.id);
+			const x = $details.findIndex((f) => f.id === id);
 
-				if (i < 0) {
-					i = x;
-					found = false;
-				}
-
-				const d = $details[i];
-                const n = p.stocks.findIndex(f => f.gudangId === 1);
-                const stock: iProductStock = p.stocks[n];
-
-				if (found) {
-					d.qty = toNumber(d.qty) + 1;
-				} else {
-					d.id = createNewId();
-					d.price = toNumber(p.price);
-					d.unit = p.unit;
-					d.productId = p.id;
-					d.direction = 1;
-					d.name = p.name;
-					d.barcode = p.barcode;
-					d.hpp = toNumber(p.hpp);
-					d.oldQty = 0; //toNumber(stock.qty);
-                    d.gudangId = stock.gudangId;
-                    d.gudangName = stock.name;
-                    d.oldGudangId = stock.gudangId;
-				}
-				d.subtotal =
-					(toNumber(p.price) - toNumber(d.discount)) * toNumber(d.qty);
-
-				updateCurrentDetail(d);
-
-				if(found) {
-					return id;
-				}
-				return d.id;
-			} else {
-				onnotfound(e);
-				return -1;
+			if (i < 0) {
+				i = x;
+				found = false;
 			}
+
+			const d = $details[i];
+			const n = p.stocks.findIndex((f) => f.gudangId === 1);
+			const stock: iProductStock = p.stocks[n];
+
+			if (found) {
+				d.qty = toNumber(d.qty) + 1;
+			} else {
+				d.id = createNewId();
+				d.price = toNumber(p.price);
+				d.unit = p.unit;
+				d.productId = p.id;
+				d.direction = 1;
+				d.name = p.name;
+				d.barcode = p.barcode;
+				d.hpp = toNumber(p.hpp);
+				d.oldQty = 0; //toNumber(stock.qty);
+				d.gudangId = stock.gudangId;
+				d.gudangName = stock.name;
+				d.oldGudangId = stock.gudangId;
+			}
+			d.subtotal = (toNumber(p.price) - toNumber(d.discount)) * toNumber(d.qty);
+
+			updateCurrentDetail(d);
+
+			if (found) {
+				return id;
+			}
+			return d.id;
+		} else {
+			onnotfound(e);
+			return -1;
+		}
 	}
 
 	async function barcodeOnKeyDown(e: KeyboardEvent, id: number) {
@@ -684,21 +665,21 @@
 			isBarcodeDirty = false;
 			const el = e.currentTarget! as HTMLInputElement;
 			const code = el.value;
-			const i = $details.findIndex(f => f.id === id);
+			const i = $details.findIndex((f) => f.id === id);
 			let letMeFind = true;
 
-			if(i >= 0) {
+			if (i >= 0) {
 				const dup = $details[i].barcode;
-				if(dup.toLowerCase() === code.toLowerCase()) {
+				if (dup.toLowerCase() === code.toLowerCase()) {
 					letMeFind = false;
 				}
 			}
 
 			currentKey = 'qty';
 
-			if(letMeFind) {
+			if (letMeFind) {
 				const test = await findProduct(code, id);
-				if(test > 0 && test !== id) {
+				if (test > 0 && test !== id) {
 					const i = $details.findIndex((f) => f.id === test);
 					currentId = $details[i].id;
 				} else {
@@ -712,7 +693,7 @@
 			await tick();
 			setFocuse(ctlId);
 		} else if (e.key === 'Tab' && e.shiftKey) {
-			 e.preventDefault();
+			e.preventDefault();
 			let i = $details.findIndex((f) => f.id === id);
 			currentKey = 'discount';
 			if (i === 0) {
@@ -843,6 +824,7 @@
 {/if}
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions (because of reasons) -->
 <div
+  style="margin-top: -14px"
 	bind:this={reform}
 	tabindex={0}
 	role="row"
@@ -860,7 +842,7 @@
 		nonSelectableRowIds={[0]}
 		expandable
 		zebra
-        size="medium"
+		size="medium"
 		bind:selectedRowIds={selectedRowIds}
 		on:click:row={onRowClick}
 	>
