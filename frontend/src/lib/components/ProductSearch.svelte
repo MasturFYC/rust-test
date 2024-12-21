@@ -19,17 +19,15 @@
 	interface Props {
 		value: string;
 		showHpp?: boolean;
-        isCustomerSpecial?: boolean;
-		onselect: (p: iProduct, q: number) => void;
+		onselect: (barcode: string, q: number) => void;
 		onclear: () => void;
 	}
 
-    let {
+	let {
 		value = $bindable(''),
 		onselect,
 		onclear,
-		showHpp = false,
-        isCustomerSpecial = false,
+		showHpp = false
 	}: Props = $props();
 
 	const initResult: iResult = {
@@ -72,7 +70,6 @@
 	});
 
 	let expanded = $state(true);
-    $inspect(isCustomerSpecial);
 </script>
 
 <div style="margin-top: 24px">
@@ -93,6 +90,10 @@
 
 <Grid>
 	{#each products as p}
-		<Product product={p} onadd={(p, q) => onselect(p, q)} {showHpp} isCustomerSpecial />
+		<Product
+			product={p}
+			onadd={(e) => onselect(p.barcode, e)}
+			showHpp={showHpp}
+		/>
 	{/each}
 </Grid>

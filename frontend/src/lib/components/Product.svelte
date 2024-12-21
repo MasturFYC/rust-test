@@ -20,40 +20,20 @@
 <script lang="ts">
 	import { formatNumber, getNumber } from '$lib/components/NumberFormat';
 	import NumberPercent from '$lib/components/NumberPercent.svelte';
-	import { baseURL, credential_include, type iProduct } from '$lib/interfaces';
+	import type { iProduct } from '$lib/interfaces';
 	import { Button, Column, Row } from 'carbon-components-svelte';
 	import { Add } from 'carbon-icons-svelte';
 
 	interface Props {
 		showHpp?: boolean;
-        isCustomerSpecial?: boolean,
-		onadd: (p: iProduct, qty: number) => void;
+		onadd: (qty: number) => void;
 		product: iProduct;
 	}
 
-	let { product, onadd, showHpp, isCustomerSpecial = false }: Props = $props();
-
-	async function findProduct(e: string) {
-		const url = `${baseURL}/products/barcode${isCustomerSpecial ? '-special':''}/${e}`;
-		const options = {
-			headers: {
-				'content-type': 'application/json'
-			},
-			method: 'GET',
-			credentials: credential_include
-		};
-		const request = new Request(url, options);
-		let result = await fetch(request);
-
-		if (result.ok) {
-			let json = await result.json();
-			console.log(json);
-			let p = json.data;
-			onadd(p, getNumber(qty));
-		}
-	}
-
+	let { product, onadd, showHpp }: Props = $props();
 	let qty = $state('1');
+
+	// $inspect(isCustomerSpecial);
 </script>
 
 <Row class="row-odd">
@@ -87,7 +67,7 @@
 	<Column noGutter as>
 		<div>
 			<Button
-				onclick={() => findProduct(product.barcode)}
+				onclick={() => onadd(getNumber(qty))}
 				size="small"
 				icon={Add}
 				kind="secondary">Tambahkan</Button

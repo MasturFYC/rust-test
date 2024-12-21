@@ -16,12 +16,13 @@
 	import { browser } from '$app/environment';
 	import { formatNumber } from '$lib/components/NumberFormat';
 	import { getBarcodes, getRelationProp } from '$lib/fetchers';
-	import type {
-		iCurrentUser,
-		iOrder,
-		iOrderDetail,
-		iProduct,
-		iProductStock
+	import {
+		baseURL,
+		credential_include,
+		type iCurrentUser,
+		type iOrder,
+		type iOrderDetail,
+		type iProductUnit
 	} from '$lib/interfaces';
 	import { OrderDetails as SendToBack } from 'carbon-icons-svelte';
 	import ProductSearch from '$lib/components/ProductSearch.svelte';
@@ -360,10 +361,8 @@
 		return 1;
 	}
 
-	function selectProduct(p: iProduct, q: number) {
+	function selectProduct(p: iProductUnit, q: number) {
 		const i = $details.findIndex((f) => f.productId === p.id);
-		const n = p.stocks.findIndex((f) => f.gudangId === 1);
-		const stock: iProductStock = p.stocks[n];
 
 		if (i >= 0) {
 			const slices = [...$details];
@@ -381,15 +380,15 @@
 				unit: p.unit,
 				productId: p.id,
 				direction: -1,
-				discount: 0,
+				discount: toNumber(p.discount),
 				subtotal: toNumber(p.price) * q,
 				name: p.name,
 				barcode: p.barcode,
 				hpp: toNumber(p.hpp),
 				oldQty: 0, // stock.qty,
-				oldGudangId: stock.gudangId,
-				gudangName: stock.name,
-				gudangId: stock.gudangId
+				oldGudangId: 1,
+				gudangId: 1,
+				gudangName: ''
 			};
 			details.update((o) => [...o, d]);
 		}
@@ -463,16 +462,36 @@
 		return 0;
 	});
 
-    function getIsCustomerSpecial(): boolean {
-        //if(customerId === 0) return false;
-        const i = customers.findIndex(f => f.id === $order.customerId);
-        if(i >= 0) {
-            const cust = customers[i];
-            return cust.isSpecial;
-        }
-        return false;
-    }
+	function getIsCustomerSpecial(id: number): boolean {
+		//if(customerId === 0) return false;
+		const i = customers.findIndex((f) => f.id === id);
+		if (i >= 0) {
+			const cust = customers[i];
+			return cust.isSpecial;
+		}
+		return false;
+	}
 
+	async function findProduct(barcode: string, qty: number) {
+		const isSpecial = getIsCustomerSpecial($order.customerId);
+		const url = `${baseURL}/products/barcode${isSpecial ? '-special' : ''}/${barcode}${isSpecial ? `/${$order.customerId}` : ''}`;
+		const options = {
+			headers: {
+				'content-type': 'application/json'
+			},
+			method: 'GET',
+			credentials: credential_include
+		};
+		const request = new Request(url, options);
+		let result = await fetch(request);
+
+		if (result.ok) {
+			let json = await result.json();
+			// console.log(json);
+			let p = json.data as iProductUnit;
+			selectProduct(p, qty);
+		}
+	}
 
 	$effect.pre(() => {
 		if (isOrderAvailabel) {
@@ -559,6 +578,7 @@
 	<OrderDetail
 		barcodes={barcodes}
 		gudangs={gudangs}
+		customers={customers}
 		onnotfound={onProductNotFound}
 		onnew={createNewOrder}
 		onopen={openOrder}
@@ -651,7 +671,7 @@
 {#if isOpen}
 	{@render orderList()}
 	{@render paginating($isFetching !== 0)}
-{:else if !isHide}
+{:else if !isHide && $customerQuery.isSuccess && $salesQuery.isSuccess}
 	{@render orderDetail()}
 {/if}
 
@@ -662,8 +682,7 @@
 {#if isSearch && !isOpen}
 	<ProductSearch
 		value={strNotFound}
-        isCustomerSpecial={getIsCustomerSpecial()}
-		onselect={(p, q) => selectProduct(p, q)}
+		onselect={(c, q) => findProduct(c, q)}
 		onclear={() => {
 			isSearch = false;
 		}}

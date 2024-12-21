@@ -40,3 +40,13 @@ export type iProduct = {
 	supplierName?: string;
 	stocks: iProductStock[];
 };
+
+export type iProductUnit = {
+	id: number;
+	name: string;
+	barcode: string;
+	unit: string;
+	hpp: number;
+	price: number;
+	discount: number;
+};

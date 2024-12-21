@@ -29,7 +29,9 @@
 		type iGudang,
 		type iOrderDetail,
 		type iProduct,
-		type iProductStock
+		type iProductStock,
+		type iProductUnit,
+		type iRelationProp
 	} from '$lib/interfaces';
 	import {
 		Button,
@@ -62,6 +64,7 @@
 	interface Props {
 		barcodes: { barcode: string }[] | undefined;
 		gudangs: iGudang[] | undefined;
+		customers: iRelationProp[] | undefined;
 		onopen: (e: number) => void;
 		onadddp: () => void;
 		onnew: (e: number) => void;
@@ -72,6 +75,7 @@
 	let {
 		barcodes = [],
 		gudangs = [],
+		customers = [],
 		onopen,
 		onadddp,
 		onnew,
@@ -140,6 +144,16 @@
 			isQtyChanged = false;
 			updateCurrentDetail(c);
 		}
+	}
+
+	function getIsCustomerSpecial(id: number): boolean {
+		//if(customerId === 0) return false;
+		const i = customers.findIndex((f) => f.id === id);
+		if (i >= 0) {
+			const cust = customers[i];
+			return cust.isSpecial;
+		}
+		return false;
 	}
 
 	function change_discount(e: string, id: number) {
@@ -597,7 +611,8 @@
 		// 	}
 		// }
 
-		const url = `${baseURL}/products/barcode/${e}`;
+		const isSpecial = getIsCustomerSpecial($order.customerId);
+		const url = `${baseURL}/products/barcode${isSpecial ? '-special' : ''}/${e}${isSpecial ? `/${$order.customerId}` : ''}`;
 
 		const options = {
 			headers: {
@@ -613,7 +628,7 @@
 
 		if (result.ok) {
 			let json = await result.json();
-			let p = json.data as iProduct;
+			let p = json.data as iProductUnit;
 			let found = true;
 
 			let i = $details.findIndex((f) => f.productId === p.id);
@@ -625,8 +640,8 @@
 			}
 
 			const d = $details[i];
-			const n = p.stocks.findIndex((f) => f.gudangId === 1);
-			const stock: iProductStock = p.stocks[n];
+			// const n = p.stocks.findIndex((f) => f.gudangId === 1);
+			// const stock: iProductStock = p.stocks[n];
 
 			if (found) {
 				d.qty = toNumber(d.qty) + 1;
@@ -639,10 +654,10 @@
 				d.name = p.name;
 				d.barcode = p.barcode;
 				d.hpp = toNumber(p.hpp);
-				d.oldQty = 0; //toNumber(stock.qty);
-				d.gudangId = stock.gudangId;
-				d.gudangName = stock.name;
-				d.oldGudangId = stock.gudangId;
+				(d.discount = toNumber(p.discount)), (d.oldQty = 0); //toNumber(stock.qty);
+				d.gudangId = 1; // stock.gudangId;
+				d.gudangName = ''; //stock.name;
+				d.oldGudangId = 1; //stock.gudangId;
 			}
 			d.subtotal = (toNumber(p.price) - toNumber(d.discount)) * toNumber(d.qty);
 
