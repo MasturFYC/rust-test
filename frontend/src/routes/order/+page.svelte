@@ -463,6 +463,17 @@
 		return 0;
 	});
 
+    function getIsCustomerSpecial(): boolean {
+        //if(customerId === 0) return false;
+        const i = customers.findIndex(f => f.id === $order.customerId);
+        if(i >= 0) {
+            const cust = customers[i];
+            return cust.isSpecial;
+        }
+        return false;
+    }
+
+
 	$effect.pre(() => {
 		if (isOrderAvailabel) {
 			subsribe();
@@ -480,8 +491,6 @@
 	// $effect(() => {
 	// 	showNotification = timeout !== undefined;
 	// });
-
-	// $inspect($order);
 	// $: setQueryOption(page, pageSize, opt, customerId, salesId, txt);
 </script>
 
@@ -653,6 +662,7 @@
 {#if isSearch && !isOpen}
 	<ProductSearch
 		value={strNotFound}
+        isCustomerSpecial={getIsCustomerSpecial()}
 		onselect={(p, q) => selectProduct(p, q)}
 		onclear={() => {
 			isSearch = false;

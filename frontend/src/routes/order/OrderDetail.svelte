@@ -1038,9 +1038,8 @@
 		</svelte:fragment>
 	</DataTable>
 </div>
-<hr />
 
-<div>
+<div style="margin-top: 16px">
 	<Button
 		size="small"
 		icon={Add}

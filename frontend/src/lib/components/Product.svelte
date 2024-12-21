@@ -6,9 +6,6 @@
 	.top-16 {
 		margin-top: 8px;
 	}
-	.min-60 {
-		min-width: 90px;
-	}
 	:global(div.row-odd.bx--row) {
 		border-bottom: 1px solid var(--cds-ui-03);
 		margin: 0 -32px;
@@ -29,14 +26,15 @@
 
 	interface Props {
 		showHpp?: boolean;
+        isCustomerSpecial?: boolean,
 		onadd: (p: iProduct, qty: number) => void;
 		product: iProduct;
 	}
-	let { product, onadd, showHpp }: Props = $props();
+
+	let { product, onadd, showHpp, isCustomerSpecial = false }: Props = $props();
 
 	async function findProduct(e: string) {
-		const url = `${baseURL}/products/barcode/${e}`;
-
+		const url = `${baseURL}/products/barcode${isCustomerSpecial ? '-special':''}/${e}`;
 		const options = {
 			headers: {
 				'content-type': 'application/json'
@@ -44,7 +42,6 @@
 			method: 'GET',
 			credentials: credential_include
 		};
-
 		const request = new Request(url, options);
 		let result = await fetch(request);
 

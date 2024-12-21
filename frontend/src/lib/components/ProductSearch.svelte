@@ -19,9 +19,18 @@
 	interface Props {
 		value: string;
 		showHpp?: boolean;
+        isCustomerSpecial?: boolean;
 		onselect: (p: iProduct, q: number) => void;
 		onclear: () => void;
 	}
+
+    let {
+		value = $bindable(''),
+		onselect,
+		onclear,
+		showHpp = false,
+        isCustomerSpecial = false,
+	}: Props = $props();
 
 	const initResult: iResult = {
 		status: 'page loading',
@@ -50,13 +59,6 @@
 		return Promise.resolve(initResult);
 	}
 
-	let {
-		value = $bindable(''),
-		onselect,
-		onclear,
-		showHpp = false
-	}: Props = $props();
-
 	const query = $derived.by(() => {
 		return useQuery<iResult, Error>({
 			queryKey: ['products', value],
@@ -70,6 +72,7 @@
 	});
 
 	let expanded = $state(true);
+    $inspect(isCustomerSpecial);
 </script>
 
 <div style="margin-top: 24px">
@@ -90,6 +93,6 @@
 
 <Grid>
 	{#each products as p}
-		<Product product={p} onadd={(p, q) => onselect(p, q)} showHpp={showHpp} />
+		<Product product={p} onadd={(p, q) => onselect(p, q)} {showHpp} isCustomerSpecial />
 	{/each}
 </Grid>
