@@ -175,8 +175,8 @@ CREATE TABLE
    );
 CREATE INDEX ix_order_detail
    ON "order_details" (order_id, created_at);
-CREATE INDEX ix_order_detail_updated
-   ON "order_details" (product_id, updated_at DESC);
+CREATE INDEX ix_order_detail_created
+   ON "order_details" (created_at DESC, product_id);
 CREATE INDEX ix_detail_gudang
     ON "order_details" (gudang_id);
 
