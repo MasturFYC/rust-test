@@ -215,7 +215,7 @@ pub async fn find_barcode_special(
     app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, HttpError> {
     let barcode = path.0.clone();
-    let custid = path.1.clone();
+    let custid = path.1;
 
     // print!("\n\n{} {}\n\n", barcode, custid);
 
@@ -421,7 +421,6 @@ pub async fn create_product(
         .map_err(|e| HttpError::bad_request(e.to_string()))?;
 
     let new_product = body.into_inner();
-
     let result = app_state.db_client.product_create(new_product).await;
 
     match result {
@@ -513,9 +512,7 @@ async fn delete_product(
     app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, HttpError> {
     let prod_id = path.into_inner();
-
     let result = app_state.db_client.product_delete(prod_id).await;
-
     match result {
         Ok(rows_affected) => Ok(HttpResponse::Ok().json(DeleteResponseDto {
             status: if rows_affected as i32 == 0 {
@@ -525,6 +522,7 @@ async fn delete_product(
             },
             data: rows_affected,
         })),
+
         // Err(sqlx::Error::Database(db_err)) => {
         //     if db_err.is_foreign_key_violation() {
         //         Err(HttpError::unique_constraint_voilation(
