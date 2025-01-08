@@ -1,8 +1,0 @@
-{
-    "rust-analyzer.checkOnSave": true,
-    "cSpell.words": [
-        "Biaya"
-    ],
-    "editor.cursorBlinking": "smooth",
-    "editor.cursorStyle": "block"
-}

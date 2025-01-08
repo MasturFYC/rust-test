@@ -268,7 +268,7 @@ async fn update_only_stock(
 
 #[delete("")]
 async fn delete(body: web::Json<Vec<i32>>, app_state: web::Data<AppState>) -> impl Responder {
-    let ids = body.into_inner();
+    let ids: Vec<i32> = body.into_inner();
     let query_result = app_state
         .db_client
         .stock_delete(ids) //
