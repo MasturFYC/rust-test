@@ -25,3 +25,11 @@ https://blog.logrocket.com/configuring-vim-rust-development/
 
 ## vs-code extention :
  Error Lens usernamehw
+ 
+important package sqlx for postgres
+
+$ install pkg-config openssl-devel / libssl-dev
+$ cargo install sqlx-cli --no-default-features --features native-tls,postgres
+$ sqlx migrate
+$ cargo install cargo-watch
+$ cargo watch -q -c -w src/ -x run
