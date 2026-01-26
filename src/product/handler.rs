@@ -421,6 +421,7 @@ pub async fn create_product(
         .map_err(|e| HttpError::bad_request(e.to_string()))?;
 
     let new_product = body.into_inner();
+
     let result = app_state.db_client.product_create(new_product).await;
 
     match result {

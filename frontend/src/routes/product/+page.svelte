@@ -178,18 +178,26 @@
 	// 	// console.log(q_key);
 	// }
 
-	const fetchCreateData = async (e: iProduct): Promise<iResponse> => {
-		const request = new Request(url, {
-			headers: {
-				'content-type': 'application/json'
-			},
-			body: JSON.stringify(e),
-			method: 'POST',
-			credentials: credential_include
-		});
+  const fetchCreateData = async (e: iProduct): Promise<iResponse> => {
+    const variable = JSON.stringify(e);
+    console.log(variable);
+    const request = {
+      method: 'POST',
+      mode: 'cors',
+      headers: {
+	'Content-Type': 'application/json',
+	'Accept': 'application/json',
+      },
+      body: variable,
+      credentials: credential_include
+    };
 
-		return await (await fetch(request)).json();
-	};
+    console.log(request.body);
+
+    const data = await fetch(url, request);
+
+    return data.json();
+  };
 
 	const fetchUpdateData = async (e: iProduct): Promise<iResponse> => {
 		const request = new Request(`${url}/${e.id}`, {
@@ -215,7 +223,9 @@
 		return await (await fetch(request)).json();
 	};
 
-	const createData = useMutation(fetchCreateData, {
+  const createData = useMutation(
+    fetchCreateData,
+    {
 		onMutate: async (_e: iProduct) => {
 			// Cancel any outgoing refetches (so they don't overwrite our optimistic update)
 			await client.cancelQueries();
@@ -231,23 +241,20 @@
 			return previousData;
 		},
 		onSuccess: async (data: any, _variable: iProduct, _context) => {
-			// setTimeout(() => {
-			if (data.status === 'success') {
-				open = false;
-				isUpdating = false;
-				isError = false;
-			} else {
-				isError = true;
-				setTimeout(() => {
-					isUpdating = false;
-				}, 250);
-				errorMessage = data.message;
-			}
+		  // setTimeout(() => {
+		  console.log(data);
+			  setTimeout(() => {
+			    errorMessage = data.message;
+			    open = false;
+			    isUpdating = false;
+			    isError = false;
+			  }, 250);
 			//}, 250);
 		},
 		// If the mutation fails, use the context returned from onMutate to roll back
-		onError: (_err: any, _variables, context: any) => {
+		onError: (err: any, _variables, context: any) => {
 			// console.log(err);
+		  console.log(err);
 			isUpdating = false;
 			if (context?.previousData) {
 				client.setQueryData<iResult>(q_key, context.previousData);
@@ -373,7 +380,7 @@
 	}
 
 	function submit(e: iProduct) {
-		const id = e.id;
+	  const id = e.id;
 		if (id === 0) {
 			$createData.mutate(e);
 		} else {

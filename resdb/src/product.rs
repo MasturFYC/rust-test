@@ -552,7 +552,7 @@ pub mod db {
                 data.supplier_id
             )
             .fetch_optional(&mut *tx)
-            .await?;
+		.await?;
 
             let ids_length = ids.len();
             let mut i: usize = 0;

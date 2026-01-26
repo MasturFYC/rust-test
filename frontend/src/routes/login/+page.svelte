@@ -12,13 +12,12 @@
 
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { credential_include, type iUserLogin } from '$lib/interfaces';
+  import { baseURL, credential_include, type iUserLogin } from '$lib/interfaces';
 	import { Button, PasswordInput, TextInput } from 'carbon-components-svelte';
 	import { Login } from 'carbon-icons-svelte';
 	import { isLogginIn } from '$lib/store';
 	// import ProductInfo from '../stock/ProductInfo.svelte';
 
-	const baseURL = import.meta.env.VITE_API_URL;
 	const url = `${baseURL}/auth/login`;
 
 	let user: iUserLogin = $state({ email: '', password: '' });
