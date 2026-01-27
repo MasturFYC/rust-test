@@ -1,3 +1,0 @@
-markdown reference
-==================
-https://joyofcode.xyz/sveltekit-markdown-blog#syntax-highlighting
