@@ -490,7 +490,8 @@ pub struct RelationProperty {
     pub name: String,
     pub city: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub region: Option<String>,
+    #[serde(rename = "regionId")]
+    pub region_id: Option<u16>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub street: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

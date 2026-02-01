@@ -73,7 +73,7 @@ pub struct RequestProductSearch {
     #[validate(range(min = 0, max = 3))]
     pub opt: Option<i8>,
     pub txt: Option<String>,
-    pub relid: Option<i16>,
+    //pub relid: Option<i16>,
     pub catid: Option<i16>,
 }
 

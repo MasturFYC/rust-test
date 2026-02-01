@@ -4,16 +4,17 @@ mod dtos;
 mod error;
 mod extractors;
 // mod models;
-mod account;
+//mod account;
 mod category;
+mod region;
 mod gudang;
-mod ledger;
-mod order;
-mod payment;
+//mod ledger;
+//mod order;
+//mod payment;
 mod product;
-mod relation;
+//mod relation;
 mod scopes;
-mod stock;
+//mod stock;
 mod utils;
 
 use actix_cors::Cors;
@@ -91,7 +92,9 @@ impl Modify for SecurityAddon {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     openssl_probe::init_ssl_cert_env_vars();
     if std::env::var_os("RUST_LOG").is_none() {
-        std::env::set_var("RUST_LOG", "actix_web=info");
+	unsafe {
+            std::env::set_var("RUST_LOG", "actix_web=info");
+	}
     }
 
     dotenv().ok();
@@ -152,13 +155,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .service(scopes::users::users_scope())
             .service(health_checker_handler)
             .configure(category::handler::category_scope)
-            .configure(account::handler::account_scope)
-            .configure(relation::handler::relation_scope)
-            .configure(order::handler::order_scope)
-            .configure(stock::stock_scope)
-            .configure(gudang::gudang_scope)
-            .configure(ledger::handler::ledger_scope)
-            .configure(payment::handler::payment_scope)
+	    .configure(region::handler::scope)
+            //.configure(account::handler::account_scope)
+            //.configure(relation::handler::relation_scope)
+            //.configure(order::handler::order_scope)
+            //.configure(stock::stock_scope)
+            .configure(gudang::warehouse_scope)
+            //.configure(ledger::handler::ledger_scope)
+            //.configure(payment::handler::payment_scope)
             .service(Redoc::with_url("/redoc", openapi.clone()))
             .service(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc"))
             .service(SwaggerUi::new("/{_:.*}").url("/api-docs/openapi.json", openapi.clone()))

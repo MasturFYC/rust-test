@@ -1,8 +1,8 @@
 -- Add up migration script here
 
-CREATE TYPE order_enum AS ENUM ('order', 'stock', 'order_return', 'stock_return', 'mutation');
-CREATE TYPE payment_enum AS ENUM ('cash', 'pending', 'loans', 'lunas');
-CREATE TYPE ledger_enum AS ENUM ('order', 'stock', 'order_return', 'stock_return', 'loan', 'order_payment', 'stock_payment', 'loan_payment');
+CREATE TYPE order_enum AS ENUM ('stock', 'order', 'retail', 'order_return', 'stock_return', 'mutation');
+-- CREATE TYPE payment_enum AS ENUM ('cash', 'pending', 'loans', 'lunas');
+CREATE TYPE transaction_enum AS ENUM ('order', 'stock', 'order_return', 'stock_return', 'loan', 'order_payment', 'stock_payment', 'loan_payment');
 CREATE TYPE relation_enum AS ENUM ('customer', 'employee', 'supplier', 'sales');
 
 CREATE TABLE "accounts" (
@@ -14,13 +14,7 @@ CREATE TABLE "accounts" (
    is_active boolean NOT NULL DEFAULT TRUE,
    payable boolean NOT NULL DEFAULT FALSE,
    descriptions VARCHAR(128),
-   created_at TIMESTAMP
-      WITH
-      TIME ZONE DEFAULT NOW(),
-   updated_at TIMESTAMP
-      WITH
-      TIME ZONE DEFAULT NOW(),
-    PRIMARY KEY (id)
+   PRIMARY KEY (id)
 );
 
 CREATE UNIQUE INDEX "ixq_account_name" ON accounts (name);
@@ -35,19 +29,28 @@ CREATE SEQUENCE IF NOT EXISTS category_id_seq AS SMALLINT
    INCREMENT BY 1
       START 1;
 
-CREATE SEQUENCE IF NOT EXISTS gudang_seq AS SMALLINT
-   INCREMENT BY 1
-      START 1;
-
 CREATE TABLE "categories" (
    id SMALLINT NOT NULL DEFAULT nextval('category_id_seq'::regclass),
    name VARCHAR(50) NOT NULL,
    PRIMARY KEY (id)
 );
 
+CREATE SEQUENCE IF NOT EXISTS region_id_seq AS SMALLINT
+   INCREMENT BY 1
+      START 2;
+
+CREATE TABLE regions (
+       id SMALLINT NOT NULL DEFAULT nextval('region_id_seq'::regclass),
+       name VARCHAR(50) NOT NULL,
+       PRIMARY KEY(id)
+);
+
+CREATE INDEX idx_region_name ON regions (name);
+
+
 CREATE SEQUENCE IF NOT EXISTS relation_id_seq AS SMALLINT
    INCREMENT BY 1
-      START 1;
+      START 2;
 
 CREATE TABLE
     "relations" (
@@ -56,13 +59,11 @@ CREATE TABLE
         city VARCHAR(50) NOT NULL,
         street VARCHAR(255),
         phone VARCHAR(25),
-        region VARCHAR(50),
+        region_id SMALLINT NOT NULL DEFAULT 1,
         is_active BOOLEAN NOT NULL DEFAULT TRUE,
         is_special BOOLEAN NOT NULL DEFAULT FALSE,
         relation_type relation_enum[] NOT NULL DEFAULT '{customer}',
         photo VARCHAR(256),
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         PRIMARY KEY (id)
     );
 
@@ -72,10 +73,10 @@ CREATE SEQUENCE IF NOT EXISTS product_id_seq AS SMALLINT
    INCREMENT BY 1
       START 1;
 
-CREATE SEQUENCE "gudang_id_seq" AS SMALLINT INCREMENT BY 1 START 1;
+CREATE SEQUENCE "warehouse_id_seq" AS SMALLINT INCREMENT BY 1 START 1;
 
-CREATE TABLE "gudangs" (
-    id SMALLINT NOT NULL DEFAULT nextval('gudang_id_seq'::regclass),
+CREATE TABLE "warehouses" (
+    id SMALLINT NOT NULL DEFAULT nextval('warehouse_id_seq'::regclass),
     name VARCHAR (50) NOT NULL,
     employee_id SMALLINT NOT NULL,
     locate VARCHAR(128),
@@ -84,74 +85,55 @@ CREATE TABLE "gudangs" (
 
 CREATE TABLE "products" (
    id SMALLINT NOT NULL DEFAULT nextval('product_id_seq'::regclass),
-   supplier_id SMALLINT NOT NULL,
    category_id SMALLINT NOT NULL,
    name VARCHAR(50) NOT NULL,
    barcode VARCHAR(25) NOT NULL,
    unit VARCHAR(6) NOT NULL,
    content NUMERIC(9,2) NOT NULL DEFAULT 1,
-   hpp NUMERIC(9,2) NOT NULL DEFAULT 0,
+   hpp NUMERIC(12,2) NOT NULL DEFAULT 0,
    margin NUMERIC(7,4) NOT NULL DEFAULT 0,
-   price NUMERIC(9,2) NOT NULL DEFAULT 0,
-   ppn NUMERIC(7,4) NOT NULL DEFAULT 0,
-   heavy REAL NOT NULL DEFAULT 0,
+   price NUMERIC(12,2) NOT NULL DEFAULT 0,
+   heavy NUMERIC(12,2) NOT NULL DEFAULT 0,
    is_active BOOLEAN NOT NULL DEFAULT TRUE,
    variant_name VARCHAR(50),
    descriptions VARCHAR(128),
-   created_at TIMESTAMP
-      WITH
-      TIME ZONE DEFAULT NOW(),
-   updated_at TIMESTAMP
-      WITH
-      TIME ZONE DEFAULT NOW(),
    PRIMARY KEY (id)
 );
 
 CREATE UNIQUE INDEX "ixq_category_name" ON categories (name);
 CREATE INDEX "ix_product_name" ON products (name);
 CREATE UNIQUE INDEX "ixq_product_barcode" ON products (barcode);
-CREATE INDEX "ix_product_supplier" ON products (supplier_id);
 
 ALTER TABLE "products"
    ADD CONSTRAINT fk_product_category FOREIGN KEY (category_id)
       REFERENCES categories (id);
 
-ALTER TABLE "products"
-   ADD CONSTRAINT fk_product_supplier FOREIGN KEY (supplier_id)
-      REFERENCES relations (id);
-
-CREATE SEQUENCE IF NOT EXISTS order_id_seq AS INT
-   INCREMENT BY 1
-      START 1;
-
 CREATE TABLE
     "orders" (
-        id INT NOT NULL DEFAULT nextval('order_id_seq'::regclass),
-        order_type order_enum NOT NULL,
+    -- transacion_id
+        order_id INT NOT NULL,
+    -- for purchase
+	order_type order_enum NOT NULL,
         customer_id SMALLINT NOT NULL,
         sales_id SMALLINT NOT NULL,
-        payment_type payment_enum NOT NULL,
-        updated_by VARCHAR(50) NOT NULL,
         total NUMERIC(12,2) NOT NULL DEFAULT 0,
         dp NUMERIC(12,2) NOT NULL DEFAULT 0,
-        payment NUMERIC(12,2) NOT NULL DEFAULT 0,
         remain NUMERIC(12,2) NOT NULL DEFAULT 0,
-        -- Nomor faktur stock
-        -- pada saat pembelian barang
-        invoice_id VARCHAR(50),
-        due_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         is_protected BOOLEAN NOT NULL DEFAULT TRUE,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-        PRIMARY KEY (id)
+        due_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+	tag VARCHAR(50) NOT NULL,
+	descriptions VARCHAR(128),
+        invoice_number varchar(50),
+        PRIMARY KEY (order_id)
     );
 
 CREATE INDEX ix_order_relation
-   ON "orders" (created_at, customer_id, sales_id, order_type, payment_type);
+   ON "orders" (customer_id, sales_id, order_type);
 
 ALTER TABLE "orders"
    ADD CONSTRAINT fk_order_customer FOREIGN KEY (customer_id)
       REFERENCES relations (id);
+
 ALTER TABLE "orders"
    ADD CONSTRAINT fk_order_sales FOREIGN KEY (sales_id)
       REFERENCES relations (id);
@@ -161,7 +143,7 @@ CREATE TABLE
       order_id INT NOT NULL,
       detail_id SMALLINT NOT NULL,
       product_id SMALLINT NOT NULL,
-      gudang_id SMALLINT NOT NULL DEFAULT 1,
+      warehouse_id SMALLINT NOT NULL DEFAULT 1,
       qty NUMERIC(9,2) NOT NULL DEFAULT 1,
       direction SMALLINT NOT NULL DEFAULT 0,
       unit VARCHAR(6) NOT NULL,
@@ -169,89 +151,127 @@ CREATE TABLE
       price NUMERIC(12,2) NOT NULL DEFAULT 0,
       discount NUMERIC(9,2) NOT NULL DEFAULT 0,
       subtotal NUMERIC(12,2) NOT NULL DEFAULT 0,
-      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       PRIMARY KEY (order_id, detail_id)
    );
-CREATE INDEX ix_order_detail
-   ON "order_details" (order_id, created_at);
-CREATE INDEX ix_order_detail_created
-   ON "order_details" (created_at DESC, product_id);
-CREATE INDEX ix_detail_gudang
-    ON "order_details" (gudang_id);
+
+CREATE INDEX ix_order_detail_updated
+   ON "order_details" (updated_at DESC, product_id);
+
+CREATE INDEX ix_detail_warehouse
+    ON "order_details" (warehouse_id);
 
 ALTER TABLE "order_details"
    ADD CONSTRAINT fk_detail_order FOREIGN KEY (order_id)
-      REFERENCES "orders" (id);
+      REFERENCES "orders" (order_id);
 
 ALTER TABLE "order_details"
    ADD CONSTRAINT fk_detail_product FOREIGN KEY (product_id)
       REFERENCES "products" (id);
 
 ALTER TABLE "order_details"
-    ADD CONSTRAINT fk_gudang_order FOREIGN KEY (gudang_id)
-    REFERENCES "gudangs" (id);
+    ADD CONSTRAINT fk_warehouse_order FOREIGN KEY (warehouse_id)
+    REFERENCES "warehouses" (id);
 
-CREATE SEQUENCE IF NOT EXISTS ledger_id_seq AS INT
+CREATE SEQUENCE IF NOT EXISTS transaction_id_seq AS INT
    INCREMENT BY 1
       START 1;
 
-CREATE TABLE "ledgers" (
-   id INT NOT NULL DEFAULT nextval('ledger_id_seq'::regclass),
-   relation_id SMALLINT NOT NULL,
-   ledger_type ledger_enum NOT NULL,
+CREATE TABLE "transactions" (
+   id INT NOT NULL DEFAULT nextval('transaction_id_seq'::regclass),
+   transaction_type transaction_enum NOT NULL,
    is_valid BOOL NOT NULL DEFAULT TRUE,
+   created_by VARCHAR(50) NOT NULL,
    updated_by VARCHAR(50) NOT NULL,
    descriptions VARCHAR(128),
+   memo VARCHAR(128),
    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
    PRIMARY KEY (id)
 );
 
-CREATE INDEX ix_ledger_relation ON ledgers (relation_id);
-
-CREATE TABLE "ledger_details" (
-   ledger_id INT NOT NULL,
+CREATE TABLE "transaction_details" (
+   transaction_id INT NOT NULL,
    detail_id SMALLINT NOT NULL,
    account_id SMALLINT NOT NULL,
    amount NUMERIC(12,2) NOT NULL DEFAULT 0,
    direction SMALLINT NOT NULL,
    ref_id INT NOT NULL DEFAULT 0,
    descriptions VARCHAR(128),
-   PRIMARY KEY (ledger_id, detail_id)
+   PRIMARY KEY (transaction_id, detail_id)
 );
 
-CREATE INDEX ix_ledger_detail_account ON ledger_details(account_id);
-CREATE INDEX ix_ledger_detail_ref ON ledger_details(ref_id);
+CREATE INDEX ix_transaction_detail_account ON transaction_details(account_id);
+CREATE INDEX ix_transaction_detail_ref ON transaction_details(ref_id);
 
-ALTER TABLE ledgers ADD CONSTRAINT fx_ledger_relation
-    FOREIGN KEY(relation_id) REFERENCES relations(id);
-ALTER TABLE ledger_details ADD CONSTRAINT fx_ledger_detail
-    FOREIGN KEY(ledger_id) REFERENCES ledgers(id) ON DELETE CASCADE;
-ALTER TABLE ledger_details ADD CONSTRAINT fx_ledger_detail_account
+ALTER TABLE transaction_details ADD CONSTRAINT fx_transaction_detail
+    FOREIGN KEY(transaction_id) REFERENCES transactions(id) ON DELETE CASCADE;
+ALTER TABLE transaction_details ADD CONSTRAINT fx_transaction_detail_account
     FOREIGN KEY(account_id) REFERENCES accounts(id);
 
-CREATE TABLE
-    "order_payments" (
-        order_id INT NOT NULL,
-        payment_id SMALLINT NOT NULL,
-        amount NUMERIC(12,0) NOT NULL DEFAULT 0,
-        updated_by VARCHAR(50) NOT NULL,
-        via_by VARCHAR(50) NOT NULL,
-        descriptions VARCHAR(50),
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-        PRIMARY KEY (order_id, payment_id)
-    );
-
-CREATE INDEX ix_order_payment
-   ON order_payments(order_id, payment_id);
-
-ALTER TABLE "order_payments"
-    ADD CONSTRAINT fk_order_payment FOREIGN KEY (order_id)
-        REFERENCES orders (id) ON DELETE CASCADE;
-
 -- Add up migration script here
+
+CREATE TABLE "stocks" (
+    warehouse_id SMALLINT NOT NULL,
+    product_id SMALLINT NOT NULL,
+    qty NUMERIC(12,2) NOT NULL DEFAULT 0,
+    PRIMARY KEY (warehouse_id, product_id)
+);
+
+CREATE UNIQUE INDEX "ixq_warehouse_name" ON warehouses (name);
+
+CREATE INDEX "ix_warehouse_employee" ON warehouses (employee_id);
+
+ALTER TABLE "warehouses"
+   ADD CONSTRAINT "fk_warehouse_employee" FOREIGN KEY (employee_id)
+      REFERENCES "relations" (id);
+
+ALTER TABLE "stocks"
+   ADD CONSTRAINT "fk_stock_warehouse" FOREIGN KEY (warehouse_id)
+      REFERENCES "warehouses" (id) ON DELETE CASCADE;
+
+ALTER TABLE "stocks"
+    ADD CONSTRAINT fk_stock_product FOREIGN KEY (product_id)
+        REFERENCES "products" (id) ON DELETE CASCADE;
+
+-- ALTER TABLE "order_details"
+   -- ADD CONSTRAINT fk_order_warehouse FOREIGN KEY (warehouse_id)
+     --   REFERENCES "warehouses" (id) ON DELETE CASCADE;
+
+ALTER TABLE "relations"
+   ADD CONSTRAINT fk_region_relation FOREIGN KEY (region_id)
+      REFERENCES regions (id);
+
+INSERT INTO regions (id, name)
+    VALUES (1, 'Non Customer');
+
+INSERT INTO relations (
+        id,
+        name,
+        city,
+        street,
+        phone,
+        region_id,
+        is_active,
+        is_special,
+        relation_type,
+        photo
+    ) VALUES (
+    1,
+    'Penjaga Gudang Toko',
+    'Local',
+    '-',
+    '0000-0000-0000',
+    1,
+    true,
+    false,
+    '{employee}',
+    'default.png'
+);
+
+INSERT INTO warehouses (id, employee_id, name)
+    VALUES (1, 1, 'Gudang Toko');
+
 INSERT INTO accounts (id, name, normal, en_name)
     VALUES (101, 'Kas', 1, 'Cash');
 INSERT INTO accounts (id, name, normal, en_name)
@@ -264,30 +284,3 @@ INSERT INTO accounts (id, name, normal, en_name)
     VALUES (421, 'Penjualan barang', -1,  'Revenue');
 INSERT INTO accounts (id, name, normal, en_name)
     VALUES (521, 'Biaya beli barang', 1,  'Cost of goods sold');
-
-CREATE TABLE "stocks" (
-    gudang_id SMALLINT NOT NULL,
-    product_id SMALLINT NOT NULL,
-    qty NUMERIC(12,2) NOT NULL DEFAULT 0,
-    PRIMARY KEY (gudang_id, product_id)
-);
-
-CREATE UNIQUE INDEX "ixq_gudang_name" ON gudangs (name);
-
-CREATE INDEX "ix_gudang_employee" ON gudangs (employee_id);
-
-ALTER TABLE "gudangs"
-   ADD CONSTRAINT "fk_gudang_employee" FOREIGN KEY (employee_id)
-      REFERENCES "relations" (id);
-
-ALTER TABLE "stocks"
-   ADD CONSTRAINT "fk_stock_gudang" FOREIGN KEY (gudang_id)
-      REFERENCES "gudangs" (id) ON DELETE CASCADE;
-
-ALTER TABLE "stocks"
-    ADD CONSTRAINT fk_stock_product FOREIGN KEY (product_id)
-        REFERENCES "products" (id) ON DELETE CASCADE;
-
--- ALTER TABLE "order_details"
-   -- ADD CONSTRAINT fk_order_gudang FOREIGN KEY (gudang_id)
-     --   REFERENCES "gudangs" (id) ON DELETE CASCADE;

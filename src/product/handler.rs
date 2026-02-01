@@ -67,6 +67,7 @@ pub fn product_scope() -> Scope {
                     UserRole::Moderator,
                 ])),
         )
+	/*
         .route(
             "/supplier/{id}",
             web::get()
@@ -75,7 +76,8 @@ pub fn product_scope() -> Scope {
                     UserRole::Admin,
                     UserRole::Moderator,
                 ])),
-        )
+)
+	*/
 }
 
 #[utoipa::path(
@@ -263,13 +265,13 @@ pub async fn get_products(
     let limit = query_params.limit.unwrap_or(10);
     let opt = query_params.opt;
     let txt = query_params.txt;
-    let relid = query_params.relid;
+//    let relid = query_params.relid;
     let catid = query_params.catid;
     let lim = limit as i64;
 
     let (products, count) = app_state
         .db_client
-        .get_products(page as u32, limit, opt, txt, relid, catid)
+        .get_products(page as u32, limit, opt, txt, catid)
         .await
         .map_err(|e| HttpError::server_error(e.to_string()))?;
 
@@ -354,6 +356,7 @@ pub async fn get_by_category(
     Ok(HttpResponse::Ok().json(response))
 }
 
+/*
 #[utoipa::path(
     get,
     path = "/api/products/supplier/{id}",
@@ -364,6 +367,9 @@ pub async fn get_by_category(
         (status=500, description= "Internal Server Error", body=Response ),
     )
 )]
+ */
+
+/*
 pub async fn get_by_supplier(
     id: web::Path<i16>,
     query: web::Query<RequestQueryDto>,
@@ -399,6 +405,7 @@ pub async fn get_by_supplier(
 
     Ok(HttpResponse::Ok().json(response))
 }
+ */
 
 #[utoipa::path(
     post,
